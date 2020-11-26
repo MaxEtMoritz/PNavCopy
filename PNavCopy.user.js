@@ -1,19 +1,16 @@
 // ==UserScript==
 /* globals jQuery, $, waitForKeyElements */
-// @id             pnav@nbg
+// @id             pnavcopy@maxetmoritz
 // @name           IITC plugin: Copy PokeNav Creation Command
 // @category       Misc
+// @downloadURL    https://github.com/MaxEtMoritz/PNavCopy/releases/download/latest/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.0
-// @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    Copy portal info in PokeNav command format: $create poi <type> "<Name>" <location> <ex eligibility>
-// @include        https://intel.ingress.com/*
-// @include        http://intel.ingress.com/*
-// @match          https://intel.ingress.com/*
-// @match          http://intel.ingress.com/*
+// @version        1.1
+// @namespace      https://github.com/MaxEtMoritz/PNavCopy
+// @description    Copy portal info in PokeNav Discord bot command format.
+// @include        http*://intel.ingress.com/*
 // @grant          none
 // ==/UserScript==
-
 
 //original Plug-In is from https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/tree/master, the License of this project is provided below:
 
@@ -34,17 +31,9 @@ OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE. */
 
-
-
-
-
-
-
-
 function wrapper(plugin_info) {
 // ensure plugin framework is there, even if iitc is not yet loaded
     if(typeof window.plugin !== 'function') window.plugin = function() {};
-
 
 // PLUGIN START ////////////////////////////////////////////////////////
 
@@ -109,7 +98,6 @@ function wrapper(plugin_info) {
         return copysuccess;
     }
 
-
     var setup = function() {
         console.log('azaza');
         if(window.plugin.pogo){
@@ -128,7 +116,6 @@ function wrapper(plugin_info) {
 
 // PLUGIN END //////////////////////////////////////////////////////////
 
-
     setup.info = plugin_info; //add the script info data to the function as a property
     if(!window.bootPlugins) window.bootPlugins = [];
     window.bootPlugins.push(setup);
@@ -141,5 +128,3 @@ var info = {};
 if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) info.script = { version: GM_info.script.version, name: GM_info.script.name, description: GM_info.script.description };
 script.appendChild(document.createTextNode('('+ wrapper +')('+JSON.stringify(info)+');'));
 (document.body || document.head || document.documentElement).appendChild(script);
-
-
