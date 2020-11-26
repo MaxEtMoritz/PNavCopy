@@ -101,10 +101,10 @@ function wrapper(plugin_info) {
     var setup = function() {
         console.log('azaza');
         if(window.plugin.pogo){
-            $('#toolbox').append('<div class="PNavCpy"><a onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a></div>');
+            $('#toolbox').append('<a title="Copy the PokeNav Command to Clipboard" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>');
         }
         else{
-            $('#toolbox').append('<div class="PNavCpy"><input type="radio" checked="true" name="type" value="stop" id="PNavStop"/><Label for="PNavStop">Stop</label><input type="radio" name="type" value="gym" id="PNavGym"/><Label for="PNavGym">Gym</label><input type="radio" name="type" value="ex" id="PNavEx"/><Label for="PNavEx">Ex Gym</label><a onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a></div>');
+            $('#toolbox').append('<input type="radio" checked="true" name="type" value="stop" id="PNavStop"/><Label for="PNavStop">Stop</label><input type="radio" name="type" value="gym" id="PNavGym"/><Label for="PNavGym">Gym</label><input type="radio" name="type" value="ex" id="PNavEx"/><Label for="PNavEx">Ex Gym</label><a title="Copy the PokeNav Command to Clipboard" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>');
         }
         $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
         window.addHook('portalSelected', function(data){
