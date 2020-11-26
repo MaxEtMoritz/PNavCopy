@@ -7,6 +7,6 @@ If you use the [Pogo tools plugin by AlfonsoML](https://gitlab.com/AlfonsoML/pog
 
 The Plugin is based on a plugin included in a [Fork of the original IITC Mobile App](https://gitlab.com/ruslan.levitskiy/iitc-mobile) ([direct link to the Plugin](https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/blob/master/app/src/main/assets/plugins/portal-link-copier.user.js))
 
-**Note**: Sponsored location option is not supported at the Moment! If you need it, add it manually before sending the message to the Bot!
+**Note**: Alias and Note options are not supported. If you need one of them, add them manually before sending the message to the Bot!
 
-**Note 2**: The Plugin is not the very best code (and visual) style and the code may not be very "error-friendly" because i am in no way an expert in JavaScript at the moment, but the important thing for me was to get it work, and it does exacly that, nothing more :-)
+**Note**: The Plugin is not the very best code (and visual) style and the code may not be very "error-friendly" because i am in no way an expert in JavaScript at the moment, but the important thing for me was to get it work, and it does exacly that, nothing more :-)

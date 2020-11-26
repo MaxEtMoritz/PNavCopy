@@ -49,7 +49,7 @@ function wrapper(plugin_info) {
             var latlng = portal.getLatLng();
             var lat = latlng.lat;
             var lng = latlng.lng;
-            var opt = "";
+            var opt = " ";
             var type = "";
             if(window.plugin.pogo){
                 if($('.pogoStop span').css('background-position') == "100% 0%"){
@@ -58,14 +58,14 @@ function wrapper(plugin_info) {
                 else if($('.pogoGym span').css('background-position') == "100% 0%"){
                     type = "gym";
                     if($('#PogoGymEx').prop('checked')==true){
-                        opt = "\"ex_eligible: 1\"";
+                        opt += "\"ex_eligible: 1\"";
                     }
                 }
             }
             else{
                 if(document.getElementById('PNavEx').checked){
                     type = "gym";
-                    opt = "\"ex_eligible: 1\"";
+                    opt += "\"ex_eligible: 1\"";
                 }
                 else if (document.getElementById('PNavGym').checked){
                     type = "gym";
@@ -74,7 +74,10 @@ function wrapper(plugin_info) {
                     type = "stop";
                 }
             }
-            input.val("$create poi " + type + " \"" + name + "\" " + lat + '-' + lng + " " + opt);
+            if($('#PNavSponsored').prop('checked')==true){
+                opt += " \"sponsored: 1\"";
+            }
+            input.val("$create poi " + type + " \"" + name + "\" " + lat + '-' + lng + opt);
             copyfieldvalue('copyInput');
             input.hide();
         }
@@ -101,10 +104,10 @@ function wrapper(plugin_info) {
     var setup = function() {
         console.log('azaza');
         if(window.plugin.pogo){
-            $('#toolbox').append('<a title="Copy the PokeNav Command to Clipboard" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>');
+            $('#toolbox').append('<input type="checkbox" name="sponsored" id="PNavSponsored"><label for="PNavSponsored">Sponsored</label><a title="Copy the PokeNav Command to Clipboard" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>');
         }
         else{
-            $('#toolbox').append('<input type="radio" checked="true" name="type" value="stop" id="PNavStop"/><Label for="PNavStop">Stop</label><input type="radio" name="type" value="gym" id="PNavGym"/><Label for="PNavGym">Gym</label><input type="radio" name="type" value="ex" id="PNavEx"/><Label for="PNavEx">Ex Gym</label><a title="Copy the PokeNav Command to Clipboard" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>');
+            $('#toolbox').append('<input type="radio" checked="true" name="type" value="stop" id="PNavStop"/><Label for="PNavStop">Stop</label><input type="radio" name="type" value="gym" id="PNavGym"/><Label for="PNavGym">Gym</label><input type="radio" name="type" value="ex" id="PNavEx"/><Label for="PNavEx">Ex Gym</label><input type="checkbox" name="sponsored" id="PNavSponsored"><label for="PNavSponsored">Sponsored</label><a title="Copy the PokeNav Command to Clipboard" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>');
         }
         $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
         window.addHook('portalSelected', function(data){
