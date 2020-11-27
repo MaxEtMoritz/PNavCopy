@@ -40,6 +40,8 @@ function wrapper(plugin_info) {
 // use own namespace for plugin
     window.plugin.pnav = function() {};
     window.plugin.pnav.selectedGuid = null;
+    //set your webhook URL here!
+    window.plugin.pnav.webhookURL = "https://discord.com/api/webhooks/781826690019360799/H214cI6Rc5XfK7Xnvfn0BhKtRQ_donLs1i-RRiVCKt4nGYien1VCQPFUgw3Pn1EzTaQC";
     window.plugin.pnav.copy = function() {
         var input = $('#copyInput');
         if(window.selectedPortal){
@@ -78,6 +80,9 @@ function wrapper(plugin_info) {
                 opt += " \"sponsored: 1\"";
             }
             input.val("$create poi " + type + " \"" + name + "\" " + lat + '-' + lng + opt);
+            if(window.plugin.pnav.webhookURL){
+                sendMessage("$create poi " + type + " \"" + name + "\" " + lat + '-' + lng + opt);
+            }
             copyfieldvalue('copyInput');
             input.hide();
         }
@@ -99,6 +104,19 @@ function wrapper(plugin_info) {
             copysuccess = false;
         }
         return copysuccess;
+    }
+
+    //source: https://dev.to/oskarcodes/send-automated-discord-messages-through-webhooks-using-javascript-1p01
+    function sendMessage(msg){
+        var request = new XMLHttpRequest();
+        request.open("POST", window.plugin.pnav.webhookURL);
+        request.setRequestHeader('Content-type', 'application/json');
+        var params = {
+            username: window.PLAYER.nickname,
+            avatar_url: "",
+            content: msg
+        }
+        request.send(JSON.stringify(params));
     }
 
     var setup = function() {
