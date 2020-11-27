@@ -79,13 +79,38 @@ function wrapper(plugin_info) {
             if($('#PNavSponsored').prop('checked')==true){
                 opt += " \"sponsored: 1\"";
             }
-            input.val("$create poi " + type + " \"" + name + "\" " + lat + '-' + lng + opt);
-            if(window.plugin.pnav.webhookURL){
-                sendMessage("$create poi " + type + " \"" + name + "\" " + lat + '-' + lng + opt);
+            input.val("$create poi " + type + " \"" + name + "\" " + lat + ' ' + lng + opt);
+            if(window.plugin.pnav.webhookURL != ""){
+                sendMessage("$create poi " + type + " \"" + name + "\" " + lat + ' ' + lng + opt);
+                console.log('sent!');
             }
-            copyfieldvalue('copyInput');
+            else{
+                copyfieldvalue('copyInput');
+            }
             input.hide();
         }
+    };
+
+    window.plugin.pnav.showSettings = function(){
+        let validURL = "^https?://discord(app)?.com/api/webhooks/[0-9]*/.*";
+        const html = `
+        <label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
+            Discord WebHook URL:
+            <input type="text" id="pnavhookurl" value="` + window.plugin.pnav.webhookURL + `" pattern="` + validURL + `"/>
+        </label>
+        `;
+        const container = dialog({
+            id:'pnavsettings',
+            width: 'auto',
+            html: html,
+            title: 'PokeNav Settings'
+        });
+        $('#pnavhookurl').on('input', function(){
+            if(new RegExp(validURL).test($(this).val())){
+                window.plugin.pnav.webhookURL = $(this).val();
+                localStorage.setItem('plugin-pnav-settings', window.plugin.pnav.webhookURL);
+            }
+        });
     };
 
     function copyfieldvalue(id){
@@ -121,12 +146,16 @@ function wrapper(plugin_info) {
 
     var setup = function() {
         console.log('azaza');
+        if(localStorage['plugin-pnav-settings']){
+            window.plugin.pnav.webhookURL = localStorage.getItem('plugin-pnav-settings');
+        }
         if(window.plugin.pogo){
             $('#toolbox').append('<input type="checkbox" name="sponsored" id="PNavSponsored"><label for="PNavSponsored">Sponsored</label><a title="Copy the PokeNav Command to Clipboard" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>');
         }
         else{
             $('#toolbox').append('<input type="radio" checked="true" name="type" value="stop" id="PNavStop"/><Label for="PNavStop">Stop</label><input type="radio" name="type" value="gym" id="PNavGym"/><Label for="PNavGym">Gym</label><input type="radio" name="type" value="ex" id="PNavEx"/><Label for="PNavEx">Ex Gym</label><input type="checkbox" name="sponsored" id="PNavSponsored"><label for="PNavSponsored">Sponsored</label><a title="Copy the PokeNav Command to Clipboard" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>');
         }
+        $('#toolbox').append('<a title="Configure PokeNav" onclick="window.plugin.pnav.showSettings();return false;" accesskey="s">PokeNav Settings</a>')
         $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
         window.addHook('portalSelected', function(data){
             console.log(data);
