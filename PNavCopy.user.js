@@ -41,7 +41,7 @@ function wrapper(plugin_info) {
     window.plugin.pnav = function() {};
     window.plugin.pnav.selectedGuid = null;
     //set your webhook URL here!
-    window.plugin.pnav.webhookURL = "https://discord.com/api/webhooks/781826690019360799/H214cI6Rc5XfK7Xnvfn0BhKtRQ_donLs1i-RRiVCKt4nGYien1VCQPFUgw3Pn1EzTaQC";
+    window.plugin.pnav.webhookURL = "";
     window.plugin.pnav.copy = function() {
         var input = $('#copyInput');
         if(window.selectedPortal){
