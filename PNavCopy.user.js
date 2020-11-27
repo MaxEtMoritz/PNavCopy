@@ -40,7 +40,7 @@ function wrapper(plugin_info) {
 // use own namespace for plugin
     window.plugin.pnav = function() {};
     window.plugin.pnav.selectedGuid = null;
-    //set your webhook URL here!
+    window.plugin.pnav.request;
     window.plugin.pnav.webhookURL = "";
     window.plugin.pnav.copy = function() {
         var input = $('#copyInput');
@@ -93,12 +93,18 @@ function wrapper(plugin_info) {
 
     window.plugin.pnav.showSettings = function(){
         let validURL = "^https?://discord(app)?.com/api/webhooks/[0-9]*/.*";
-        const html = `
+        var html = `
         <label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
             Discord WebHook URL:
             <input type="text" id="pnavhookurl" value="` + window.plugin.pnav.webhookURL + `" pattern="` + validURL + `"/>
         </label>
         `;
+        if(window.plugin.pogo){
+            html += `
+            <p><a title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportGyms();return false;">Export all PogoTools Gyms</a></p>
+            <p><a title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportStops();return false;">Export all PogoTools Stops</a></p>
+            `;
+        }
         const container = dialog({
             id:'pnavsettings',
             width: 'auto',
@@ -112,6 +118,61 @@ function wrapper(plugin_info) {
             }
         });
     };
+
+    window.plugin.pnav.bulkExportGyms = function(){
+        var data;
+        if(localStorage['plugin-pogo']){
+            data = JSON.parse(localStorage.getItem('plugin-pogo'));
+        }
+        else if(localStorage['plugin-pogo-data']){
+            data = JSON.parse(localStorage.getItem('plugin-pogo-data'));
+        }
+        else{
+            alert("Pogo Tools is loaded but no Data File was found!");
+        }
+        if(data && data.gyms){
+            bulkExport(data.gyms,'gym');
+        }
+    };
+
+    window.plugin.pnav.bulkExportStops = function(){
+        var data;
+        if(localStorage['plugin-pogo']){
+            data = JSON.parse(localStorage.getItem('plugin-pogo'));
+        }
+        else if(localStorage['plugin-pogo-data']){
+            data = JSON.parse(localStorage.getItem('plugin-pogo-data'));
+        }
+        else{
+            alert("Pogo Tools is loaded but no Data File was found!");
+        }
+        if(data && data.stops){
+            bulkExport(data.stops,'stop');
+        }
+    };
+
+    function bulkExport(data, type){
+        //console.log(data);
+        var keys = Object.keys(data);
+        var i = 0;
+        var timer = setInterval(function(){
+            if(i>=keys.length){
+                alert('Export ready!');
+                clearInterval(timer);
+            }
+            else{
+                var entry = data[keys[i]];
+                let lat = entry.lat;
+                let lng = entry.lng;
+                let name = entry.name;
+                let ex = entry.isEx?true:false;
+                let options = ex?'"ex_eligible: 1"':''
+                //sendMessage('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+                console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+                i++;
+            }
+        },300);
+    }
 
     function copyfieldvalue(id){
         var field = document.getElementById(id);
@@ -133,15 +194,24 @@ function wrapper(plugin_info) {
 
     //source: https://dev.to/oskarcodes/send-automated-discord-messages-through-webhooks-using-javascript-1p01
     function sendMessage(msg){
-        var request = new XMLHttpRequest();
-        request.open("POST", window.plugin.pnav.webhookURL);
-        request.setRequestHeader('Content-type', 'application/json');
+        if(!window.plugin.pnav.request){
+            window.plugin.pnav.request = new XMLHttpRequest();
+            window.plugin.pnav.request.open("POST", window.plugin.pnav.webhookURL);
+            window.plugin.pnav.request.setRequestHeader('Content-type', 'application/json');
+        }
         var params = {
             username: window.PLAYER.nickname,
             avatar_url: "",
             content: msg
         }
-        request.send(JSON.stringify(params));
+        if(window.plugin.pnav.request.readyState==4){
+            window.plugin.pnav.request.send(JSON.stringify(params));
+        }
+        else{
+            //TODO
+            //does onreadystatechange call the function only once?
+            //propablay No.
+        }
     }
 
     var setup = function() {
