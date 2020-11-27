@@ -5,7 +5,7 @@
 // @category       Misc
 // @downloadURL    https://github.com/MaxEtMoritz/PNavCopy/releases/download/latest/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.1
+// @version        1.2
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info in PokeNav Discord bot command format.
 // @include        http*://intel.ingress.com/*
