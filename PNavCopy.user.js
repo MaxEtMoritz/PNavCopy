@@ -40,8 +40,8 @@ function wrapper(plugin_info) {
 // use own namespace for plugin
     window.plugin.pnav = function() {};
     window.plugin.pnav.selectedGuid = null;
-    window.plugin.pnav.request;
     window.plugin.pnav.webhookURL = "";
+    window.plugin.pnav.request = new XMLHttpRequest();
     window.plugin.pnav.copy = function() {
         var input = $('#copyInput');
         if(window.selectedPortal){
@@ -155,23 +155,89 @@ function wrapper(plugin_info) {
         //console.log(data);
         var keys = Object.keys(data);
         var i = 0;
-        var timer = setInterval(function(){
-            if(i>=keys.length){
-                alert('Export ready!');
-                clearInterval(timer);
-            }
-            else{
+        var wait = 1000;
+        var rateLimit = wait;
+        //TODO test and add a way to abort that stuff!
+        var doit = function(){
+             if($('#exportProgressBar')){
+                 $('#exportProgressBar').val(i);
+             }
+            if($('#exportNumber')){
+                 $('#exportNumber').text(i);
+             }
+            if($('#exportTimeRemaining')){
+                 $('#exportTimeRemaining').text(Math.round((wait * (keys.length - i)) / 1000));
+             }
+            if(i<keys.length){
                 var entry = data[keys[i]];
                 let lat = entry.lat;
                 let lng = entry.lng;
                 let name = entry.name;
                 let ex = entry.isEx?true:false;
-                let options = ex?'"ex_eligible: 1"':''
-                //sendMessage('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
-                console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+                let options = ex?' "ex_eligible: 1"':''
+                let request = window.plugin.pnav.request;
+                var params = {
+                    username: window.PLAYER.nickname,
+                    avatar_url: "",
+                    content: '$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options
+                };
+                request.open("POST", window.plugin.pnav.webhookURL);
+                request.setRequestHeader('Content-type', 'application/json');
+                request.onload = function(){
+                    if(request.status==204){
+                    let limit = request.getResponseHeader('X-RateLimit-Limit'); //The number of requests that can be made
+                    let remaining = request.getResponseHeader('X-RateLimit-Remaining'); //The number of remaining requests that can be made
+                    let reset = request.getResponseHeader('X-RateLimit-Reset'); //Epoch time (seconds since 00:00:00 UTC on January 1, 1970) at which the rate limit resets
+                    let bucket = request.getResponseHeader('X-RateLimit-Bucket'); //A unique string denoting the rate limit being encountered (non-inclusive of major parameters in the route path)
+                    let resetAfter = request.getResponseHeader('X-RateLimit-Reset-After'); //Total time (in seconds) of when the current rate limit bucket will reset. Can have decimals to match previous millisecond ratelimit precision
+                    if(remaining&&remaining<=2){
+                        rateLimit = 1000 * resetAfter;
+                    }
+                    console.log('rate limit is near!')
+                    }
+                    else if(request.status==200&&rateLimit>wait){
+                        rateLimit = wait;
+                    }
+                    else if(request.status==429){
+                        console.log(429);
+                    }
+                }
+                request.send(JSON.stringify(params), false);
+                //console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
                 i++;
+                setTimeout(doit,Math.max(wait,rateLimit));
             }
-        },300);
+            else{
+
+            }
+        }
+
+        setTimeout(doit,Math.max(wait,rateLimit));
+
+        var dialog = window.dialog({
+            id: 'bulkExportProgress',
+            html: `
+                <label>Exporting...</label>
+                <p>
+                    <label>
+                        Progress:
+                        <progress id="exportProgressBar" value="0" max=` + keys.length + `/>
+                    </label>
+                </p>
+                <label id="exportNumber">0</label><label> of ` + keys.length +`</label>
+                <br>
+                <label>Time remaining: </label><label id="exportTimeRemaining">` + Math.round((wait * keys.length) / 1000) + `</label><label>s</label>
+            `,
+            // TODO time remaining does not take the rate limit into account!
+            width: 'auto',
+            title: 'PokeNav Bulk Export Progress',
+            buttons: {
+                Abort: function(){
+                    clearInterval(timer);
+                    dialog.dialog('close');
+                }
+            }
+        });
     }
 
     function copyfieldvalue(id){
@@ -194,24 +260,15 @@ function wrapper(plugin_info) {
 
     //source: https://dev.to/oskarcodes/send-automated-discord-messages-through-webhooks-using-javascript-1p01
     function sendMessage(msg){
-        if(!window.plugin.pnav.request){
-            window.plugin.pnav.request = new XMLHttpRequest();
-            window.plugin.pnav.request.open("POST", window.plugin.pnav.webhookURL);
-            window.plugin.pnav.request.setRequestHeader('Content-type', 'application/json');
-        }
-        var params = {
+       let request = window.plugin.pnav.request;
+       var params = {
             username: window.PLAYER.nickname,
             avatar_url: "",
             content: msg
-        }
-        if(window.plugin.pnav.request.readyState==4){
-            window.plugin.pnav.request.send(JSON.stringify(params));
-        }
-        else{
-            //TODO
-            //does onreadystatechange call the function only once?
-            //propablay No.
-        }
+        };
+        request.open("POST", window.plugin.pnav.webhookURL);
+        request.setRequestHeader('Content-type', 'application/json');
+        request.send(JSON.stringify(params), false);
     }
 
     var setup = function() {
