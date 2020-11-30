@@ -41,11 +41,12 @@ function wrapper(plugin_info) {
   window.plugin.pnav = function () {};
   window.plugin.pnav.selectedGuid = null;
   window.plugin.pnav.settings = {
-    webhookUrl1: "",
-    webhookUrl2: "",
+    webhookUrl: "",
+    name: window.PLAYER.nickname,
   };
   window.plugin.pnav.request = new XMLHttpRequest();
   window.plugin.pnav.abort = false;
+  window.plugin.pnav.wip = false;
   window.plugin.pnav.copy = function () {
     var input = $("#copyInput");
     if (window.selectedPortal) {
@@ -59,7 +60,7 @@ function wrapper(plugin_info) {
       var type = "";
       if (window.plugin.pogo) {
         if ($(".pogoStop span").css("background-position") == "100% 0%") {
-          type = "stop";
+          type = "pokestop";
         } else if ($(".pogoGym span").css("background-position") == "100% 0%") {
           type = "gym";
           if ($("#PogoGymEx").prop("checked") == true) {
@@ -73,7 +74,7 @@ function wrapper(plugin_info) {
         } else if (document.getElementById("PNavGym").checked) {
           type = "gym";
         } else {
-          type = "stop";
+          type = "pokestop";
         }
       }
       if ($("#PNavSponsored").prop("checked") == true) {
@@ -82,10 +83,7 @@ function wrapper(plugin_info) {
       input.val(
         "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
       );
-      if (
-        window.plugin.pnav.settings.webhookUrl1 ||
-        window.plugin.pnav.settings.webhookUrl2
-      ) {
+      if (window.plugin.pnav.settings.webhookUrl) {
         sendMessage(
           "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
         );
@@ -100,19 +98,16 @@ function wrapper(plugin_info) {
   window.plugin.pnav.showSettings = function () {
     let validURL = "^https?://discord(app)?.com/api/webhooks/[0-9]*/.*";
     var html = `
-        <p id="webhook1"><label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
-            Discord Web Hook URL 1:
-            <input type="text" id="pnavhookurl1" value="${window.plugin.pnav.settings.webhookUrl1}" pattern="${validURL}"/>
+        <p id="webhook"><label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
+            Discord Web Hook URL:
+            <input type="text" id="pnavhookurl" value="${window.plugin.pnav.settings.webhookUrl}" pattern="${validURL}"/>
         </label></p>
-        <p id="webhook2"><label title="If you wish to speed up the Bulk Export, Create a second Web Hook and paste the URL in here.">
-            Discord Web Hook URL 2:
-            <input type="text" id="pnavhookurl2" value="${window.plugin.pnav.settings.webhookUrl2}" pattern="${validURL}"/>
-        </label></p>
+        <p><Label title="The Name that will displayed if you send to the PokeNav channel. Default is your Ingess Codename.">Name:<input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/></label></p>
         `;
     if (window.plugin.pogo) {
       html += `
-            <p><a title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportGyms();return false;">Export all PogoTools Gyms</a></p>
-            <p><a title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportStops();return false;">Export all PogoTools Stops</a></p>
+            <p><button type="Button" id="btnBulkExportGyms" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportGyms();return false;">Export all PogoTools Gyms</button></p>
+            <p><button type="Button" id="btnBulkExportStops" title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportStops();return false;">Export all PogoTools Stops</button></p>
             `;
     }
     const container = dialog({
@@ -124,59 +119,40 @@ function wrapper(plugin_info) {
         OK: function () {
           let allOK = true;
           if (
-            !$("#pnavhookurl1").val() ||
-            new RegExp(validURL).test($("#pnavhookurl1").val())
+            !$("#pnavhookurl").val() ||
+            new RegExp(validURL).test($("#pnavhookurl").val())
           ) {
-            window.plugin.pnav.settings.webhookUrl1 = $("#pnavhookurl1").val();
-            if ($("#lblError1").length > 0) {
-              $("#lblError1").remove();
+            window.plugin.pnav.settings.webhookUrl = $("#pnavhookurl").val();
+            if ($("#lblErrorWH").length > 0) {
+              $("#lblErrorWH").remove();
             }
           } else {
-            if ($("#lblError1").length == 0) {
-              $("#webhook1").after(
-                '<label id="lblError1" style="color:red">invalid URL! please delete or correct it!</label>'
+            if ($("#lblErrorWH").length == 0) {
+              $("#webhook").after(
+                '<label id="lblErrorWH" style="color:red">invalid URL! please delete or correct it!</label>'
               );
             }
             allOK = false;
           }
-          if (
-            !$("#pnavhookurl2").val() ||
-            new RegExp(validURL).test($("#pnavhookurl2").val())
-          ) {
-            window.plugin.pnav.settings.webhookUrl2 = $("#pnavhookurl2").val();
-            if ($("#lblError2").length > 0) {
-              $("#lblError2").remove();
-            }
+          if (!$("#pnavCodename").val()) {
+            window.plugin.pnav.settings.name = window.PLAYER.nickname;
           } else {
-            if ($("#lblError2").length == 0) {
-              $("#webhook2").after(
-                '<label id="lblError2" style="color:red">invalid URL! please delete or correct it!</label>'
-              );
-            }
-            allOK = false;
+            window.plugin.pnav.settings.name = $("#pnavCodename").val();
           }
           if (allOK) {
-            if (
-              $("#pnavhookurl1").val() &&
-              $("#pnavhookurl2").val() &&
-              $("#pnavhookurl1").val() == $("#pnavhookurl2").val()
-            ) {
-              $("#webhook2").after(
-                '<label id="lblErroridentical" style="color:red">Both URLs are identical! Please use different Web Hooks or just one!</label>'
-              );
-              allOK = false;
-            }
-            if (allOK) {
-              localStorage.setItem(
-                "plugin-pnav-settings",
-                JSON.stringify(window.plugin.pnav.settings)
-              );
-              container.dialog("close");
-            }
+            localStorage.setItem(
+              "plugin-pnav-settings",
+              JSON.stringify(window.plugin.pnav.settings)
+            );
+            container.dialog("close");
           }
         },
       },
     });
+    if(window.plugin.pnav.wip){
+      $("#btnBulkExportStops").prop('disabled',true);
+      $('#btnBulkExportGyms').prop('disabled',true);
+    }
   };
 
   window.plugin.pnav.bulkExportGyms = function () {
@@ -190,6 +166,8 @@ function wrapper(plugin_info) {
     }
     if (data && data.gyms) {
       bulkExport(data.gyms, "gym");
+      $('#btnBulkExportStops').prop('disabled',true);
+      $('#btnBulkExportGyms').prop('disabled',true);
     }
   };
 
@@ -202,17 +180,20 @@ function wrapper(plugin_info) {
     } else {
       alert("Pogo Tools is loaded but no Data File was found!");
     }
-    if (data && data.stops) {
-      bulkExport(data.stops, "stop");
+    if (data && data.pokestops) {
+      bulkExport(data.pokestops, "pokestop");
+      $('#btnBulkExportStops').prop('disabled',true);
+      $('#btnBulkExportGyms').prop('disabled',true);
     }
   };
 
   function bulkExport(data, type) {
     //console.log(data);
     window.plugin.pnav.abort = false;
+    window.plugin.pnav.wip = true;
     var keys = Object.keys(data);
     var i = 0;
-    var wait = 1500;
+    var wait = 2000; //Discord WebHook accepts 30 Messages in 60 Seconds
     var doit = function () {
       if ($("#exportProgressBar")) {
         $("#exportProgressBar").val(i);
@@ -234,20 +215,11 @@ function wrapper(plugin_info) {
         let options = ex ? ' "ex_eligible: 1"' : "";
         let request = window.plugin.pnav.request;
         var params = {
-          username: window.PLAYER.nickname,
+          username: window.plugin.pnav.settings.name,
           avatar_url: "",
-          content:
-            "$create poi " +
-            type +
-            ' "' +
-            name +
-            '" ' +
-            lat +
-            " " +
-            lng +
-            options,
+          content: `$create poi ${type} "${name}" ${lat} ${lng}${options}`,
         };
-        request.open("POST", window.plugin.pnav.webhookURL);
+        request.open("POST", window.plugin.pnav.settings.webhookUrl);
         request.setRequestHeader("Content-type", "application/json");
         request.onload = function () {
           if (request.status == 204 || request.status == 200) {
@@ -266,10 +238,11 @@ function wrapper(plugin_info) {
       } else {
         $("#exportState").text("Export Ready!");
         okayButton.text("OK");
+        $('#btnBulkExportStops').prop('disabled',false);
+        $('#btnBulkExportGyms').prop('disabled',false);
+        window.plugin.pnav.wip=false;
       }
     };
-
-    setTimeout(doit, wait);
 
     var dialog = window.dialog({
       id: "bulkExportProgress",
@@ -298,7 +271,7 @@ function wrapper(plugin_info) {
     //console.log(dialog);
 
     let thisDialog = $(".ui-dialog").has("#dialog-bulkExportProgress")[0];
-    console.log(thisDialog);
+    //console.log(thisDialog);
     var okayButton = $(".ui-button", thisDialog).not(
       ".ui-dialog-titlebar-button"
     );
@@ -313,6 +286,8 @@ function wrapper(plugin_info) {
         window.plugin.pnav.abort = true;
       }
     );
+
+    doit();
   }
 
   function copyfieldvalue(id) {
@@ -337,15 +312,13 @@ function wrapper(plugin_info) {
   function sendMessage(msg) {
     let request = window.plugin.pnav.request;
     var params = {
-      username: window.PLAYER.nickname,
+      username: window.plugin.pnav.settings.name,
       avatar_url: "",
       content: msg,
     };
     request.open(
       "POST",
-      window.plugin.pnav.settings.webhookUrl1
-        ? window.plugin.pnav.settings.webhookUrl1
-        : window.plugin.pnav.settings.webhookUrl2
+      window.plugin.pnav.settings.webhookUrl
     );
     request.setRequestHeader("Content-type", "application/json");
     request.send(JSON.stringify(params), false);
