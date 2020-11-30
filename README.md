@@ -1,18 +1,18 @@
 # IITC-Plugin: Copy PokeNav Creation Command
 IITC Plugin that copies Portal Info to Clipboard or sends them directly to Discord via WebHook in the format needed by the PokeNav Discord Bot as follows:
 
-```$create poi <type> "<name>" <location> <options>```
+```$create poi <type> "<name>" <location> "ex-eligibility: 1" (if Ex Gym)```
 
-### Supported Options:
-- ```"ex-eligibility: 1"```
-- ```"sponsored: 1"```
 
 ### Features
 - Classify a portal manually as Stop, Gym or EX Gym or use the Info already collected with Pogo Tools (see Integrations section)
 - Copy The Command to Clipboard or use a WebHook to send it directly to the appropriate Discord channel.
+- Send all the Data already collected with PoGo Tools to PokeNav with a few Clicks.
 
 ### Integrations
 If you use the [Pogo tools plugin by AlfonsoML](https://gitlab.com/AlfonsoML/pogo-s2/), the info entered there is used to determine Type and Ex Eligibility if applicable. Otherwise you can choose manually.
+
+If you use the Plugin, you also have the option to upload all gathered Data at once.
 
 ### Original Source
 The Plugin is based on a plugin included in a [Fork of the original IITC Mobile App](https://gitlab.com/ruslan.levitskiy/iitc-mobile) ([direct link to the Plugin](https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/blob/master/app/src/main/assets/plugins/portal-link-copier.user.js))
