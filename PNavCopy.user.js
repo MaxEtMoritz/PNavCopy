@@ -99,8 +99,25 @@ function wrapper(plugin_info) {
             Discord Web Hook URL:
             <input type="text" id="pnavhookurl" value="${window.plugin.pnav.settings.webhookUrl}" pattern="${validURL}"/>
         </label></p>
-        <p><Label title="The Name that will displayed if you send to the PokeNav channel. Default is your Ingess Codename.">Name:<input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/></label></p>
+        <p>
+          <Label title="The Name that will displayed if you send to the PokeNav channel. Default is your Ingess Codename.">
+            Name:
+            <input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/>
+          </label>
+        </p>
+        <p>
+          <label title="Paste the Center Coordinate of your Community here (you can view it typing $show settings in Admin Channel)">
+          Community Center:
+          <input id="pnavCenter" type="text" pattern="^-?[1-9]?[0-9].?\d*, -?[1-9]?[0-9].?\d*"/>
+          </label>
+          <br>
+          <label title="enter the specified Community Radius here.">
+          Community Radius:
+          <input id="pnavRadius" type="text" pattern="^[0-9]+.?[0-9]*"/>
+          </label>
+        </p>
         `;
+        //regex dont work.
     if (window.plugin.pogo) {
       html += `
             <p><button type="Button" id="btnBulkExportGyms" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportGyms();return false;">Export all PogoTools Gyms</button></p>
@@ -131,6 +148,7 @@ function wrapper(plugin_info) {
             }
             allOK = false;
           }
+          if($('#pnavRadius').val())//TODO check validity and save center and radius! And test new filtering in Bulk Export!
           if (!$("#pnavCodename").val()) {
             window.plugin.pnav.settings.name = window.PLAYER.nickname;
           } else {
@@ -184,11 +202,18 @@ function wrapper(plugin_info) {
     }
   };
 
-  function bulkExport(data, type) {
-    //console.log(data);
+  function bulkExport(inData, type) {
+    //console.log(inData);
     window.plugin.pnav.abort = false;
     window.plugin.pnav.wip = true;
-    var keys = Object.keys(data);
+    var data = [];
+    let origKeys = Object.keys(inData);
+    origKeys.forEach(function(key){
+      let obj = origKeys[key];
+      if(checkDistance(obj.lat,obj.lng,window.plugin.pnav.settings.lat,window,plugin.pnav.settings.lng)<=window.plugin.pnav.settings.radius){
+        data.push(obj);
+      }
+    });
     var i = 0;
     var wait = 2000; //Discord WebHook accepts 30 Messages in 60 Seconds.
     var doit = function () {
@@ -200,11 +225,11 @@ function wrapper(plugin_info) {
       }
       if ($("#exportTimeRemaining")) {
         $("#exportTimeRemaining").text(
-          Math.round((wait * (keys.length - i)) / 1000)
+          Math.round((wait * (data.length - i)) / 1000)
         );
       }
-      if (i < keys.length && !window.plugin.pnav.abort) {
-        var entry = data[keys[i]];
+      if (i < data.length && !window.plugin.pnav.abort) {
+        var entry = data[i];
         let lat = entry.lat;
         let lng = entry.lng;
         let name = entry.name;
@@ -285,6 +310,24 @@ function wrapper(plugin_info) {
     );
 
     doit();
+  }
+
+  //https://stackoverflow.com/a/14561433
+  function checkDistance(lat1, lon1, lat2, lon2){
+    Number.prototype.toRad = function() {
+      return this * Math.PI / 180;
+   }
+    const R = 6371;
+    var x1 = lat2-lat1;
+    var dLat = x1.toRad();
+    var x2 = lon2-lon1;
+    var dLon = x2.toRad();
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+                Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);  
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var d = R * c;
+    return d;
   }
 
   function copyfieldvalue(id) {
