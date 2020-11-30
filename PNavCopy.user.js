@@ -77,9 +77,6 @@ function wrapper(plugin_info) {
           type = "pokestop";
         }
       }
-      if ($("#PNavSponsored").prop("checked") == true) {
-        opt += ' "sponsored: 1"';
-      }
       input.val(
         "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
       );
@@ -149,9 +146,9 @@ function wrapper(plugin_info) {
         },
       },
     });
-    if(window.plugin.pnav.wip){
-      $("#btnBulkExportStops").prop('disabled',true);
-      $('#btnBulkExportGyms').prop('disabled',true);
+    if (window.plugin.pnav.wip) {
+      $("#btnBulkExportStops").prop("disabled", true);
+      $("#btnBulkExportGyms").prop("disabled", true);
     }
   };
 
@@ -166,8 +163,8 @@ function wrapper(plugin_info) {
     }
     if (data && data.gyms) {
       bulkExport(data.gyms, "gym");
-      $('#btnBulkExportStops').prop('disabled',true);
-      $('#btnBulkExportGyms').prop('disabled',true);
+      $("#btnBulkExportStops").prop("disabled", true);
+      $("#btnBulkExportGyms").prop("disabled", true);
     }
   };
 
@@ -182,8 +179,8 @@ function wrapper(plugin_info) {
     }
     if (data && data.pokestops) {
       bulkExport(data.pokestops, "pokestop");
-      $('#btnBulkExportStops').prop('disabled',true);
-      $('#btnBulkExportGyms').prop('disabled',true);
+      $("#btnBulkExportStops").prop("disabled", true);
+      $("#btnBulkExportGyms").prop("disabled", true);
     }
   };
 
@@ -193,7 +190,7 @@ function wrapper(plugin_info) {
     window.plugin.pnav.wip = true;
     var keys = Object.keys(data);
     var i = 0;
-    var wait = 2000; //Discord WebHook accepts 30 Messages in 60 Seconds
+    var wait = 2000; //Discord WebHook accepts 30 Messages in 60 Seconds.
     var doit = function () {
       if ($("#exportProgressBar")) {
         $("#exportProgressBar").val(i);
@@ -238,9 +235,9 @@ function wrapper(plugin_info) {
       } else {
         $("#exportState").text("Export Ready!");
         okayButton.text("OK");
-        $('#btnBulkExportStops').prop('disabled',false);
-        $('#btnBulkExportGyms').prop('disabled',false);
-        window.plugin.pnav.wip=false;
+        $("#btnBulkExportStops").prop("disabled", false);
+        $("#btnBulkExportGyms").prop("disabled", false);
+        window.plugin.pnav.wip = false;
       }
     };
 
@@ -316,10 +313,7 @@ function wrapper(plugin_info) {
       avatar_url: "",
       content: msg,
     };
-    request.open(
-      "POST",
-      window.plugin.pnav.settings.webhookUrl
-    );
+    request.open("POST", window.plugin.pnav.settings.webhookUrl);
     request.setRequestHeader("Content-type", "application/json");
     request.send(JSON.stringify(params), false);
   }
@@ -329,15 +323,6 @@ function wrapper(plugin_info) {
     if (localStorage["plugin-pnav-settings"]) {
       window.plugin.pnav.settings = JSON.parse(
         localStorage.getItem("plugin-pnav-settings")
-      );
-    }
-    if (window.plugin.pogo) {
-      $("#toolbox").append(
-        '<input type="checkbox" name="sponsored" id="PNavSponsored"><label for="PNavSponsored">Sponsored</label><a title="Copy the PokeNav Command to Clipboard or post to Discord via Web Hook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>'
-      );
-    } else {
-      $("#toolbox").append(
-        '<input type="radio" checked="true" name="type" value="stop" id="PNavStop"/><Label for="PNavStop">Stop</label><input type="radio" name="type" value="gym" id="PNavGym"/><Label for="PNavGym">Gym</label><input type="radio" name="type" value="ex" id="PNavEx"/><Label for="PNavEx">Ex Gym</label><input type="checkbox" name="sponsored" id="PNavSponsored"><label for="PNavSponsored">Sponsored</label><a title="Copy the PokeNav Command to Clipboard or post to Discord via Web Hook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>'
       );
     }
     $("#toolbox").append(
@@ -350,6 +335,22 @@ function wrapper(plugin_info) {
       console.log(data);
       var guid = data.selectedPortalGuid;
       window.plugin.pnav.selectedGuid = guid;
+      setTimeout(function () {
+        if ($(".PogoButtons").length == 0) {
+          $("#portaldetails").append(`
+          <div id="PNav" style="color:#fff">
+          <Label><input type="radio" checked="true" name="type" value="stop" id="PNavStop"/>Stop</label>
+          <Label><input type="radio" name="type" value="gym" id="PNavGym"/>Gym</label>
+          <Label><input type="radio" name="type" value="ex" id="PNavEx"/>Ex Gym</label>
+          <a title="Copy the PokeNav Command to Clipboard or post to Discord via Web Hook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
+          </div>
+        `);
+        } else {
+          $(".PogoButtons").append(`
+        <a title="Copy the PokeNav Command to Clipboard or post to Discord via Web Hook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
+        `);
+        }
+      }, 0);
     });
   };
 
