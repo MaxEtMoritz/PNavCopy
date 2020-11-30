@@ -5,7 +5,7 @@
 // @category       Misc
 // @downloadURL    https://github.com/MaxEtMoritz/PNavCopy/releases/download/latest/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.2
+// @version        1.3
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info in PokeNav Discord bot command format.
 // @include        http*://intel.ingress.com/*
@@ -43,6 +43,9 @@ function wrapper(plugin_info) {
   window.plugin.pnav.settings = {
     webhookUrl: "",
     name: window.PLAYER.nickname,
+    radius: "",
+    lat: "",
+    lng: "",
   };
   window.plugin.pnav.request = new XMLHttpRequest();
   window.plugin.pnav.abort = false;
@@ -80,7 +83,19 @@ function wrapper(plugin_info) {
       input.val(
         "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
       );
-      if (window.plugin.pnav.settings.webhookUrl) {
+      if (
+        window.plugin.pnav.settings.webhookUrl &&
+        (!window.plugin.pnav.settings.lat ||
+          !window.plugin.pnav.settings.lng ||
+          !window.plugin.pnav.settings.radius ||
+          checkDistance(
+            lat,
+            lng,
+            window.plugin.pnav.settings.lat,
+            window,
+            plugin.pnav.settings.lng
+          ) <= window.plugin.pnav.settings.radius)
+      ) {
         sendMessage(
           "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
         );
@@ -97,27 +112,38 @@ function wrapper(plugin_info) {
     var html = `
         <p id="webhook"><label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
             Discord Web Hook URL:
-            <input type="text" id="pnavhookurl" value="${window.plugin.pnav.settings.webhookUrl}" pattern="${validURL}"/>
+            <input type="text" id="pnavhookurl" value="${
+              window.plugin.pnav.settings.webhookUrl
+            }" pattern="${validURL}"/>
         </label></p>
         <p>
           <Label title="The Name that will displayed if you send to the PokeNav channel. Default is your Ingess Codename.">
             Name:
-            <input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/>
+            <input id="pnavCodename" type="text" placeholder="${
+              window.PLAYER.nickname
+            }" value="${window.plugin.pnav.settings.name}"/>
           </label>
         </p>
         <p>
           <label title="Paste the Center Coordinate of your Community here (you can view it typing $show settings in Admin Channel)">
           Community Center:
-          <input id="pnavCenter" type="text" pattern="^-?[1-9]?[0-9].?\d*, -?[1-9]?[0-9].?\d*"/>
+          <input id="pnavCenter" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${
+            window.plugin.pnav.settings.lat != ""
+              ? window.plugin.pnav.settings.lat +
+                ", " +
+                window.plugin.pnav.settings.lng
+              : ""
+          }"/>
           </label>
           <br>
           <label title="enter the specified Community Radius here.">
           Community Radius:
-          <input id="pnavRadius" type="text" pattern="^[0-9]+.?[0-9]*"/>
+          <input id="pnavRadius" type="text" pattern="^&#92;d+(&#92;.&#92;d+)?" value="${
+            window.plugin.pnav.settings.radius
+          }"/>
           </label>
         </p>
         `;
-        //regex dont work.
     if (window.plugin.pogo) {
       html += `
             <p><button type="Button" id="btnBulkExportGyms" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportGyms();return false;">Export all PogoTools Gyms</button></p>
@@ -127,6 +153,7 @@ function wrapper(plugin_info) {
     const container = dialog({
       id: "pnavsettings",
       width: "auto",
+      height: "auto",
       html: html,
       title: "PokeNav Settings",
       buttons: {
@@ -148,7 +175,38 @@ function wrapper(plugin_info) {
             }
             allOK = false;
           }
-          if($('#pnavRadius').val())//TODO check validity and save center and radius! And test new filtering in Bulk Export!
+          if (!$("#pnavRadius").val()) {
+            window.plugin.pnav.settings.radius = "";
+          } else if (!Number.isNaN(parseFloat($("#pnavRadius").val()))) {
+            window.plugin.pnav.settings.radius = parseFloat(
+              $("#pnavRadius").val()
+            );
+          } else {
+            //TODO show error Message
+            allOK = false;
+          }
+          if (!$("#pnavCenter").val()) {
+            window.plugin.pnav.settings.lat = "";
+            window.plugin.pnav.settings.lng = "";
+          } else {
+            let arr = $("#pnavCenter").val().split(", ");
+            let lat = arr[0] ? parseFloat(arr[0]) : NaN;
+            let lng = arr[1] ? parseFloat(arr[1]) : NaN;
+            if (
+              !Number.isNaN(lat) &&
+              !Number.isNaN(lng) &&
+              lat >= -90 &&
+              lat <= 90 &&
+              lng >= -90 &&
+              lng <= 90
+            ) {
+              window.plugin.pnav.settings.lat = lat;
+              window.plugin.pnav.settings.lng = lng;
+            } else {
+              //TODO show error message
+              allOK = false;
+            }
+          }
           if (!$("#pnavCodename").val()) {
             window.plugin.pnav.settings.name = window.PLAYER.nickname;
           } else {
@@ -207,10 +265,21 @@ function wrapper(plugin_info) {
     window.plugin.pnav.abort = false;
     window.plugin.pnav.wip = true;
     var data = [];
-    let origKeys = Object.keys(inData);
-    origKeys.forEach(function(key){
-      let obj = origKeys[key];
-      if(checkDistance(obj.lat,obj.lng,window.plugin.pnav.settings.lat,window,plugin.pnav.settings.lng)<=window.plugin.pnav.settings.radius){
+    var origKeys = Object.keys(inData);
+    origKeys.forEach(function (key) {
+      var obj = inData[key];
+      if (
+        !window.plugin.pnav.settings.lat ||
+        !window.plugin.pnav.settings.lng ||
+        !window.plugin.pnav.settings.radius ||
+        checkDistance(
+          obj.lat,
+          obj.lng,
+          window.plugin.pnav.settings.lat,
+          window,
+          plugin.pnav.settings.lng
+        ) <= window.plugin.pnav.settings.radius
+      ) {
         data.push(obj);
       }
     });
@@ -274,16 +343,16 @@ function wrapper(plugin_info) {
                     <label>
                         Progress:
                         <progress id="exportProgressBar" value="0" max="${
-                          keys.length
+                          data.length
                         }"/>
                     </label>
                 </p>
                 <label id="exportNumber">0</label><label> of${
-                  keys.length
+                  data.length
                 }</label>
                 <br>
                 <label>Time remaining: </label><label id="exportTimeRemaining">${Math.round(
-                  (wait * keys.length) / 1000
+                  (wait * data.length) / 1000
                 )}</label><label>s</label>
             `,
       width: "auto",
@@ -313,19 +382,19 @@ function wrapper(plugin_info) {
   }
 
   //https://stackoverflow.com/a/14561433
-  function checkDistance(lat1, lon1, lat2, lon2){
-    Number.prototype.toRad = function() {
-      return this * Math.PI / 180;
-   }
+  function checkDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
-    var x1 = lat2-lat1;
-    var dLat = x1.toRad();
-    var x2 = lon2-lon1;
-    var dLon = x2.toRad();
-    var a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
-                Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2);  
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var x1 = lat2 - lat1;
+    var dLat = (x1* Math.PI) / 180;
+    var x2 = lon2 - lon1;
+    var dLon = (x2* Math.PI) / 180;
+    var a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1* Math.PI) / 180) *
+        Math.cos((lat2* Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     var d = R * c;
     return d;
   }
