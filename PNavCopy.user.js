@@ -99,23 +99,14 @@ function wrapper(plugin_info) {
 
   window.plugin.pnav.showSettings = function () {
     let validURL = "^https?://discord(app)?.com/api/webhooks/[0-9]*/.*";
-    var html =
-      `
+    var html = `
         <p id="webhook1"><label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
             Discord Web Hook URL 1:
-            <input type="text" id="pnavhookurl1" value="` +
-      window.plugin.pnav.settings.webhookUrl1 +
-      `" pattern="` +
-      validURL +
-      `"/>
+            <input type="text" id="pnavhookurl1" value="${window.plugin.pnav.settings.webhookUrl1}" pattern="${validURL}"/>
         </label></p>
         <p id="webhook2"><label title="If you wish to speed up the Bulk Export, Create a second Web Hook and paste the URL in here.">
             Discord Web Hook URL 2:
-            <input type="text" id="pnavhookurl2" value="` +
-      window.plugin.pnav.settings.webhookUrl2 +
-      `" pattern="` +
-      validURL +
-      `"/>
+            <input type="text" id="pnavhookurl2" value="${window.plugin.pnav.settings.webhookUrl2}" pattern="${validURL}"/>
         </label></p>
         `;
     if (window.plugin.pogo) {
@@ -282,24 +273,23 @@ function wrapper(plugin_info) {
 
     var dialog = window.dialog({
       id: "bulkExportProgress",
-      html:
-        `
+      html: `
                 <h3 id="exportState">Exporting...</h3>
                 <p>
                     <label>
                         Progress:
-                        <progress id="exportProgressBar" value="0" max=` +
-        keys.length +
-        `/>
+                        <progress id="exportProgressBar" value="0" max="${
+                          keys.length
+                        }"/>
                     </label>
                 </p>
-                <label id="exportNumber">0</label><label> of ` +
-        keys.length +
-        `</label>
+                <label id="exportNumber">0</label><label> of${
+                  keys.length
+                }</label>
                 <br>
-                <label>Time remaining: </label><label id="exportTimeRemaining">` +
-        Math.round((wait * keys.length) / 1000) +
-        `</label><label>s</label>
+                <label>Time remaining: </label><label id="exportTimeRemaining">${Math.round(
+                  (wait * keys.length) / 1000
+                )}</label><label>s</label>
             `,
       width: "auto",
       title: "PokeNav Bulk Export Progress",
