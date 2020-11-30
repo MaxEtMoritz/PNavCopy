@@ -40,7 +40,10 @@ function wrapper(plugin_info) {
   // use own namespace for plugin
   window.plugin.pnav = function () {};
   window.plugin.pnav.selectedGuid = null;
-  window.plugin.pnav.webhookURL = "";
+  window.plugin.pnav.settings = {
+    webhookUrl1: "",
+    webhookUrl2: "",
+  };
   window.plugin.pnav.request = new XMLHttpRequest();
   window.plugin.pnav.abort = false;
   window.plugin.pnav.copy = function () {
@@ -79,7 +82,10 @@ function wrapper(plugin_info) {
       input.val(
         "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
       );
-      if (window.plugin.pnav.webhookURL != "") {
+      if (
+        window.plugin.pnav.settings.webhookUrl1 ||
+        window.plugin.pnav.settings.webhookUrl2
+      ) {
         sendMessage(
           "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
         );
@@ -95,14 +101,22 @@ function wrapper(plugin_info) {
     let validURL = "^https?://discord(app)?.com/api/webhooks/[0-9]*/.*";
     var html =
       `
-        <label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
-            Discord WebHook URL:
-            <input type="text" id="pnavhookurl" value="` +
-      window.plugin.pnav.webhookURL +
+        <p id="webhook1"><label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
+            Discord Web Hook URL 1:
+            <input type="text" id="pnavhookurl1" value="` +
+      window.plugin.pnav.settings.webhookUrl1 +
       `" pattern="` +
       validURL +
       `"/>
-        </label>
+        </label></p>
+        <p id="webhook2"><label title="If you wish to speed up the Bulk Export, Create a second Web Hook and paste the URL in here.">
+            Discord Web Hook URL 2:
+            <input type="text" id="pnavhookurl2" value="` +
+      window.plugin.pnav.settings.webhookUrl2 +
+      `" pattern="` +
+      validURL +
+      `"/>
+        </label></p>
         `;
     if (window.plugin.pogo) {
       html += `
@@ -115,15 +129,62 @@ function wrapper(plugin_info) {
       width: "auto",
       html: html,
       title: "PokeNav Settings",
-    });
-    $("#pnavhookurl").on("input", function () {
-      if (new RegExp(validURL).test($(this).val())) {
-        window.plugin.pnav.webhookURL = $(this).val();
-        localStorage.setItem(
-          "plugin-pnav-settings",
-          window.plugin.pnav.webhookURL
-        );
-      }
+      buttons: {
+        OK: function () {
+          let allOK = true;
+          if (
+            !$("#pnavhookurl1").val() ||
+            new RegExp(validURL).test($("#pnavhookurl1").val())
+          ) {
+            window.plugin.pnav.settings.webhookUrl1 = $("#pnavhookurl1").val();
+            if ($("#lblError1").length > 0) {
+              $("#lblError1").remove();
+            }
+          } else {
+            if ($("#lblError1").length == 0) {
+              $("#webhook1").after(
+                '<label id="lblError1" style="color:red">invalid URL! please delete or correct it!</label>'
+              );
+            }
+            allOK = false;
+          }
+          if (
+            !$("#pnavhookurl2").val() ||
+            new RegExp(validURL).test($("#pnavhookurl2").val())
+          ) {
+            window.plugin.pnav.settings.webhookUrl2 = $("#pnavhookurl2").val();
+            if ($("#lblError2").length > 0) {
+              $("#lblError2").remove();
+            }
+          } else {
+            if ($("#lblError2").length == 0) {
+              $("#webhook2").after(
+                '<label id="lblError2" style="color:red">invalid URL! please delete or correct it!</label>'
+              );
+            }
+            allOK = false;
+          }
+          if (allOK) {
+            if (
+              $("#pnavhookurl1").val() &&
+              $("#pnavhookurl2").val() &&
+              $("#pnavhookurl1").val() == $("#pnavhookurl2").val()
+            ) {
+              $("#webhook2").after(
+                '<label id="lblErroridentical" style="color:red">Both URLs are identical! Please use different Web Hooks or just one!</label>'
+              );
+              allOK = false;
+            }
+            if (allOK) {
+              localStorage.setItem(
+                "plugin-pnav-settings",
+                JSON.stringify(window.plugin.pnav.settings)
+              );
+              container.dialog("close");
+            }
+          }
+        },
+      },
     });
   };
 
@@ -290,7 +351,12 @@ function wrapper(plugin_info) {
       avatar_url: "",
       content: msg,
     };
-    request.open("POST", window.plugin.pnav.webhookURL);
+    request.open(
+      "POST",
+      window.plugin.pnav.settings.webhookUrl1
+        ? window.plugin.pnav.settings.webhookUrl1
+        : window.plugin.pnav.settings.webhookUrl2
+    );
     request.setRequestHeader("Content-type", "application/json");
     request.send(JSON.stringify(params), false);
   }
@@ -298,8 +364,8 @@ function wrapper(plugin_info) {
   var setup = function () {
     console.log("azaza");
     if (localStorage["plugin-pnav-settings"]) {
-      window.plugin.pnav.webhookURL = localStorage.getItem(
-        "plugin-pnav-settings"
+      window.plugin.pnav.settings = JSON.parse(
+        localStorage.getItem("plugin-pnav-settings")
       );
     }
     if (window.plugin.pogo) {
