@@ -53,7 +53,6 @@ function wrapper(plugin_info) {
   window.plugin.pnav.copy = function () {
     var input = $("#copyInput");
     if (window.selectedPortal) {
-      input.show();
       var portal = window.portals[window.plugin.pnav.selectedGuid];
       var name = portal.options.data.title;
       var latlng = portal.getLatLng();
@@ -80,30 +79,33 @@ function wrapper(plugin_info) {
           type = "pokestop";
         }
       }
-      input.val(
-        "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
-      );
-      if (
-        window.plugin.pnav.settings.webhookUrl &&
-        (!window.plugin.pnav.settings.lat ||
-          !window.plugin.pnav.settings.lng ||
-          !window.plugin.pnav.settings.radius ||
+      if (window.plugin.pnav.settings.webhookUrl) {
+        if (
+          window.plugin.pnav.settings.lat &&
+          window.plugin.pnav.settings.lng &&
+          window.plugin.pnav.settings.radius &&
           checkDistance(
             lat,
             lng,
             window.plugin.pnav.settings.lat,
-            window,
-            plugin.pnav.settings.lng
-          ) <= window.plugin.pnav.settings.radius)
-      ) {
-        sendMessage(
+            window.plugin.pnav.settings.lng
+          ) > window.plugin.pnav.settings.radius
+        ) {
+          alert("this location is outside the specified Community Area!");
+        } else {
+          sendMessage(
+            "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
+          );
+          console.log("sent!");
+        }
+      } else {
+        input.show();
+        input.val(
           "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
         );
-        console.log("sent!");
-      } else {
         copyfieldvalue("copyInput");
+        input.hide();
       }
-      input.hide();
     }
   };
 
@@ -276,8 +278,7 @@ function wrapper(plugin_info) {
           obj.lat,
           obj.lng,
           window.plugin.pnav.settings.lat,
-          window,
-          plugin.pnav.settings.lng
+          window.plugin.pnav.settings.lng
         ) <= window.plugin.pnav.settings.radius
       ) {
         data.push(obj);
@@ -385,13 +386,13 @@ function wrapper(plugin_info) {
   function checkDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     var x1 = lat2 - lat1;
-    var dLat = (x1* Math.PI) / 180;
+    var dLat = (x1 * Math.PI) / 180;
     var x2 = lon2 - lon1;
-    var dLon = (x2* Math.PI) / 180;
+    var dLon = (x2 * Math.PI) / 180;
     var a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1* Math.PI) / 180) *
-        Math.cos((lat2* Math.PI) / 180) *
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
         Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
