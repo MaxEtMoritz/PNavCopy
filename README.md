@@ -31,3 +31,6 @@ If you created the Web Hook, copy the Web Hook URL and paste it into the Text Bo
 __Note:__ Have in mind that anyone who has the Web Hook URL and knows how to post to Web Hooks can send any Message he likes to the Channel, so be cautious who you give the Web Hook URL to.
 
 __Second Note:__ Some Bots ignore Messages sent via Web Hooks or other Bots, but the PokeNav Bot doesn't at the moment (PokeNav v 1.89.2). No Guarantee that this will stay like that forever...
+
+## Disclaimer
+This Userscript is not affiliated with PokeNav, nor with Niantic, Ingress, Pokémon Go etc., nor with Discord. Names Like "Pokémon", "Pokémon GO" "Pokéstop", "Portal", "Gym", "PokeNav", "Discord" maybe used in this Userscript may be Subject to Copyright and the Rights on those Names are all at their respective Owners. I am not responsible for any Data Loss, Damage etc. this Userscript might cause on your Computer (though i don't believe it will cause any). 
