@@ -46,6 +46,7 @@ function wrapper(plugin_info) {
     radius: "",
     lat: "",
     lng: "",
+    prefix: "$",
   };
   window.plugin.pnav.request = new XMLHttpRequest();
   window.plugin.pnav.abort = false;
@@ -60,6 +61,7 @@ function wrapper(plugin_info) {
       var lng = latlng.lng;
       var opt = " ";
       var type = "";
+      var prefix = window.plugin.pnav.settings.prefix;
       if (window.plugin.pogo) {
         if ($(".pogoStop span").css("background-position") == "100% 0%") {
           type = "pokestop";
@@ -94,14 +96,32 @@ function wrapper(plugin_info) {
           alert("this location is outside the specified Community Area!");
         } else {
           sendMessage(
-            "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
+            prefix +
+              "create poi " +
+              type +
+              ' "' +
+              name +
+              '" ' +
+              lat +
+              " " +
+              lng +
+              opt
           );
           console.log("sent!");
         }
       } else {
         input.show();
         input.val(
-          "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
+          prefix +
+            "create poi " +
+            type +
+            ' "' +
+            name +
+            '" ' +
+            lat +
+            " " +
+            lng +
+            opt
         );
         copyfieldvalue("copyInput");
         input.hide();
@@ -112,23 +132,33 @@ function wrapper(plugin_info) {
   window.plugin.pnav.showSettings = function () {
     let validURL = "^https?://discord(app)?.com/api/webhooks/[0-9]*/.*";
     var html = `
+        <p>
+          <label title="input the Prefix for the PokeNav Bot here. Default Prefix is $.">
+            PokeNav Prefix: 
+            <input type="text" id="pnavprefix" value="${
+              window.plugin.pnav.settings.prefix
+            }" placeholder="$"/>
+          </label>
+        </p>
         <p id="webhook"><label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
-            Discord Web Hook URL:
+            Discord Web Hook URL: 
             <input type="text" id="pnavhookurl" value="${
               window.plugin.pnav.settings.webhookUrl
             }" pattern="${validURL}"/>
         </label></p>
         <p>
           <Label title="The Name that will displayed if you send to the PokeNav channel. Default is your Ingess Codename.">
-            Name:
+            Name: 
             <input id="pnavCodename" type="text" placeholder="${
               window.PLAYER.nickname
             }" value="${window.plugin.pnav.settings.name}"/>
           </label>
         </p>
         <p>
-          <label title="Paste the Center Coordinate of your Community here (you can view it typing $show settings in Admin Channel)">
-          Community Center:
+          <label title="Paste the Center Coordinate of your Community here (you can view it typing ${
+            window.plugin.pnav.settings.prefix
+          }show settings in Admin Channel)">
+          Community Center: 
           <input id="pnavCenter" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${
             window.plugin.pnav.settings.lat != ""
               ? window.plugin.pnav.settings.lat +
@@ -139,7 +169,7 @@ function wrapper(plugin_info) {
           </label>
           <br>
           <label title="enter the specified Community Radius here.">
-          Community Radius:
+          Community Radius: 
           <input id="pnavRadius" type="text" pattern="^&#92;d+(&#92;.&#92;d+)?" value="${
             window.plugin.pnav.settings.radius
           }"/>
@@ -176,6 +206,14 @@ function wrapper(plugin_info) {
               );
             }
             allOK = false;
+          }
+          if ($("#pnavprefix").val() && $("#pnavprefix").val().length == 1) {
+            window.plugin.pnav.settings.prefix = $("#pnavprefix").val();
+          } else if (!$("#pnavprefix").val()) {
+            window.plugin.pnav.settings.prefix = "$";
+          } else {
+            allOK = false;
+            //TODO show Error Message
           }
           if (!$("#pnavRadius").val()) {
             window.plugin.pnav.settings.radius = "";
@@ -303,13 +341,14 @@ function wrapper(plugin_info) {
         let lat = entry.lat;
         let lng = entry.lng;
         let name = entry.name;
+        let prefix = window.plugin.pnav.settings.prefix;
         let ex = entry.isEx ? true : false;
         let options = ex ? ' "ex_eligible: 1"' : "";
         let request = window.plugin.pnav.request;
         var params = {
           username: window.plugin.pnav.settings.name,
           avatar_url: "",
-          content: `$create poi ${type} "${name}" ${lat} ${lng}${options}`,
+          content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`,
         };
         request.open("POST", window.plugin.pnav.settings.webhookUrl);
         request.setRequestHeader("Content-type", "application/json");
