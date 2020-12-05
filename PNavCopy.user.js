@@ -252,10 +252,17 @@ function wrapper(plugin_info) {
           } else {
             window.plugin.pnav.settings.name = $("#pnavCodename").val();
           }
-          if (allOK) {
-            localStorage.setItem(
-              "plugin-pnav-settings",
-              JSON.stringify(window.plugin.pnav.settings)
+          if (window.plugin.pnav.wip == false) {
+            if (allOK) {
+              localStorage.setItem(
+                "plugin-pnav-settings",
+                JSON.stringify(window.plugin.pnav.settings)
+              );
+              container.dialog("close");
+            }
+          } else {
+            alert(
+              "Settings not saved because Export was running. Pause the Export and then try again!"
             );
             container.dialog("close");
           }
@@ -501,7 +508,7 @@ function wrapper(plugin_info) {
       );
     }
     $("#toolbox").append(
-      '<a title="Configure PokeNav" onclick="window.plugin.pnav.showSettings();return false;" accesskey="s">PokeNav Settings</a>'
+      '<a title="Configure PokeNav" onclick="if(window.plugin.pnav.wip==false){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>'
     );
     $("body").prepend(
       '<input id="copyInput" style="position: absolute;"></input>'
