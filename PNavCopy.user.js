@@ -1,13 +1,13 @@
 // ==UserScript==
 /* globals jQuery, $, waitForKeyElements */
 // @id             pnavcopy@maxetmoritz
-// @name           IITC plugin: Copy PokeNav Creation Command
+// @name           IITC plugin: Copy PokeNav Command
 // @category       Misc
 // @downloadURL    https://github.com/MaxEtMoritz/PNavCopy/releases/download/latest/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.3.1
+// @version        1.4
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
-// @description    Copy portal info in PokeNav Discord bot command format.
+// @description    Copy portal info to clipboard or send it to Discord in the format the PokeNav Discord bot needs.
 // @include        http*://intel.ingress.com/*
 // @grant          none
 // ==/UserScript==
