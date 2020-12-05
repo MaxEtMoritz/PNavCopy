@@ -55,7 +55,9 @@ function wrapper(plugin_info) {
     var input = $("#copyInput");
     if (window.selectedPortal) {
       var portal = window.portals[window.plugin.pnav.selectedGuid];
-      var name = (portal.options.data.title).replaceAll('"','\\"');
+      var name = portal.options.data.title
+        .replaceAll("\\", "\\\\")
+        .replaceAll('"', '\\"'); //escaping Backslashes and Hyphens in Portal Names
       var latlng = portal.getLatLng();
       var lat = latlng.lat;
       var lng = latlng.lng;
@@ -358,10 +360,20 @@ function wrapper(plugin_info) {
             window.plugin.pnav.abort = false;
             window.plugin.pnav.wip = false;
           } else {
+            if (i % 10 == 0) {
+              //sometimes save the state in case someone exits IITC Mobile without using the Back Button
+              let todo = data.slice(i);
+              localStorage.setItem(
+                "plugin-pnav-todo-" + type,
+                JSON.stringify(todo)
+              );
+            }
             var entry = data[i];
             let lat = entry.lat;
             let lng = entry.lng;
-            let name = (entry.name).replaceAll('"','\\"');
+            let name = entry.name
+              .replaceAll("\\", "\\\\")
+              .replaceAll('"', '\\"'); //escaping Backslashes and Hyphens in Portal Names
             let prefix = window.plugin.pnav.settings.prefix;
             let ex = entry.isEx ? true : false;
             let options = ex ? ' "ex_eligible: 1"' : "";
@@ -532,7 +544,7 @@ function wrapper(plugin_info) {
         <a title="Copy the PokeNav Command to Clipboard or post to Discord via Web Hook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
         `);
         }
-      }, 0);
+      }, 5);
     });
   };
 
