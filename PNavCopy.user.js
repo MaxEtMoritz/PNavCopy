@@ -5,7 +5,7 @@
 // @category       Misc
 // @downloadURL    https://github.com/MaxEtMoritz/PNavCopy/releases/download/latest/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.3
+// @version        1.3.1
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info in PokeNav Discord bot command format.
 // @include        http*://intel.ingress.com/*
@@ -43,6 +43,10 @@ function wrapper(plugin_info) {
   window.plugin.pnav.settings = {
     webhookUrl: "",
     name: window.PLAYER.nickname,
+    radius: "",
+    lat: "",
+    lng: "",
+    prefix: "$",
   };
   window.plugin.pnav.request = new XMLHttpRequest();
   window.plugin.pnav.abort = false;
@@ -50,7 +54,6 @@ function wrapper(plugin_info) {
   window.plugin.pnav.copy = function () {
     var input = $("#copyInput");
     if (window.selectedPortal) {
-      input.show();
       var portal = window.portals[window.plugin.pnav.selectedGuid];
       var name = portal.options.data.title;
       var latlng = portal.getLatLng();
@@ -58,6 +61,7 @@ function wrapper(plugin_info) {
       var lng = latlng.lng;
       var opt = " ";
       var type = "";
+      var prefix = window.plugin.pnav.settings.prefix;
       if (window.plugin.pogo) {
         if ($(".pogoStop span").css("background-position") == "100% 0%") {
           type = "pokestop";
@@ -77,29 +81,100 @@ function wrapper(plugin_info) {
           type = "pokestop";
         }
       }
-      input.val(
-        "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
-      );
       if (window.plugin.pnav.settings.webhookUrl) {
-        sendMessage(
-          "$create poi " + type + ' "' + name + '" ' + lat + " " + lng + opt
-        );
-        console.log("sent!");
+        if (
+          window.plugin.pnav.settings.lat &&
+          window.plugin.pnav.settings.lng &&
+          window.plugin.pnav.settings.radius &&
+          checkDistance(
+            lat,
+            lng,
+            window.plugin.pnav.settings.lat,
+            window.plugin.pnav.settings.lng
+          ) > window.plugin.pnav.settings.radius
+        ) {
+          alert("this location is outside the specified Community Area!");
+        } else {
+          sendMessage(
+            prefix +
+              "create poi " +
+              type +
+              ' "' +
+              name +
+              '" ' +
+              lat +
+              " " +
+              lng +
+              opt
+          );
+          console.log("sent!");
+        }
       } else {
+        input.show();
+        input.val(
+          prefix +
+            "create poi " +
+            type +
+            ' "' +
+            name +
+            '" ' +
+            lat +
+            " " +
+            lng +
+            opt
+        );
         copyfieldvalue("copyInput");
+        input.hide();
       }
-      input.hide();
     }
   };
 
   window.plugin.pnav.showSettings = function () {
     let validURL = "^https?://discord(app)?.com/api/webhooks/[0-9]*/.*";
     var html = `
+        <p>
+          <label title="input the Prefix for the PokeNav Bot here. Default Prefix is $.">
+            PokeNav Prefix: 
+            <input type="text" id="pnavprefix" value="${
+              window.plugin.pnav.settings.prefix
+            }" placeholder="$"/>
+          </label>
+        </p>
         <p id="webhook"><label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
-            Discord Web Hook URL:
-            <input type="text" id="pnavhookurl" value="${window.plugin.pnav.settings.webhookUrl}" pattern="${validURL}"/>
+            Discord Web Hook URL: 
+            <input type="text" id="pnavhookurl" value="${
+              window.plugin.pnav.settings.webhookUrl
+            }" pattern="${validURL}"/>
         </label></p>
-        <p><Label title="The Name that will displayed if you send to the PokeNav channel. Default is your Ingess Codename.">Name:<input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/></label></p>
+        <p>
+          <Label title="The Name that will displayed if you send to the PokeNav channel. Default is your Ingess Codename.">
+            Name: 
+            <input id="pnavCodename" type="text" placeholder="${
+              window.PLAYER.nickname
+            }" value="${window.plugin.pnav.settings.name}"/>
+          </label>
+        </p>
+        <p>
+          <label title="Paste the Center Coordinate of your Community here (you can view it typing ${
+            window.plugin.pnav.settings.prefix
+          }show settings in Admin Channel)">
+          Community Center: 
+          <input id="pnavCenter" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${
+            window.plugin.pnav.settings.lat != ""
+              ? window.plugin.pnav.settings.lat +
+                ", " +
+                window.plugin.pnav.settings.lng
+              : ""
+          }"/>
+          </label>
+          <br>
+          <label title="enter the specified Community Radius here.">
+          Community Radius: 
+          <input id="pnavRadius" type="text" pattern="^&#92;d+(&#92;.&#92;d+)?" value="${
+            window.plugin.pnav.settings.radius
+          }"/>
+          </label>
+        </p>
         `;
     if (window.plugin.pogo) {
       html += `
@@ -110,6 +185,7 @@ function wrapper(plugin_info) {
     const container = dialog({
       id: "pnavsettings",
       width: "auto",
+      height: "auto",
       html: html,
       title: "PokeNav Settings",
       buttons: {
@@ -131,25 +207,68 @@ function wrapper(plugin_info) {
             }
             allOK = false;
           }
+          if ($("#pnavprefix").val() && $("#pnavprefix").val().length == 1) {
+            window.plugin.pnav.settings.prefix = $("#pnavprefix").val();
+          } else if (!$("#pnavprefix").val()) {
+            window.plugin.pnav.settings.prefix = "$";
+          } else {
+            allOK = false;
+            //TODO show Error Message
+          }
+          if (!$("#pnavRadius").val()) {
+            window.plugin.pnav.settings.radius = "";
+          } else if (!Number.isNaN(parseFloat($("#pnavRadius").val()))) {
+            window.plugin.pnav.settings.radius = parseFloat(
+              $("#pnavRadius").val()
+            );
+          } else {
+            //TODO show error Message
+            allOK = false;
+          }
+          if (!$("#pnavCenter").val()) {
+            window.plugin.pnav.settings.lat = "";
+            window.plugin.pnav.settings.lng = "";
+          } else {
+            let arr = $("#pnavCenter").val().split(", ");
+            let lat = arr[0] ? parseFloat(arr[0]) : NaN;
+            let lng = arr[1] ? parseFloat(arr[1]) : NaN;
+            if (
+              !Number.isNaN(lat) &&
+              !Number.isNaN(lng) &&
+              lat >= -90 &&
+              lat <= 90 &&
+              lng >= -90 &&
+              lng <= 90
+            ) {
+              window.plugin.pnav.settings.lat = lat;
+              window.plugin.pnav.settings.lng = lng;
+            } else {
+              //TODO show error message
+              allOK = false;
+            }
+          }
           if (!$("#pnavCodename").val()) {
             window.plugin.pnav.settings.name = window.PLAYER.nickname;
           } else {
             window.plugin.pnav.settings.name = $("#pnavCodename").val();
           }
-          if (allOK) {
-            localStorage.setItem(
-              "plugin-pnav-settings",
-              JSON.stringify(window.plugin.pnav.settings)
+          if (window.plugin.pnav.wip == false) {
+            if (allOK) {
+              localStorage.setItem(
+                "plugin-pnav-settings",
+                JSON.stringify(window.plugin.pnav.settings)
+              );
+              container.dialog("close");
+            }
+          } else {
+            alert(
+              "Settings not saved because Export was running. Pause the Export and then try again!"
             );
             container.dialog("close");
           }
         },
       },
     });
-    if (window.plugin.pnav.wip) {
-      $("#btnBulkExportStops").prop("disabled", true);
-      $("#btnBulkExportGyms").prop("disabled", true);
-    }
   };
 
   window.plugin.pnav.bulkExportGyms = function () {
@@ -163,8 +282,6 @@ function wrapper(plugin_info) {
     }
     if (data && data.gyms) {
       bulkExport(data.gyms, "gym");
-      $("#btnBulkExportStops").prop("disabled", true);
-      $("#btnBulkExportGyms").prop("disabled", true);
     }
   };
 
@@ -179,112 +296,177 @@ function wrapper(plugin_info) {
     }
     if (data && data.pokestops) {
       bulkExport(data.pokestops, "pokestop");
-      $("#btnBulkExportStops").prop("disabled", true);
-      $("#btnBulkExportGyms").prop("disabled", true);
     }
   };
 
-  function bulkExport(data, type) {
-    //console.log(data);
-    window.plugin.pnav.abort = false;
-    window.plugin.pnav.wip = true;
-    var keys = Object.keys(data);
-    var i = 0;
-    var wait = 2000; //Discord WebHook accepts 30 Messages in 60 Seconds.
-    var doit = function () {
-      if ($("#exportProgressBar")) {
-        $("#exportProgressBar").val(i);
-      }
-      if ($("#exportNumber")) {
-        $("#exportNumber").text(i);
-      }
-      if ($("#exportTimeRemaining")) {
-        $("#exportTimeRemaining").text(
-          Math.round((wait * (keys.length - i)) / 1000)
-        );
-      }
-      if (i < keys.length && !window.plugin.pnav.abort) {
-        var entry = data[keys[i]];
-        let lat = entry.lat;
-        let lng = entry.lng;
-        let name = entry.name;
-        let ex = entry.isEx ? true : false;
-        let options = ex ? ' "ex_eligible: 1"' : "";
-        let request = window.plugin.pnav.request;
-        var params = {
-          username: window.plugin.pnav.settings.name,
-          avatar_url: "",
-          content: `$create poi ${type} "${name}" ${lat} ${lng}${options}`,
-        };
-        request.open("POST", window.plugin.pnav.settings.webhookUrl);
-        request.setRequestHeader("Content-type", "application/json");
-        request.onload = function () {
-          if (request.status == 204 || request.status == 200) {
-            i++;
-            setTimeout(doit, wait);
-          } else {
-            console.log("status code " + request.status);
-            setTimeout(doit, 3 * wait);
-          }
-        };
-        request.onerror = function () {
-          setTimeout(doit, 3 * wait);
-        };
-        request.send(JSON.stringify(params), false);
-        //console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+  function bulkExport(inData, type) {
+    if (window.plugin.pnav.wip == false) {
+      //console.log(inData);
+      window.plugin.pnav.abort = false;
+      window.plugin.pnav.wip = true;
+      var data = [];
+      if (localStorage.getItem("plugin-pnav-todo-" + type)) {
+        data = JSON.parse(localStorage.getItem("plugin-pnav-todo-" + type));
       } else {
-        $("#exportState").text("Export Ready!");
-        okayButton.text("OK");
-        $("#btnBulkExportStops").prop("disabled", false);
-        $("#btnBulkExportGyms").prop("disabled", false);
-        window.plugin.pnav.wip = false;
+        var origKeys = Object.keys(inData);
+        origKeys.forEach(function (key) {
+          var obj = inData[key];
+          if (
+            !window.plugin.pnav.settings.lat ||
+            !window.plugin.pnav.settings.lng ||
+            !window.plugin.pnav.settings.radius ||
+            checkDistance(
+              obj.lat,
+              obj.lng,
+              window.plugin.pnav.settings.lat,
+              window.plugin.pnav.settings.lng
+            ) <= window.plugin.pnav.settings.radius
+          ) {
+            data.push(obj);
+          }
+        });
+        localStorage.setItem("plugin-pnav-todo-" + type, JSON.stringify(data));
       }
-    };
+      var i = 0;
+      var wait = 2000; //Discord WebHook accepts 30 Messages in 60 Seconds.
+      window.onbeforeunload = function () {
+        if (i && data && type && i < data.length) {
+          localStorage.setItem(
+            "plugin-pnav-todo-" + type,
+            JSON.stringify(data.slice(i))
+          );
+        }
+        return null;
+      };
+      var doit = function () {
+        if ($("#exportProgressBar")) {
+          $("#exportProgressBar").val(i);
+        }
+        if ($("#exportNumber")) {
+          $("#exportNumber").text(i);
+        }
+        if ($("#exportTimeRemaining")) {
+          $("#exportTimeRemaining").text((wait * (data.length - i)) / 1000);
+        }
+        if (i < data.length) {
+          if (window.plugin.pnav.abort) {
+            let todo = data.slice(i);
+            localStorage.setItem(
+              "plugin-pnav-todo-" + type,
+              JSON.stringify(todo)
+            );
+            window.plugin.pnav.abort = false;
+            window.plugin.pnav.wip = false;
+          } else {
+            var entry = data[i];
+            let lat = entry.lat;
+            let lng = entry.lng;
+            let name = entry.name;
+            let prefix = window.plugin.pnav.settings.prefix;
+            let ex = entry.isEx ? true : false;
+            let options = ex ? ' "ex_eligible: 1"' : "";
+            let request = window.plugin.pnav.request;
+            var params = {
+              username: window.plugin.pnav.settings.name,
+              avatar_url: "",
+              content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`,
+            };
+            request.open("POST", window.plugin.pnav.settings.webhookUrl);
+            request.setRequestHeader("Content-type", "application/json");
+            request.onload = function () {
+              if (request.status == 204 || request.status == 200) {
+                i++;
+                setTimeout(doit, wait);
+              } else {
+                console.log("status code " + request.status);
+                setTimeout(doit, 3 * wait);
+              }
+            };
+            request.onerror = function () {
+              setTimeout(doit, 3 * wait);
+            };
+            request.send(JSON.stringify(params), false);
+            //console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+          }
+        } else {
+          $("#exportState").text("Export Ready!");
+          okayButton.text("OK");
+          okayButton.prop("title", "");
+          window.plugin.pnav.wip = false;
+          localStorage.removeItem("plugin-pnav-todo-" + type);
+          window.onbeforeunload = null;
+        }
+      };
 
-    var dialog = window.dialog({
-      id: "bulkExportProgress",
-      html: `
+      var dialog = window.dialog({
+        id: "bulkExportProgress",
+        html: `
                 <h3 id="exportState">Exporting...</h3>
                 <p>
                     <label>
                         Progress:
                         <progress id="exportProgressBar" value="0" max="${
-                          keys.length
+                          data.length
                         }"/>
                     </label>
                 </p>
                 <label id="exportNumber">0</label><label> of${
-                  keys.length
+                  data.length
                 }</label>
                 <br>
                 <label>Time remaining: </label><label id="exportTimeRemaining">${Math.round(
-                  (wait * keys.length) / 1000
+                  (wait * data.length) / 1000
                 )}</label><label>s</label>
             `,
-      width: "auto",
-      title: "PokeNav Bulk Export Progress",
-    });
+        width: "auto",
+        title: "PokeNav Bulk Export Progress",
+      });
 
-    //console.log(dialog);
+      //console.log(dialog);
 
-    let thisDialog = $(".ui-dialog").has("#dialog-bulkExportProgress")[0];
-    //console.log(thisDialog);
-    var okayButton = $(".ui-button", thisDialog).not(
-      ".ui-dialog-titlebar-button"
-    );
-    okayButton.text("Abort");
-    okayButton.on("click", function () {
-      window.plugin.pnav.abort = true;
-    });
-
-    $(".ui-button.ui-dialog-titlebar-button-close", thisDialog).on(
-      "click",
-      function () {
+      let thisDialog = $(".ui-dialog").has("#dialog-bulkExportProgress")[0];
+      //console.log(thisDialog);
+      var okayButton = $(".ui-button", thisDialog).not(
+        ".ui-dialog-titlebar-button"
+      );
+      okayButton.text("Pause");
+      okayButton.prop(
+        "title",
+        "store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again."
+      );
+      okayButton.on("click", function () {
         window.plugin.pnav.abort = true;
-      }
-    );
+      });
 
-    doit();
+      $(".ui-button.ui-dialog-titlebar-button-close", thisDialog).on(
+        "click",
+        function () {
+          window.plugin.pnav.abort = true;
+        }
+      );
+
+      doit();
+    } else {
+      console.log("Bulk Export already running!");
+    }
+  }
+
+  //https://stackoverflow.com/a/14561433
+  function checkDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    var x1 = lat2 - lat1;
+    var dLat = (x1 * Math.PI) / 180;
+    var x2 = lon2 - lon1;
+    var dLon = (x2 * Math.PI) / 180;
+    var a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    var d = R * c;
+    return d;
   }
 
   function copyfieldvalue(id) {
@@ -326,7 +508,7 @@ function wrapper(plugin_info) {
       );
     }
     $("#toolbox").append(
-      '<a title="Configure PokeNav" onclick="window.plugin.pnav.showSettings();return false;" accesskey="s">PokeNav Settings</a>'
+      '<a title="Configure PokeNav" onclick="if(window.plugin.pnav.wip==false){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>'
     );
     $("body").prepend(
       '<input id="copyInput" style="position: absolute;"></input>'
