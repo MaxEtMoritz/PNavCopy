@@ -5,7 +5,7 @@
 // @category       Misc
 // @downloadURL    https://github.com/MaxEtMoritz/PNavCopy/releases/download/latest/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.3
+// @version        1.3.1
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info in PokeNav Discord bot command format.
 // @include        http*://intel.ingress.com/*
@@ -262,10 +262,6 @@ function wrapper(plugin_info) {
         },
       },
     });
-    if (window.plugin.pnav.wip) {
-      $("#btnBulkExportStops").prop("disabled", true);
-      $("#btnBulkExportGyms").prop("disabled", true);
-    }
   };
 
   window.plugin.pnav.bulkExportGyms = function () {
@@ -279,8 +275,6 @@ function wrapper(plugin_info) {
     }
     if (data && data.gyms) {
       bulkExport(data.gyms, "gym");
-      $("#btnBulkExportStops").prop("disabled", true);
-      $("#btnBulkExportGyms").prop("disabled", true);
     }
   };
 
@@ -295,89 +289,111 @@ function wrapper(plugin_info) {
     }
     if (data && data.pokestops) {
       bulkExport(data.pokestops, "pokestop");
-      $("#btnBulkExportStops").prop("disabled", true);
-      $("#btnBulkExportGyms").prop("disabled", true);
     }
   };
 
   function bulkExport(inData, type) {
-    //console.log(inData);
-    window.plugin.pnav.abort = false;
-    window.plugin.pnav.wip = true;
-    var data = [];
-    var origKeys = Object.keys(inData);
-    origKeys.forEach(function (key) {
-      var obj = inData[key];
-      if (
-        !window.plugin.pnav.settings.lat ||
-        !window.plugin.pnav.settings.lng ||
-        !window.plugin.pnav.settings.radius ||
-        checkDistance(
-          obj.lat,
-          obj.lng,
-          window.plugin.pnav.settings.lat,
-          window.plugin.pnav.settings.lng
-        ) <= window.plugin.pnav.settings.radius
-      ) {
-        data.push(obj);
-      }
-    });
-    var i = 0;
-    var wait = 2000; //Discord WebHook accepts 30 Messages in 60 Seconds.
-    var doit = function () {
-      if ($("#exportProgressBar")) {
-        $("#exportProgressBar").val(i);
-      }
-      if ($("#exportNumber")) {
-        $("#exportNumber").text(i);
-      }
-      if ($("#exportTimeRemaining")) {
-        $("#exportTimeRemaining").text(
-          Math.round((wait * (data.length - i)) / 1000)
-        );
-      }
-      if (i < data.length && !window.plugin.pnav.abort) {
-        var entry = data[i];
-        let lat = entry.lat;
-        let lng = entry.lng;
-        let name = entry.name;
-        let prefix = window.plugin.pnav.settings.prefix;
-        let ex = entry.isEx ? true : false;
-        let options = ex ? ' "ex_eligible: 1"' : "";
-        let request = window.plugin.pnav.request;
-        var params = {
-          username: window.plugin.pnav.settings.name,
-          avatar_url: "",
-          content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`,
-        };
-        request.open("POST", window.plugin.pnav.settings.webhookUrl);
-        request.setRequestHeader("Content-type", "application/json");
-        request.onload = function () {
-          if (request.status == 204 || request.status == 200) {
-            i++;
-            setTimeout(doit, wait);
-          } else {
-            console.log("status code " + request.status);
-            setTimeout(doit, 3 * wait);
-          }
-        };
-        request.onerror = function () {
-          setTimeout(doit, 3 * wait);
-        };
-        request.send(JSON.stringify(params), false);
-        //console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+    if (window.plugin.pnav.wip == false) {
+      //console.log(inData);
+      window.plugin.pnav.abort = false;
+      window.plugin.pnav.wip = true;
+      var data = [];
+      if (localStorage.getItem("plugin-pnav-todo-" + type)) {
+        data = JSON.parse(localStorage.getItem("plugin-pnav-todo-" + type));
       } else {
-        $("#exportState").text("Export Ready!");
-        okayButton.text("OK");
-        $("#btnBulkExportStops").prop("disabled", false);
-        $("#btnBulkExportGyms").prop("disabled", false);
-        window.plugin.pnav.wip = false;
+        var origKeys = Object.keys(inData);
+        origKeys.forEach(function (key) {
+          var obj = inData[key];
+          if (
+            !window.plugin.pnav.settings.lat ||
+            !window.plugin.pnav.settings.lng ||
+            !window.plugin.pnav.settings.radius ||
+            checkDistance(
+              obj.lat,
+              obj.lng,
+              window.plugin.pnav.settings.lat,
+              window.plugin.pnav.settings.lng
+            ) <= window.plugin.pnav.settings.radius
+          ) {
+            data.push(obj);
+          }
+        });
+        localStorage.setItem("plugin-pnav-todo-" + type, JSON.stringify(data));
       }
-    };
+      var i = 0;
+      var wait = 2000; //Discord WebHook accepts 30 Messages in 60 Seconds.
+      window.onbeforeunload = function () {
+        if (i && data && type && i < data.length) {
+          localStorage.setItem(
+            "plugin-pnav-todo-" + type,
+            JSON.stringify(data.slice(i))
+          );
+        }
+        return null;
+      };
+      var doit = function () {
+        if ($("#exportProgressBar")) {
+          $("#exportProgressBar").val(i);
+        }
+        if ($("#exportNumber")) {
+          $("#exportNumber").text(i);
+        }
+        if ($("#exportTimeRemaining")) {
+          $("#exportTimeRemaining").text((wait * (data.length - i)) / 1000);
+        }
+        if (i < data.length) {
+          if (window.plugin.pnav.abort) {
+            let todo = data.slice(i);
+            localStorage.setItem(
+              "plugin-pnav-todo-" + type,
+              JSON.stringify(todo)
+            );
+            window.plugin.pnav.abort = false;
+            window.plugin.pnav.wip = false;
+          } else {
+            var entry = data[i];
+            let lat = entry.lat;
+            let lng = entry.lng;
+            let name = entry.name;
+            let prefix = window.plugin.pnav.settings.prefix;
+            let ex = entry.isEx ? true : false;
+            let options = ex ? ' "ex_eligible: 1"' : "";
+            let request = window.plugin.pnav.request;
+            var params = {
+              username: window.plugin.pnav.settings.name,
+              avatar_url: "",
+              content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`,
+            };
+            request.open("POST", window.plugin.pnav.settings.webhookUrl);
+            request.setRequestHeader("Content-type", "application/json");
+            request.onload = function () {
+              if (request.status == 204 || request.status == 200) {
+                i++;
+                setTimeout(doit, wait);
+              } else {
+                console.log("status code " + request.status);
+                setTimeout(doit, 3 * wait);
+              }
+            };
+            request.onerror = function () {
+              setTimeout(doit, 3 * wait);
+            };
+            request.send(JSON.stringify(params), false);
+            //console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+          }
+        } else {
+          $("#exportState").text("Export Ready!");
+          okayButton.text("OK");
+          okayButton.prop("title", "");
+          window.plugin.pnav.wip = false;
+          localStorage.removeItem("plugin-pnav-todo-" + type);
+          window.onbeforeunload = null;
+        }
+      };
 
-    var dialog = window.dialog({
-      id: "bulkExportProgress",
-      html: `
+      var dialog = window.dialog({
+        id: "bulkExportProgress",
+        html: `
                 <h3 id="exportState">Exporting...</h3>
                 <p>
                     <label>
@@ -395,30 +411,37 @@ function wrapper(plugin_info) {
                   (wait * data.length) / 1000
                 )}</label><label>s</label>
             `,
-      width: "auto",
-      title: "PokeNav Bulk Export Progress",
-    });
+        width: "auto",
+        title: "PokeNav Bulk Export Progress",
+      });
 
-    //console.log(dialog);
+      //console.log(dialog);
 
-    let thisDialog = $(".ui-dialog").has("#dialog-bulkExportProgress")[0];
-    //console.log(thisDialog);
-    var okayButton = $(".ui-button", thisDialog).not(
-      ".ui-dialog-titlebar-button"
-    );
-    okayButton.text("Abort");
-    okayButton.on("click", function () {
-      window.plugin.pnav.abort = true;
-    });
-
-    $(".ui-button.ui-dialog-titlebar-button-close", thisDialog).on(
-      "click",
-      function () {
+      let thisDialog = $(".ui-dialog").has("#dialog-bulkExportProgress")[0];
+      //console.log(thisDialog);
+      var okayButton = $(".ui-button", thisDialog).not(
+        ".ui-dialog-titlebar-button"
+      );
+      okayButton.text("Pause");
+      okayButton.prop(
+        "title",
+        "store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again."
+      );
+      okayButton.on("click", function () {
         window.plugin.pnav.abort = true;
-      }
-    );
+      });
 
-    doit();
+      $(".ui-button.ui-dialog-titlebar-button-close", thisDialog).on(
+        "click",
+        function () {
+          window.plugin.pnav.abort = true;
+        }
+      );
+
+      doit();
+    } else {
+      console.log("Bulk Export already running!");
+    }
   }
 
   //https://stackoverflow.com/a/14561433
