@@ -134,22 +134,22 @@ function wrapper(plugin_info) {
   window.plugin.pnav.showSettings = function () {
     let validURL = "^https?://discord(app)?.com/api/webhooks/[0-9]*/.*";
     var html = `
-        <p>
-          <label title="input the Prefix for the PokeNav Bot here. Default Prefix is $.">
+        <p id="prefix">
+          <label title="Input the Prefix for the PokeNav Bot here. Default Prefix is $.">
             PokeNav Prefix: 
-            <input type="text" id="pnavprefix" value="${
+            <input type="text" id="pnavprefix" pattern="^.$" value="${
               window.plugin.pnav.settings.prefix
-            }" placeholder="$"/>
+            }" placeholder="$" style="width:15px"/>
           </label>
         </p>
-        <p id="webhook"><label title="Paste the URL of the WebHook you created in your Server to issue Location Commands to the PokeNav Bot Here. If left blank, the Commands are copied to clipboard.">
-            Discord Web Hook URL: 
-            <input type="text" id="pnavhookurl" value="${
+        <p id="webhook"><label title="Paste the URL of the WebHook you created in your Server's Admin Channel here. If left blank, the Commands are copied to Clipboard.">
+            Discord WebHook URL: 
+            <input type="url" style="width:100%" id="pnavhookurl" value="${
               window.plugin.pnav.settings.webhookUrl
             }" pattern="${validURL}"/>
         </label></p>
         <p>
-          <Label title="The Name that will displayed if you send to the PokeNav channel. Default is your Ingess Codename.">
+          <Label title="The Name that will be displayed if you send to the PokeNav channel. Default is your Ingess Codename.">
             Name: 
             <input id="pnavCodename" type="text" placeholder="${
               window.PLAYER.nickname
@@ -157,7 +157,7 @@ function wrapper(plugin_info) {
           </label>
         </p>
         <p>
-          <label title="Paste the Center Coordinate of your Community here (you can view it typing ${
+          <label id="center" title="Paste the Center Coordinate of your Community here (you can view it typing ${
             window.plugin.pnav.settings.prefix
           }show settings in Admin Channel)">
           Community Center: 
@@ -170,9 +170,9 @@ function wrapper(plugin_info) {
           }"/>
           </label>
           <br>
-          <label title="enter the specified Community Radius here.">
+          <label id="radius" title="Enter the specified Community Radius here.">
           Community Radius: 
-          <input id="pnavRadius" type="text" pattern="^&#92;d+(&#92;.&#92;d+)?" value="${
+          <input id="pnavRadius" style="width:70px" type="number" min="0" step="0.001" value="${
             window.plugin.pnav.settings.radius
           }"/>
           </label>
@@ -180,8 +180,8 @@ function wrapper(plugin_info) {
         `;
     if (window.plugin.pogo) {
       html += `
-            <p><button type="Button" id="btnBulkExportGyms" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportGyms();return false;">Export all PogoTools Gyms</button></p>
-            <p><button type="Button" id="btnBulkExportStops" title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportStops();return false;">Export all PogoTools Stops</button></p>
+            <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportGyms();return false;">Export all PogoTools Gyms</button></p>
+            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportStops();return false;">Export all PogoTools Stops</button></p>
             `;
     }
     const container = dialog({
@@ -211,25 +211,51 @@ function wrapper(plugin_info) {
           }
           if ($("#pnavprefix").val() && $("#pnavprefix").val().length == 1) {
             window.plugin.pnav.settings.prefix = $("#pnavprefix").val();
+            if ($("#lblErrorPf").length > 0) {
+              $("#lblErrorPf").remove();
+            }
           } else if (!$("#pnavprefix").val()) {
             window.plugin.pnav.settings.prefix = "$";
+            if ($("#lblErrorPf").length > 0) {
+              $("#lblErrorPf").remove();
+            }
           } else {
             allOK = false;
-            //TODO show Error Message
+            if ($("#lblErrorPf").length == 0) {
+              $("#prefix").after(`
+            <label id="lblErrorPf" style="color:red">Prefix must be only one Character!</label>
+            `);
+            }
           }
           if (!$("#pnavRadius").val()) {
             window.plugin.pnav.settings.radius = "";
-          } else if (!Number.isNaN(parseFloat($("#pnavRadius").val()))) {
+            if ($("#lblErrorRd").length > 0) {
+              $("#lblErrorRd").remove();
+            }
+          } else if (
+            new RegExp("^\\d+(\\.\\d+)?$").test($("#pnavRadius").val()) &&
+            !Number.isNaN(parseFloat($("#pnavRadius").val()))
+          ) {
             window.plugin.pnav.settings.radius = parseFloat(
               $("#pnavRadius").val()
             );
+            if ($("#lblErrorRd").length > 0) {
+              $("#lblErrorRd").remove();
+            }
           } else {
-            //TODO show error Message
+            if ($("#lblErrorRd").length == 0) {
+              $("#radius").after(`
+            <label id="lblErrorRd" style="color:red"><br>Invalid Radius! Please check if it is a valid Number!</label>
+            `);
+            }
             allOK = false;
           }
           if (!$("#pnavCenter").val()) {
             window.plugin.pnav.settings.lat = "";
             window.plugin.pnav.settings.lng = "";
+            if ($("#lblErrorCn").length > 0) {
+              $("#lblErrorCn").remove();
+            }
           } else {
             let arr = $("#pnavCenter").val().split(", ");
             let lat = arr[0] ? parseFloat(arr[0]) : NaN;
@@ -237,6 +263,9 @@ function wrapper(plugin_info) {
             if (
               !Number.isNaN(lat) &&
               !Number.isNaN(lng) &&
+              new RegExp("^-?\\d?\\d(\\.\\d+)?, -?\\d?\\d(\\.\\d+)?$").test(
+                $("#pnavCenter").val()
+              ) &&
               lat >= -90 &&
               lat <= 90 &&
               lng >= -90 &&
@@ -244,8 +273,15 @@ function wrapper(plugin_info) {
             ) {
               window.plugin.pnav.settings.lat = lat;
               window.plugin.pnav.settings.lng = lng;
+              if ($("#lblErrorCn").length > 0) {
+                $("#lblErrorCn").remove();
+              }
             } else {
-              //TODO show error message
+              if ($("#lblErrorCn").length == 0) {
+                $("#center").after(
+                  '<label id="lblErrorCn" style="color:red"><br>Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!</label>'
+                );
+              }
               allOK = false;
             }
           }
@@ -422,7 +458,7 @@ function wrapper(plugin_info) {
                         }"/>
                     </label>
                 </p>
-                <label id="exportNumber">0</label><label> of${
+                <label id="exportNumber">0</label><label> of ${
                   data.length
                 }</label>
                 <br>
@@ -520,7 +556,7 @@ function wrapper(plugin_info) {
       );
     }
     $("#toolbox").append(
-      '<a title="Configure PokeNav" onclick="if(window.plugin.pnav.wip==false){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>'
+      '<a title="Configure PokeNav" style="margin-left:4px" onclick="if(window.plugin.pnav.wip==false){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>'
     );
     $("body").prepend(
       '<input id="copyInput" style="position: absolute;"></input>'
@@ -532,17 +568,19 @@ function wrapper(plugin_info) {
       setTimeout(function () {
         if ($(".PogoButtons").length == 0) {
           $("#portaldetails").append(`
-          <div id="PNav" style="color:#fff">
+          <div id="PNav" style="color:#fff;display:flex">
           <Label><input type="radio" checked="true" name="type" value="stop" id="PNavStop"/>Stop</label>
           <Label><input type="radio" name="type" value="gym" id="PNavGym"/>Gym</label>
           <Label><input type="radio" name="type" value="ex" id="PNavEx"/>Ex Gym</label>
-          <a title="Copy the PokeNav Command to Clipboard or post to Discord via Web Hook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
+          <a style="margin-left:auto;margin-right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
           </div>
         `);
         } else {
           $(".PogoButtons").append(`
-        <a title="Copy the PokeNav Command to Clipboard or post to Discord via Web Hook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
+        <a style="margin-left:auto;margin-right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
         `);
+          $(".PogoButtons").css("display", "flex");
+          $(".PogoButtons").css("align-items", "baseline");
         }
       }, 5);
     });
