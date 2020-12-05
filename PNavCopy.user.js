@@ -55,7 +55,7 @@ function wrapper(plugin_info) {
     var input = $("#copyInput");
     if (window.selectedPortal) {
       var portal = window.portals[window.plugin.pnav.selectedGuid];
-      var name = portal.options.data.title;
+      var name = (portal.options.data.title).replaceAll('"','\\"');
       var latlng = portal.getLatLng();
       var lat = latlng.lat;
       var lng = latlng.lng;
@@ -361,7 +361,7 @@ function wrapper(plugin_info) {
             var entry = data[i];
             let lat = entry.lat;
             let lng = entry.lng;
-            let name = entry.name;
+            let name = (entry.name).replaceAll('"','\\"');
             let prefix = window.plugin.pnav.settings.prefix;
             let ex = entry.isEx ? true : false;
             let options = ex ? ' "ex_eligible: 1"' : "";
