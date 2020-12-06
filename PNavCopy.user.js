@@ -356,6 +356,29 @@ function wrapper (plugin_info) {
         var done = localStorage.getItem(`plugin-pnav-done-${type}`)
           ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
           : null;
+        function saveState () {
+          let todo = data.slice(i);
+          if (todo.length > 0) {
+            localStorage.setItem(
+              `plugin-pnav-todo-${type}`,
+              JSON.stringify(todo)
+            );
+          } else {
+            localStorage.removeItem(`plugin-pnav-todo-${type}`);
+          }
+          if (!done) {
+            localStorage.setItem(
+              `plugin-pnav-done-${type}`,
+              JSON.stringify(data.slice(0, i))
+            );
+          } else {
+            done.concat(data.slice(0, i));
+            localStorage.setItem(
+              `plugin-pnav-done-${type}`,
+              JSON.stringify(done)
+            );
+          }
+        }
         if ($('#exportProgressBar')) {
           $('#exportProgressBar').val(i);
         }
@@ -367,45 +390,13 @@ function wrapper (plugin_info) {
         }
         if (i < data.length) {
           if (window.plugin.pnav.abort) {
-            let todo = data.slice(i);
-            localStorage.setItem(
-              `plugin-pnav-todo-${type}`,
-              JSON.stringify(todo)
-            );
-            if (!done) {
-              localStorage.setItem(
-                `plugin-pnav-done-${type}`,
-                JSON.stringify(data.slice(0, i))
-              );
-            } else {
-              done.concat(data.slice(0, i));
-              localStorage.setItem(
-                `plugin-pnav-done-${type}`,
-                JSON.stringify(done)
-              );
-            }
+            saveState();
             window.plugin.pnav.abort = false;
             window.plugin.pnav.wip = false;
           } else {
             if (i % 10 == 0) {
               // sometimes save the state in case someone exits IITC Mobile without using the Back Button
-              let todo = data.slice(i);
-              localStorage.setItem(
-                `plugin-pnav-todo-${type}`,
-                JSON.stringify(todo)
-              );
-              if (!done) {
-                localStorage.setItem(
-                  `plugin-pnav-done-${type}`,
-                  JSON.stringify(data.slice(0, i))
-                );
-              } else {
-                done.concat(data.slice(0, i));
-                localStorage.setItem(
-                  `plugin-pnav-done-${type}`,
-                  JSON.stringify(done)
-                );
-              }
+              saveState();
             }
             var entry = data[i];
             let lat = entry.lat;
@@ -445,19 +436,7 @@ function wrapper (plugin_info) {
           okayButton.text('OK');
           okayButton.prop('title', '');
           window.plugin.pnav.wip = false;
-          localStorage.removeItem(`plugin-pnav-todo-${type}`);
-          if (!done) {
-            localStorage.setItem(
-              `plugin-pnav-done-${type}`,
-              JSON.stringify(data.slice(0, i))
-            );
-          } else {
-            done.concat(data.slice(0, i));
-            localStorage.setItem(
-              `plugin-pnav-done-${type}`,
-              JSON.stringify(done)
-            );
-          }
+          saveState();
           window.onbeforeunload = null;
         }
       };
@@ -467,12 +446,13 @@ function wrapper (plugin_info) {
         html: `
               <h3 id="exportState">Exporting...</h3>
               <p>
-                 <label>
-                    Progress:
-                    <progress id="exportProgressBar" value="0" max="${data.length}"/>
+                <label>
+                  Progress:
+                  <progress id="exportProgressBar" value="0" max="${data.length}"/>
                 </label>
               </p>
-              <label id="exportNumber">0</label><label> of ${data.length}</label>
+              <label id="exportNumber">0</label>
+              <label> of ${data.length}</label>
               <br>
               <label>Time remaining: </label>
               <label id="exportTimeRemaining">${Math.round((wait * data.length) / 1000)}</label>
@@ -484,7 +464,7 @@ function wrapper (plugin_info) {
 
       // console.log(dialog);
 
-      let thisDialog = $('.ui-dialog').has('#dialog-bulkExportProgress')[0];
+      let thisDialog = dialog.parent();
       // console.log(thisDialog);
       var okayButton = $('.ui-button', thisDialog).not('.ui-dialog-titlebar-button');
       okayButton.text('Pause');
@@ -510,7 +490,7 @@ function wrapper (plugin_info) {
   }
 
   /*
-   *the idea of the following funtion was taken from https://stackoverflow.com/a/14561433
+   *the idea of the following function was taken from https://stackoverflow.com/a/14561433
    *by User talkol (https://stackoverflow.com/users/1025458/talkol).
    *The License is CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
    *The Code was slightly adapted.
@@ -537,7 +517,7 @@ function wrapper (plugin_info) {
     field.focus();
     field.setSelectionRange(0, field.value.length);
     field.select();
-    var copysuccess = copySelectionText();
+    return copySelectionText();
   }
 
   function copySelectionText () {
@@ -578,10 +558,21 @@ function wrapper (plugin_info) {
         if ($('.PogoButtons').length == 0) {
           $('#portaldetails').append(`
           <div id="PNav" style="color:#fff;display:flex">
-          <Label><input type="radio" checked="true" name="type" value="stop" id="PNavStop"/>Stop</label>
-          <Label><input type="radio" name="type" value="gym" id="PNavGym"/>Gym</label>
-          <Label><input type="radio" name="type" value="ex" id="PNavEx"/>Ex Gym</label>
-          <a style="margin-left:auto;margin-right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
+            <Label>
+              <input type="radio" checked="true" name="type" value="stop" id="PNavStop"/>
+              Stop
+            </label>
+            <Label>
+              <input type="radio" name="type" value="gym" id="PNavGym"/>
+              Gym
+            </label>
+            <Label>
+              <input type="radio" name="type" value="ex" id="PNavEx"/>
+              Ex Gym
+            </label>
+            <a style="margin-left:auto;margin-right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
+              Copy PokeNav
+            </a>
           </div>
         `);
         } else {
