@@ -1,5 +1,6 @@
 // ==UserScript==
 /* globals $, GM_info */
+// eslint-disable-next-line multiline-comment-style
 // @id             pnavcopy@maxetmoritz
 // @name           IITC plugin: Copy PokeNav Command
 // @category       Misc
@@ -23,28 +24,29 @@
 /* eslint comma-style: "error" */
 /* eslint function-call-argument-newline: ["error", "consistent"] */
 /* eslint indent: ["error", 2] */
-/* eslint linebreak-style: ["error", "windows"] */
 
 // original Plug-In is from https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/tree/master, the License of this project is provided below:
 
-/* ISC License
+/*
+ * ISC License
+ *
+ * Copyright © 2013 Stefan Breunig
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
+ * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
 
-Copyright © 2013 Stefan Breunig
-
-Permission to use, copy, modify, and/or distribute this software for
-any purpose with or without fee is hereby granted, provided that the
-above copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
-WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
-AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
-OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE. */
-
-function wrapper(plugin_info) {
+function wrapper (plugin_info) {
   // ensure plugin framework is there, even if iitc is not yet loaded
   if (typeof window.plugin !== 'function') window.plugin = function () { };
 
@@ -59,7 +61,7 @@ function wrapper(plugin_info) {
     radius: '',
     lat: '',
     lng: '',
-    prefix: '$',
+    prefix: '$'
   };
   window.plugin.pnav.request = new XMLHttpRequest();
   window.plugin.pnav.abort = false;
@@ -68,9 +70,10 @@ function wrapper(plugin_info) {
     var input = $('#copyInput');
     if (window.selectedPortal) {
       var portal = window.portals[window.plugin.pnav.selectedGuid];
+      // escaping Backslashes and Hyphens in Portal Names
       var name = portal.options.data.title
         .replaceAll('\\', '\\\\')
-        .replaceAll('"', '\\"'); // escaping Backslashes and Hyphens in Portal Names
+        .replaceAll('"', '\\"');
       var latlng = portal.getLatLng();
       var lat = latlng.lat;
       var lng = latlng.lng;
@@ -101,8 +104,8 @@ function wrapper(plugin_info) {
           window.plugin.pnav.settings.lat &&
           window.plugin.pnav.settings.lng &&
           window.plugin.pnav.settings.radius &&
-          checkDistance(lat, lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng)
-          > window.plugin.pnav.settings.radius
+          checkDistance(lat, lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
+          window.plugin.pnav.settings.radius
         ) {
           alert('this location is outside the specified Community Area!');
         } else {
@@ -140,7 +143,7 @@ function wrapper(plugin_info) {
         <p>
           <label id="center" title="Paste the Center Coordinate of your Community here (you can view it typing ${window.plugin.pnav.settings.prefix}show settings in Admin Channel)">
           Community Center: 
-          <input id="pnavCenter" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${window.plugin.pnav.settings.lat != ''? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}`: ''}"/>
+          <input id="pnavCenter" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${window.plugin.pnav.settings.lat != '' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
           </label>
           <br>
           <label id="radius" title="Enter the specified Community Radius here.">
@@ -159,10 +162,10 @@ function wrapper(plugin_info) {
       id: 'pnavsettings',
       width: 'auto',
       height: 'auto',
-      html: html,
+      html,
       title: 'PokeNav Settings',
       buttons: {
-        OK: function () {
+        OK () {
           let allOK = true;
           if (
             !$('#pnavhookurl').val() ||
@@ -174,9 +177,7 @@ function wrapper(plugin_info) {
             }
           } else {
             if ($('#lblErrorWH').length == 0) {
-              $('#webhook').after(
-                '<label id="lblErrorWH" style="color:red">invalid URL! please delete or correct it!</label>'
-              );
+              $('#webhook').after('<label id="lblErrorWH" style="color:red">invalid URL! please delete or correct it!</label>');
             }
             allOK = false;
           }
@@ -205,9 +206,7 @@ function wrapper(plugin_info) {
             new RegExp('^\\d+(\\.\\d+)?$').test($('#pnavRadius').val()) &&
             !Number.isNaN(parseFloat($('#pnavRadius').val()))
           ) {
-            window.plugin.pnav.settings.radius = parseFloat(
-              $('#pnavRadius').val()
-            );
+            window.plugin.pnav.settings.radius = parseFloat($('#pnavRadius').val());
             if ($('#lblErrorRd').length > 0) {
               $('#lblErrorRd').remove();
             }
@@ -224,7 +223,8 @@ function wrapper(plugin_info) {
               $('#lblErrorCn').remove();
             }
           } else {
-            let arr = $('#pnavCenter').val().split(', ');
+            let arr = $('#pnavCenter').val()
+              .split(', ');
             let lat = arr[0] ? parseFloat(arr[0]) : NaN;
             let lng = arr[1] ? parseFloat(arr[1]) : NaN;
             if (
@@ -243,9 +243,7 @@ function wrapper(plugin_info) {
               }
             } else {
               if ($('#lblErrorCn').length == 0) {
-                $('#center').after(
-                  '<label id="lblErrorCn" style="color:red"><br>Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!</label>'
-                );
+                $('#center').after('<label id="lblErrorCn" style="color:red"><br>Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!</label>');
               }
               allOK = false;
             }
@@ -264,13 +262,11 @@ function wrapper(plugin_info) {
               container.dialog('close');
             }
           } else {
-            alert(
-              'Settings not saved because Export was running. Pause the Export and then try again!'
-            );
+            alert('Settings not saved because Export was running. Pause the Export and then try again!');
             container.dialog('close');
           }
-        },
-      },
+        }
+      }
     });
   };
 
@@ -302,18 +298,18 @@ function wrapper(plugin_info) {
     }
   };
 
-  function bulkExport(inData, type) {
+  function bulkExport (inData, type) {
     if (window.plugin.pnav.wip == false) {
       // console.log(inData);
       window.plugin.pnav.abort = false;
       window.plugin.pnav.wip = true;
       var data = [];
-      if (localStorage.getItem(`plugin-pnav-todo-${  type}`)) {
-        data = JSON.parse(localStorage.getItem(`plugin-pnav-todo-${  type}`));
+      if (localStorage.getItem(`plugin-pnav-todo-${type}`)) {
+        data = JSON.parse(localStorage.getItem(`plugin-pnav-todo-${type}`));
       } else {
         var origKeys = Object.keys(inData);
-        var done = localStorage.getItem(`plugin-pnav-done-${  type}`)
-          ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${  type}`))
+        var done = localStorage.getItem(`plugin-pnav-done-${type}`)
+          ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
           : null;
         origKeys.forEach(function (key) {
           var obj = inData[key];
@@ -321,34 +317,35 @@ function wrapper(plugin_info) {
             (!window.plugin.pnav.settings.lat ||
               !window.plugin.pnav.settings.lng ||
               !window.plugin.pnav.settings.radius ||
-              checkDistance(obj.lat,obj.lng,window.plugin.pnav.settings.lat,window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
+              checkDistance(obj.lat, obj.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
             (!done || !done.includes(inData[key]))
           ) {
             data.push(obj);
           }
         });
-        localStorage.setItem(`plugin-pnav-todo-${  type}`, JSON.stringify(data));
+        localStorage.setItem(`plugin-pnav-todo-${type}`, JSON.stringify(data));
       }
       var i = 0;
-      var wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
+      // Discord WebHook accepts 30 Messages in 60 Seconds.
+      var wait = 2000;
       window.onbeforeunload = function () {
         if (i && data && type && i < data.length) {
           localStorage.setItem(
-            `plugin-pnav-todo-${  type}`,
+            `plugin-pnav-todo-${type}`,
             JSON.stringify(data.slice(i))
           );
-          var done = localStorage.getItem(`plugin-pnav-done-${  type}`)
-            ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${  type}`))
+          var done = localStorage.getItem(`plugin-pnav-done-${type}`)
+            ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
             : null;
           if (!done) {
             localStorage.setItem(
-              `plugin-pnav-done-${  type}`,
+              `plugin-pnav-done-${type}`,
               JSON.stringify(data.slice(0, i))
             );
           } else {
             done.concat(data.slice(0, i));
             localStorage.setItem(
-              `plugin-pnav-done-${  type}`,
+              `plugin-pnav-done-${type}`,
               JSON.stringify(done)
             );
           }
@@ -356,8 +353,8 @@ function wrapper(plugin_info) {
         return null;
       };
       var doit = function () {
-        var done = localStorage.getItem(`plugin-pnav-done-${  type}`)
-          ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${  type}`))
+        var done = localStorage.getItem(`plugin-pnav-done-${type}`)
+          ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
           : null;
         if ($('#exportProgressBar')) {
           $('#exportProgressBar').val(i);
@@ -372,18 +369,18 @@ function wrapper(plugin_info) {
           if (window.plugin.pnav.abort) {
             let todo = data.slice(i);
             localStorage.setItem(
-              `plugin-pnav-todo-${  type}`,
+              `plugin-pnav-todo-${type}`,
               JSON.stringify(todo)
             );
             if (!done) {
               localStorage.setItem(
-                `plugin-pnav-done-${  type}`,
+                `plugin-pnav-done-${type}`,
                 JSON.stringify(data.slice(0, i))
               );
             } else {
               done.concat(data.slice(0, i));
               localStorage.setItem(
-                `plugin-pnav-done-${  type}`,
+                `plugin-pnav-done-${type}`,
                 JSON.stringify(done)
               );
             }
@@ -394,18 +391,18 @@ function wrapper(plugin_info) {
               // sometimes save the state in case someone exits IITC Mobile without using the Back Button
               let todo = data.slice(i);
               localStorage.setItem(
-                `plugin-pnav-todo-${  type}`,
+                `plugin-pnav-todo-${type}`,
                 JSON.stringify(todo)
               );
               if (!done) {
                 localStorage.setItem(
-                  `plugin-pnav-done-${  type}`,
+                  `plugin-pnav-done-${type}`,
                   JSON.stringify(data.slice(0, i))
                 );
               } else {
                 done.concat(data.slice(0, i));
                 localStorage.setItem(
-                  `plugin-pnav-done-${  type}`,
+                  `plugin-pnav-done-${type}`,
                   JSON.stringify(done)
                 );
               }
@@ -413,17 +410,18 @@ function wrapper(plugin_info) {
             var entry = data[i];
             let lat = entry.lat;
             let lng = entry.lng;
+            // escaping Backslashes and Hyphens in Portal Names
             let name = entry.name
               .replaceAll('\\', '\\\\')
-              .replaceAll('"', '\\"'); // escaping Backslashes and Hyphens in Portal Names
+              .replaceAll('"', '\\"');
             let prefix = window.plugin.pnav.settings.prefix;
-            let ex = entry.isEx ? true : false;
+            let ex = Boolean(entry.isEx);
             let options = ex ? ' "ex_eligible: 1"' : '';
             let request = window.plugin.pnav.request;
             var params = {
               username: window.plugin.pnav.settings.name,
               avatar_url: '',
-              content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`,
+              content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`
             };
             request.open('POST', window.plugin.pnav.settings.webhookUrl);
             request.setRequestHeader('Content-type', 'application/json');
@@ -432,7 +430,7 @@ function wrapper(plugin_info) {
                 i++;
                 setTimeout(doit, wait);
               } else {
-                console.log(`status code ${  request.status}`);
+                console.log(`status code ${request.status}`);
                 setTimeout(doit, 3 * wait);
               }
             };
@@ -447,16 +445,16 @@ function wrapper(plugin_info) {
           okayButton.text('OK');
           okayButton.prop('title', '');
           window.plugin.pnav.wip = false;
-          localStorage.removeItem(`plugin-pnav-todo-${  type}`);
+          localStorage.removeItem(`plugin-pnav-todo-${type}`);
           if (!done) {
             localStorage.setItem(
-              `plugin-pnav-done-${  type}`,
+              `plugin-pnav-done-${type}`,
               JSON.stringify(data.slice(0, i))
             );
           } else {
             done.concat(data.slice(0, i));
             localStorage.setItem(
-              `plugin-pnav-done-${  type}`,
+              `plugin-pnav-done-${type}`,
               JSON.stringify(done)
             );
           }
@@ -481,16 +479,14 @@ function wrapper(plugin_info) {
               <label>s</label>
         `,
         width: 'auto',
-        title: 'PokeNav Bulk Export Progress',
+        title: 'PokeNav Bulk Export Progress'
       });
 
       // console.log(dialog);
 
       let thisDialog = $('.ui-dialog').has('#dialog-bulkExportProgress')[0];
       // console.log(thisDialog);
-      var okayButton = $('.ui-button', thisDialog).not(
-        '.ui-dialog-titlebar-button'
-      );
+      var okayButton = $('.ui-button', thisDialog).not('.ui-dialog-titlebar-button');
       okayButton.text('Pause');
       okayButton.prop(
         'title',
@@ -512,13 +508,14 @@ function wrapper(plugin_info) {
       console.log('Bulk Export already running!');
     }
   }
+
   /*
-  the idea of the following funtion was taken from https://stackoverflow.com/a/14561433
-  by User talkol (https://stackoverflow.com/users/1025458/talkol).
-  The License is CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
-  The Code was slightly adapted.
-  */
-  function checkDistance(lat1, lon1, lat2, lon2) {
+   *the idea of the following funtion was taken from https://stackoverflow.com/a/14561433
+   *by User talkol (https://stackoverflow.com/users/1025458/talkol).
+   *The License is CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+   *The Code was slightly adapted.
+   */
+  function checkDistance (lat1, lon1, lat2, lon2) {
     const R = 6371;
     var x1 = lat2 - lat1;
     var dLat = (x1 * Math.PI) / 180;
@@ -535,7 +532,7 @@ function wrapper(plugin_info) {
     return d;
   }
 
-  function copyfieldvalue(id) {
+  function copyfieldvalue (id) {
     var field = document.getElementById(id);
     field.focus();
     field.setSelectionRange(0, field.value.length);
@@ -543,7 +540,7 @@ function wrapper(plugin_info) {
     var copysuccess = copySelectionText();
   }
 
-  function copySelectionText() {
+  function copySelectionText () {
     var copysuccess;
     try {
       copysuccess = document.execCommand('copy');
@@ -554,12 +551,12 @@ function wrapper(plugin_info) {
   }
 
   // source: Oscar Zanota on Dev.to (https://dev.to/oskarcodes/send-automated-discord-messages-through-webhooks-using-javascript-1p01)
-  function sendMessage(msg) {
+  function sendMessage (msg) {
     let request = window.plugin.pnav.request;
     var params = {
       username: window.plugin.pnav.settings.name,
       avatar_url: '',
-      content: msg,
+      content: msg
     };
     request.open('POST', window.plugin.pnav.settings.webhookUrl);
     request.setRequestHeader('Content-type', 'application/json');
@@ -569,16 +566,10 @@ function wrapper(plugin_info) {
   var setup = function () {
     console.log('azaza');
     if (localStorage['plugin-pnav-settings']) {
-      window.plugin.pnav.settings = JSON.parse(
-        localStorage.getItem('plugin-pnav-settings')
-      );
+      window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
     }
-    $('#toolbox').append(
-      '<a title="Configure PokeNav" style="margin-left:4px" onclick="if(window.plugin.pnav.wip==false){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>'
-    );
-    $('body').prepend(
-      '<input id="copyInput" style="position: absolute;"></input>'
-    );
+    $('#toolbox').append('<a title="Configure PokeNav" style="margin-left:4px" onclick="if(window.plugin.pnav.wip==false){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
+    $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
     window.addHook('portalSelected', function (data) {
       console.log(data);
       var guid = data.selectedPortalGuid;
@@ -606,24 +597,26 @@ function wrapper(plugin_info) {
 
   // PLUGIN END //////////////////////////////////////////////////////////
 
-  setup.info = plugin_info; // add the script info data to the function as a property
+  // add the script info data to the function as a property
+  setup.info = plugin_info;
   if (!window.bootPlugins) window.bootPlugins = [];
   window.bootPlugins.push(setup);
   // if IITC has already booted, immediately run the 'setup' function
   if (window.iitcLoaded && typeof setup === 'function') setup();
-} // wrapper end
-// inject code into site context
+}
+
+/*
+ * wrapper end
+ * inject code into site context
+ */
 var script = document.createElement('script');
 var info = {};
-if (typeof GM_info !== 'undefined' && GM_info && GM_info.script)
+if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) {
   info.script = {
     version: GM_info.script.version,
     name: GM_info.script.name,
-    description: GM_info.script.description,
+    description: GM_info.script.description
   };
-script.appendChild(
-  document.createTextNode(`(${  wrapper  })(${  JSON.stringify(info)  });`)
-);
-(document.body || document.head || document.documentElement).appendChild(
-  script
-);
+}
+script.appendChild(document.createTextNode(`(${wrapper})(${JSON.stringify(info)});`));
+(document.body || document.head || document.documentElement).appendChild(script);
