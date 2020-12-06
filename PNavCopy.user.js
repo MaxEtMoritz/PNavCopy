@@ -4,7 +4,7 @@
 // @id             pnavcopy@maxetmoritz
 // @name           IITC plugin: Copy PokeNav Command
 // @category       Misc
-// @downloadURL    https://github.com/MaxEtMoritz/PNavCopy/releases/download/latest/PNavCopy.user.js
+// @downloadURL    https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js
 // @author         MaxEtMoritz
 // @version        1.4
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
