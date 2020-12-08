@@ -64,7 +64,6 @@ function wrapper (plugin_info) {
     prefix: '$'
   };
   window.plugin.pnav.request = new XMLHttpRequest();
-  window.plugin.pnav.abort = false;
   window.plugin.pnav.copy = function () {
     var input = $('#copyInput');
     if (window.selectedPortal) {
@@ -311,109 +310,113 @@ function wrapper (plugin_info) {
     );
   }
 
+  function gatherExportData (type) {
+    var pogoData = JSON.parse(localStorage['plugin-pogo']);
+    if (pogoData && pogoData[`${type}s`]) {
+      pogoData = pogoData[`${type}s`];
+      // console.log(pogoData);
+      var exportData;
+      if (localStorage[`plugin-pnav-todo-${type}`]) {
+        exportData = JSON.parse(localStorage[`plugin-pnav-todo-${type}`]);
+      } else {
+        exportData = [];
+        var keys = Object.keys(pogoData);
+        var done = localStorage[`plugin-pnav-done-${type}`]
+          ? JSON.parse(localStorage[`plugin-pnav-done-${type}`])
+          : null;
+        keys.forEach(function (key) {
+          var obj = pogoData[key];
+          if (
+            (!window.plugin.pnav.settings.lat ||
+              !window.plugin.pnav.settings.lng ||
+              !window.plugin.pnav.settings.radius ||
+              checkDistance(obj.lat, obj.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
+            (!done || !done.includes(key))
+          ) {
+            exportData.push(pogoData[key]);
+          }
+        });
+        localStorage.setItem(`plugin-pnav-todo-${type}`, JSON.stringify(exportData));
+      }
+      return exportData;
+    }
+    return null;
+  }
+
   /**
    * @param {string} type - the type of locations to export (expected values pokestop or gym)
    */
   window.plugin.pnav.bulkExport = function (type) {
-    if (localStorage['plugin-pogo']) {
-      var inData = JSON.parse(localStorage.getItem('plugin-pogo'));
-      if (inData[`${type}s`]) {
-        inData = inData[`${type}s`];
-        if (!window.plugin.pnav.timer) {
-          // console.log(inData);
-          window.plugin.pnav.abort = false;
-          var data = [];
-          if (localStorage.getItem(`plugin-pnav-todo-${type}`)) {
-            data = JSON.parse(localStorage.getItem(`plugin-pnav-todo-${type}`));
-          } else {
-            var origKeys = Object.keys(inData);
-            var done = localStorage.getItem(`plugin-pnav-done-${type}`)
-              ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
-              : null;
-            origKeys.forEach(function (key) {
-              var obj = inData[key];
-              if (
-                (!window.plugin.pnav.settings.lat ||
-                  !window.plugin.pnav.settings.lng ||
-                  !window.plugin.pnav.settings.radius ||
-                  checkDistance(obj.lat, obj.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
-                (!done || !done.includes(key))
-              ) {
-                data.push(inData[key]);
-              }
-            });
-            localStorage.setItem(`plugin-pnav-todo-${type}`, JSON.stringify(data));
-          }
-          var i = 0;
-          // Discord WebHook accepts 30 Messages in 60 Seconds.
-          const wait = 2000;
-          window.onbeforeunload = function () {
+    if (!window.plugin.pnav.timer) {
+      var data = gatherExportData(type);
+      if (!data) {
+        alert('There was a problem reading the PogoTools Data File.');
+        return;
+      }
+      var i = 0;
+      // Discord WebHook accepts 30 Messages in 60 Seconds.
+      const wait = 2000;
+      window.onbeforeunload = function () {
+        saveState(data, type, i);
+        return null;
+      };
+      window.plugin.pnav.timer = setInterval(function () {
+        if ($('#exportProgressBar')) {
+          $('#exportProgressBar').val(i);
+        }
+        if ($('#exportNumber')) {
+          $('#exportNumber').text(i);
+        }
+        if ($('#exportTimeRemaining')) {
+          $('#exportTimeRemaining').text((wait * (data.length - i)) / 1000);
+        }
+        if (i < data.length) {
+          if (i % 10 == 0) {
+            // sometimes save the state in case someone exits IITC Mobile without using the Back Button
             saveState(data, type, i);
-            return null;
+          }
+          var entry = data[i];
+          let lat = entry.lat;
+          let lng = entry.lng;
+          // escaping Backslashes and Hyphens in Portal Names
+          let name = entry.name
+            .replaceAll('\\', '\\\\')
+            .replaceAll('"', '\\"');
+          let prefix = window.plugin.pnav.settings.prefix;
+          let ex = Boolean(entry.isEx);
+          let options = ex ? ' "ex_eligible: 1"' : '';
+          let request = window.plugin.pnav.request;
+          var params = {
+            username: window.plugin.pnav.settings.name,
+            avatar_url: '',
+            content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`
           };
-          window.plugin.pnav.timer = setInterval(function () {
-            if ($('#exportProgressBar')) {
-              $('#exportProgressBar').val(i);
-            }
-            if ($('#exportNumber')) {
-              $('#exportNumber').text(i);
-            }
-            if ($('#exportTimeRemaining')) {
-              $('#exportTimeRemaining').text((wait * (data.length - i)) / 1000);
-            }
-            if (i < data.length) {
-              if (window.plugin.pnav.abort) {
-                saveState(data, type, i);
-                window.plugin.pnav.abort = false;
-                clearInterval(window.plugin.pnav.timer);
-                window.plugin.pnav.timer = null;
-              } else {
-                if (i % 10 == 0) {
-                  // sometimes save the state in case someone exits IITC Mobile without using the Back Button
-                  saveState(data, type, i);
-                }
-                var entry = data[i];
-                let lat = entry.lat;
-                let lng = entry.lng;
-                // escaping Backslashes and Hyphens in Portal Names
-                let name = entry.name
-                  .replaceAll('\\', '\\\\')
-                  .replaceAll('"', '\\"');
-                let prefix = window.plugin.pnav.settings.prefix;
-                let ex = Boolean(entry.isEx);
-                let options = ex ? ' "ex_eligible: 1"' : '';
-                let request = window.plugin.pnav.request;
-                var params = {
-                  username: window.plugin.pnav.settings.name,
-                  avatar_url: '',
-                  content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`
-                };
-                request.open('POST', window.plugin.pnav.settings.webhookUrl);
-                request.setRequestHeader('Content-type', 'application/json');
-                request.onload = function () {
-                  if (request.status >= 200 && request.status < 300) {
-                    i++;
-                  } else {
-                    console.log(`status code ${request.status}`);
-                  }
-                };
-                request.send(JSON.stringify(params), false);
-                // console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
-              }
+          request.open('POST', window.plugin.pnav.settings.webhookUrl);
+          request.setRequestHeader('Content-type', 'application/json');
+          request.onload = function () {
+            if (request.status >= 200 && request.status < 300) {
+              i++;
             } else {
-              $('#exportState').text('Export Ready!');
-              okayButton.text('OK');
-              okayButton.prop('title', '');
-              saveState(data, type, i);
-              clearInterval(window.plugin.pnav.timer);
-              window.plugin.pnav.timer = null;
-              window.onbeforeunload = null;
+              console.log(`status code ${request.status}`);
             }
-          }, wait);
+          };
+          request.send(JSON.stringify(params), false);
+          // console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
 
-          var dialog = window.dialog({
-            id: 'bulkExportProgress',
-            html: `
+        } else {
+          $('#exportState').text('Export Ready!');
+          okayButton.text('OK');
+          okayButton.prop('title', '');
+          saveState(data, type, i);
+          clearInterval(window.plugin.pnav.timer);
+          window.plugin.pnav.timer = null;
+          window.onbeforeunload = null;
+        }
+      }, wait);
+
+      var dialog = window.dialog({
+        id: 'bulkExportProgress',
+        html: `
               <h3 id="exportState">Exporting...</h3>
               <p>
                 <label>
@@ -428,36 +431,39 @@ function wrapper (plugin_info) {
               <label id="exportTimeRemaining">${Math.round((wait * data.length) / 1000)}</label>
               <label>s</label>
         `,
-            width: 'auto',
-            title: 'PokeNav Bulk Export Progress'
-          });
-
-          // console.log(dialog);
-
-          let thisDialog = dialog.parent();
-          // console.log(thisDialog);
-          var okayButton = $('.ui-button', thisDialog).not('.ui-dialog-titlebar-button');
-          okayButton.text('Pause');
-          okayButton.prop(
-            'title',
-            'store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.'
-          );
-          okayButton.on('click', function () {
-            window.plugin.pnav.abort = true;
-          });
-
-          $('.ui-button.ui-dialog-titlebar-button-close', thisDialog).on(
-            'click',
-            function () {
-              window.plugin.pnav.abort = true;
-            }
-          );
-        } else {
-          console.log('Bulk Export already running!');
+        width: 'auto',
+        title: 'PokeNav Bulk Export Progress',
+        buttons: {
+          OK () {
+            saveState(data, type, i);
+            clearInterval(window.plugin.pnav.timer);
+            window.plugin.pnav.timer = null;
+            dialog.dialog('close');
+          }
         }
-      } else {
-        alert('Pogo Tools is loaded but no Data File was found!');
-      }
+      });
+
+      // console.log(dialog);
+
+      let thisDialog = dialog.parent();
+      // console.log(thisDialog);
+      var okayButton = $('.ui-button', thisDialog).not('.ui-dialog-titlebar-button');
+      okayButton.text('Pause');
+      okayButton.prop(
+        'title',
+        'store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.'
+      );
+
+      $('.ui-button.ui-dialog-titlebar-button-close', thisDialog).on(
+        'click',
+        function () {
+          saveState(data, type, i);
+          clearInterval(window.plugin.pnav.timer);
+          window.plugin.pnav.timer = null;
+        }
+      );
+    } else {
+      console.log('Bulk Export already running!');
     }
   };
 
@@ -531,7 +537,7 @@ function wrapper (plugin_info) {
     if (localStorage['plugin-pnav-settings']) {
       window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
     }
-    $('#toolbox').append('<a title="Configure PokeNav" style="margin-left:4px" onclick="if(!window.plugin.pnav.timer!=null){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
+    $('#toolbox').append('<a title="Configure PokeNav" style="margin-left:4px" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
     window.addHook('portalSelected', function (data) {
       console.log(data);
