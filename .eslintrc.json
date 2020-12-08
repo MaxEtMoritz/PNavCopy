@@ -33,7 +33,10 @@
         ],
         "consistent-return": "error",
         "consistent-this": "error",
-        "curly": ["warn","multi-line"],
+        "curly": [
+            "warn",
+            "multi-line"
+        ],
         "default-case": "error",
         "default-case-last": "error",
         "default-param-last": "error",
@@ -49,7 +52,10 @@
         "func-names": "off",
         "func-style": "off",
         "function-call-argument-newline": "error",
-        "function-paren-newline": ["warn", "multiline"],
+        "function-paren-newline": [
+            "warn",
+            "multiline"
+        ],
         "generator-star-spacing": "error",
         "global-require": "error",
         "grouped-accessor-pairs": "error",
@@ -60,13 +66,22 @@
         "id-length": "off",
         "id-match": "error",
         "implicit-arrow-linebreak": "error",
-        "indent": ["error", 2],
+        "indent": [
+            "error",
+            2
+        ],
         "init-declarations": "off",
         "jsx-quotes": "error",
         "key-spacing": "error",
         "keyword-spacing": "error",
-        "line-comment-position": ["warn", "above"],
-        "linebreak-style": ["error", "windows"],
+        "line-comment-position": [
+            "warn",
+            "above"
+        ],
+        "linebreak-style": [
+            "error",
+            "windows"
+        ],
         "lines-around-comment": "warn",
         "lines-around-directive": "error",
         "lines-between-class-members": "error",
@@ -259,7 +274,19 @@
             "error",
             "never"
         ],
-        "valid-jsdoc": "error",
+        "valid-jsdoc": [
+            "warn",
+            {
+                "prefer": {
+                    "arg": "param",
+                    "argument": "param",
+                    "returns": "return"
+                },
+                "requireReturn": false,
+                "requireParamDescription": false,
+                "requireReturnDescription": false
+            }
+        ],
         "vars-on-top": "off",
         "wrap-iife": "error",
         "wrap-regex": "error",

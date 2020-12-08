@@ -65,12 +65,12 @@ function wrapper (plugin_info) {
   };
   window.plugin.pnav.request = new XMLHttpRequest();
   window.plugin.pnav.abort = false;
-  window.plugin.pnav.wip = false;
   window.plugin.pnav.copy = function () {
     var input = $('#copyInput');
     if (window.selectedPortal) {
       var portal = window.portals[window.plugin.pnav.selectedGuid];
       // escaping Backslashes and Hyphens in Portal Names
+      /** @type {string} */
       var name = portal.options.data.title
         .replaceAll('\\', '\\\\')
         .replaceAll('"', '\\"');
@@ -79,6 +79,8 @@ function wrapper (plugin_info) {
       var lng = latlng.lng;
       var opt = ' ';
       var type = '';
+
+      /** @type {string} */
       var prefix = window.plugin.pnav.settings.prefix;
       if (window.plugin.pogo) {
         if ($('.pogoStop span').css('background-position') == '100% 0%') {
@@ -158,6 +160,7 @@ function wrapper (plugin_info) {
             <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">Export all PogoTools Stops</button></p>
             `;
     }
+
     const container = window.dialog({
       id: 'pnavsettings',
       width: 'auto',
@@ -223,6 +226,8 @@ function wrapper (plugin_info) {
               $('#lblErrorCn').remove();
             }
           } else {
+
+            /** @type {string[]} */
             let arr = $('#pnavCenter').val()
               .split(', ');
             let lat = arr[0] ? parseFloat(arr[0]) : NaN;
@@ -253,7 +258,7 @@ function wrapper (plugin_info) {
           } else {
             window.plugin.pnav.settings.name = $('#pnavCodename').val();
           }
-          if (window.plugin.pnav.wip == false) {
+          if (!window.plugin.pnav.timer) {
             if (allOK) {
               localStorage.setItem(
                 'plugin-pnav-settings',
@@ -270,15 +275,53 @@ function wrapper (plugin_info) {
     });
   };
 
+  /**
+   * saves the State of the Bulk Export to local Storage.
+   * @param {object[]} data
+   * @param {string} type
+   * @param {number} index
+   */
+  function saveState (data, type, index) {
+
+    /** @type {string[]} */
+    var done = localStorage[`plugin-pnav-done-${type}`]
+      ? JSON.parse(localStorage[`plugin-pnav-done-${type}`])
+      : [];
+    let todo = data.slice(index);
+    if (todo.length > 0) {
+      localStorage.setItem(
+        `plugin-pnav-todo-${type}`,
+        JSON.stringify(todo)
+      );
+    } else {
+      localStorage.removeItem(`plugin-pnav-todo-${type}`);
+    }
+    const addToDone = data.slice(0, index);
+    console.log(addToDone);
+
+    /** @type {string[]} */
+    var guidsToAdd = [];
+    addToDone.forEach(function (entry) {
+      guidsToAdd.push(entry.guid);
+      console.log(entry.guid);
+    });
+    localStorage.setItem(
+      `plugin-pnav-done-${type}`,
+      JSON.stringify(done.concat(guidsToAdd))
+    );
+  }
+
+  /**
+   * @param {string} type - the type of locations to export (expected values pokestop or gym)
+   */
   window.plugin.pnav.bulkExport = function (type) {
     if (localStorage['plugin-pogo']) {
       var inData = JSON.parse(localStorage.getItem('plugin-pogo'));
       if (inData[`${type}s`]) {
         inData = inData[`${type}s`];
-        if (window.plugin.pnav.wip == false) {
+        if (!window.plugin.pnav.timer) {
           // console.log(inData);
           window.plugin.pnav.abort = false;
-          window.plugin.pnav.wip = true;
           var data = [];
           if (localStorage.getItem(`plugin-pnav-todo-${type}`)) {
             data = JSON.parse(localStorage.getItem(`plugin-pnav-todo-${type}`));
@@ -303,69 +346,12 @@ function wrapper (plugin_info) {
           }
           var i = 0;
           // Discord WebHook accepts 30 Messages in 60 Seconds.
-          var wait = 2000;
+          const wait = 2000;
           window.onbeforeunload = function () {
-            if (i && data && type && i < data.length) {
-              localStorage.setItem(
-                `plugin-pnav-todo-${type}`,
-                JSON.stringify(data.slice(i))
-              );
-              var done = localStorage.getItem(`plugin-pnav-done-${type}`)
-                ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
-                : null;
-              const newdone = data.slice(0, i);
-              var war = [];
-              newdone.forEach(function (entry) {
-                war.push(entry.guid);
-              });
-              if (!done) {
-                localStorage.setItem(
-                  `plugin-pnav-done-${type}`,
-                  JSON.stringify(war)
-                );
-              } else {
-                done.concat(war);
-                localStorage.setItem(
-                  `plugin-pnav-done-${type}`,
-                  JSON.stringify(done)
-                );
-              }
-            }
+            saveState(data, type, i);
             return null;
           };
-          var doit = function () {
-            var done = localStorage.getItem(`plugin-pnav-done-${type}`)
-              ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
-              : null;
-            function saveState () {
-              let todo = data.slice(i);
-              if (todo.length > 0) {
-                localStorage.setItem(
-                  `plugin-pnav-todo-${type}`,
-                  JSON.stringify(todo)
-                );
-              } else {
-                localStorage.removeItem(`plugin-pnav-todo-${type}`);
-              }
-              const newdone = data.slice(0, i);
-              console.log(newdone);
-              var war = [];
-              newdone.forEach(function (entry) {
-                war.push(entry.guid);
-                console.log(entry.guid);
-              });
-              if (!done) {
-                localStorage.setItem(
-                  `plugin-pnav-done-${type}`,
-                  JSON.stringify(war)
-                );
-              } else {
-                localStorage.setItem(
-                  `plugin-pnav-done-${type}`,
-                  JSON.stringify(done.concat(war))
-                );
-              }
-            }
+          window.plugin.pnav.timer = setInterval(function () {
             if ($('#exportProgressBar')) {
               $('#exportProgressBar').val(i);
             }
@@ -377,13 +363,14 @@ function wrapper (plugin_info) {
             }
             if (i < data.length) {
               if (window.plugin.pnav.abort) {
-                saveState();
+                saveState(data, type, i);
                 window.plugin.pnav.abort = false;
-                window.plugin.pnav.wip = false;
+                clearInterval(window.plugin.pnav.timer);
+                window.plugin.pnav.timer = null;
               } else {
                 if (i % 10 == 0) {
                   // sometimes save the state in case someone exits IITC Mobile without using the Back Button
-                  saveState();
+                  saveState(data, type, i);
                 }
                 var entry = data[i];
                 let lat = entry.lat;
@@ -404,16 +391,11 @@ function wrapper (plugin_info) {
                 request.open('POST', window.plugin.pnav.settings.webhookUrl);
                 request.setRequestHeader('Content-type', 'application/json');
                 request.onload = function () {
-                  if (request.status == 204 || request.status == 200) {
+                  if (request.status >= 200 && request.status < 300) {
                     i++;
-                    setTimeout(doit, wait);
                   } else {
                     console.log(`status code ${request.status}`);
-                    setTimeout(doit, 3 * wait);
                   }
-                };
-                request.onerror = function () {
-                  setTimeout(doit, 3 * wait);
                 };
                 request.send(JSON.stringify(params), false);
                 // console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
@@ -422,11 +404,12 @@ function wrapper (plugin_info) {
               $('#exportState').text('Export Ready!');
               okayButton.text('OK');
               okayButton.prop('title', '');
-              window.plugin.pnav.wip = false;
-              saveState();
+              saveState(data, type, i);
+              clearInterval(window.plugin.pnav.timer);
+              window.plugin.pnav.timer = null;
               window.onbeforeunload = null;
             }
-          };
+          }, wait);
 
           var dialog = window.dialog({
             id: 'bulkExportProgress',
@@ -469,8 +452,6 @@ function wrapper (plugin_info) {
               window.plugin.pnav.abort = true;
             }
           );
-
-          doit();
         } else {
           console.log('Bulk Export already running!');
         }
@@ -485,6 +466,13 @@ function wrapper (plugin_info) {
    *by User talkol (https://stackoverflow.com/users/1025458/talkol).
    *The License is CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
    *The Code was slightly adapted.
+   */
+  /**
+   * @param {number} lat1
+   * @param {number} lon1
+   * @param {number} lat2
+   * @param {number} lon2
+   * @return {number}
    */
   function checkDistance (lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -503,6 +491,10 @@ function wrapper (plugin_info) {
     return d;
   }
 
+  /**
+   * @param {string} id - the id of the input field to copy from
+   * @return {bool} - returns if copying was successful
+   */
   function copyfieldvalue (id) {
     var field = document.getElementById(id);
     field.focus();
@@ -539,7 +531,7 @@ function wrapper (plugin_info) {
     if (localStorage['plugin-pnav-settings']) {
       window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
     }
-    $('#toolbox').append('<a title="Configure PokeNav" style="margin-left:4px" onclick="if(window.plugin.pnav.wip==false){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
+    $('#toolbox').append('<a title="Configure PokeNav" style="margin-left:4px" onclick="if(!window.plugin.pnav.timer!=null){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
     window.addHook('portalSelected', function (data) {
       console.log(data);
