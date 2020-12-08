@@ -154,8 +154,8 @@ function wrapper (plugin_info) {
         `;
     if (window.plugin.pogo) {
       html += `
-            <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportGyms();return false;">Export all PogoTools Gyms</button></p>
-            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExportStops();return false;">Export all PogoTools Stops</button></p>
+            <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExport('gym');return false;">Export all PogoTools Gyms</button></p>
+            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">Export all PogoTools Stops</button></p>
             `;
     }
     const container = window.dialog({
@@ -270,180 +270,167 @@ function wrapper (plugin_info) {
     });
   };
 
-  window.plugin.pnav.bulkExportGyms = function () {
-    var data;
+  window.plugin.pnav.bulkExport = function (type) {
     if (localStorage['plugin-pogo']) {
-      data = JSON.parse(localStorage.getItem('plugin-pogo'));
-    } else if (localStorage['plugin-pogo-data']) {
-      data = JSON.parse(localStorage.getItem('plugin-pogo-data'));
-    } else {
-      alert('Pogo Tools is loaded but no Data File was found!');
-    }
-    if (data && data.gyms) {
-      bulkExport(data.gyms, 'gym');
-    }
-  };
-
-  window.plugin.pnav.bulkExportStops = function () {
-    var data;
-    if (localStorage['plugin-pogo']) {
-      data = JSON.parse(localStorage.getItem('plugin-pogo'));
-    } else if (localStorage['plugin-pogo-data']) {
-      data = JSON.parse(localStorage.getItem('plugin-pogo-data'));
-    } else {
-      alert('Pogo Tools is loaded but no Data File was found!');
-    }
-    if (data && data.pokestops) {
-      bulkExport(data.pokestops, 'pokestop');
-    }
-  };
-
-  function bulkExport (inData, type) {
-    if (window.plugin.pnav.wip == false) {
-      // console.log(inData);
-      window.plugin.pnav.abort = false;
-      window.plugin.pnav.wip = true;
-      var data = [];
-      if (localStorage.getItem(`plugin-pnav-todo-${type}`)) {
-        data = JSON.parse(localStorage.getItem(`plugin-pnav-todo-${type}`));
-      } else {
-        var origKeys = Object.keys(inData);
-        var done = localStorage.getItem(`plugin-pnav-done-${type}`)
-          ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
-          : null;
-        origKeys.forEach(function (key) {
-          var obj = inData[key];
-          if (
-            (!window.plugin.pnav.settings.lat ||
-              !window.plugin.pnav.settings.lng ||
-              !window.plugin.pnav.settings.radius ||
-              checkDistance(obj.lat, obj.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
-            (!done || !done.includes(inData[key]))
-          ) {
-            data.push(obj);
-          }
-        });
-        localStorage.setItem(`plugin-pnav-todo-${type}`, JSON.stringify(data));
-      }
-      var i = 0;
-      // Discord WebHook accepts 30 Messages in 60 Seconds.
-      var wait = 2000;
-      window.onbeforeunload = function () {
-        if (i && data && type && i < data.length) {
-          localStorage.setItem(
-            `plugin-pnav-todo-${type}`,
-            JSON.stringify(data.slice(i))
-          );
-          var done = localStorage.getItem(`plugin-pnav-done-${type}`)
-            ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
-            : null;
-          if (!done) {
-            localStorage.setItem(
-              `plugin-pnav-done-${type}`,
-              JSON.stringify(data.slice(0, i))
-            );
+      var inData = JSON.parse(localStorage.getItem('plugin-pogo'));
+      if (inData[`${type}s`]) {
+        inData = inData[`${type}s`];
+        if (window.plugin.pnav.wip == false) {
+          // console.log(inData);
+          window.plugin.pnav.abort = false;
+          window.plugin.pnav.wip = true;
+          var data = [];
+          if (localStorage.getItem(`plugin-pnav-todo-${type}`)) {
+            data = JSON.parse(localStorage.getItem(`plugin-pnav-todo-${type}`));
           } else {
-            done.concat(data.slice(0, i));
-            localStorage.setItem(
-              `plugin-pnav-done-${type}`,
-              JSON.stringify(done)
-            );
-          }
-        }
-        return null;
-      };
-      var doit = function () {
-        var done = localStorage.getItem(`plugin-pnav-done-${type}`)
-          ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
-          : null;
-        function saveState () {
-          let todo = data.slice(i);
-          if (todo.length > 0) {
-            localStorage.setItem(
-              `plugin-pnav-todo-${type}`,
-              JSON.stringify(todo)
-            );
-          } else {
-            localStorage.removeItem(`plugin-pnav-todo-${type}`);
-          }
-          if (!done) {
-            localStorage.setItem(
-              `plugin-pnav-done-${type}`,
-              JSON.stringify(data.slice(0, i))
-            );
-          } else {
-            done.concat(data.slice(0, i));
-            localStorage.setItem(
-              `plugin-pnav-done-${type}`,
-              JSON.stringify(done)
-            );
-          }
-        }
-        if ($('#exportProgressBar')) {
-          $('#exportProgressBar').val(i);
-        }
-        if ($('#exportNumber')) {
-          $('#exportNumber').text(i);
-        }
-        if ($('#exportTimeRemaining')) {
-          $('#exportTimeRemaining').text((wait * (data.length - i)) / 1000);
-        }
-        if (i < data.length) {
-          if (window.plugin.pnav.abort) {
-            saveState();
-            window.plugin.pnav.abort = false;
-            window.plugin.pnav.wip = false;
-          } else {
-            if (i % 10 == 0) {
-              // sometimes save the state in case someone exits IITC Mobile without using the Back Button
-              saveState();
-            }
-            var entry = data[i];
-            let lat = entry.lat;
-            let lng = entry.lng;
-            // escaping Backslashes and Hyphens in Portal Names
-            let name = entry.name
-              .replaceAll('\\', '\\\\')
-              .replaceAll('"', '\\"');
-            let prefix = window.plugin.pnav.settings.prefix;
-            let ex = Boolean(entry.isEx);
-            let options = ex ? ' "ex_eligible: 1"' : '';
-            let request = window.plugin.pnav.request;
-            var params = {
-              username: window.plugin.pnav.settings.name,
-              avatar_url: '',
-              content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`
-            };
-            request.open('POST', window.plugin.pnav.settings.webhookUrl);
-            request.setRequestHeader('Content-type', 'application/json');
-            request.onload = function () {
-              if (request.status == 204 || request.status == 200) {
-                i++;
-                setTimeout(doit, wait);
-              } else {
-                console.log(`status code ${request.status}`);
-                setTimeout(doit, 3 * wait);
+            var origKeys = Object.keys(inData);
+            var done = localStorage.getItem(`plugin-pnav-done-${type}`)
+              ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
+              : null;
+            origKeys.forEach(function (key) {
+              var obj = inData[key];
+              if (
+                (!window.plugin.pnav.settings.lat ||
+                  !window.plugin.pnav.settings.lng ||
+                  !window.plugin.pnav.settings.radius ||
+                  checkDistance(obj.lat, obj.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
+                (!done || !done.includes(key))
+              ) {
+                data.push(inData[key]);
               }
-            };
-            request.onerror = function () {
-              setTimeout(doit, 3 * wait);
-            };
-            request.send(JSON.stringify(params), false);
-            // console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+            });
+            localStorage.setItem(`plugin-pnav-todo-${type}`, JSON.stringify(data));
           }
-        } else {
-          $('#exportState').text('Export Ready!');
-          okayButton.text('OK');
-          okayButton.prop('title', '');
-          window.plugin.pnav.wip = false;
-          saveState();
-          window.onbeforeunload = null;
-        }
-      };
+          var i = 0;
+          // Discord WebHook accepts 30 Messages in 60 Seconds.
+          var wait = 2000;
+          window.onbeforeunload = function () {
+            if (i && data && type && i < data.length) {
+              localStorage.setItem(
+                `plugin-pnav-todo-${type}`,
+                JSON.stringify(data.slice(i))
+              );
+              var done = localStorage.getItem(`plugin-pnav-done-${type}`)
+                ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
+                : null;
+              const newdone = data.slice(0, i);
+              var war = [];
+              newdone.forEach(function (entry) {
+                war.push(entry.guid);
+              });
+              if (!done) {
+                localStorage.setItem(
+                  `plugin-pnav-done-${type}`,
+                  JSON.stringify(war)
+                );
+              } else {
+                done.concat(war);
+                localStorage.setItem(
+                  `plugin-pnav-done-${type}`,
+                  JSON.stringify(done)
+                );
+              }
+            }
+            return null;
+          };
+          var doit = function () {
+            var done = localStorage.getItem(`plugin-pnav-done-${type}`)
+              ? JSON.parse(localStorage.getItem(`plugin-pnav-done-${type}`))
+              : null;
+            function saveState () {
+              let todo = data.slice(i);
+              if (todo.length > 0) {
+                localStorage.setItem(
+                  `plugin-pnav-todo-${type}`,
+                  JSON.stringify(todo)
+                );
+              } else {
+                localStorage.removeItem(`plugin-pnav-todo-${type}`);
+              }
+              const newdone = data.slice(0, i);
+              console.log(newdone);
+              var war = [];
+              newdone.forEach(function (entry) {
+                war.push(entry.guid);
+                console.log(entry.guid);
+              });
+              if (!done) {
+                localStorage.setItem(
+                  `plugin-pnav-done-${type}`,
+                  JSON.stringify(war)
+                );
+              } else {
+                localStorage.setItem(
+                  `plugin-pnav-done-${type}`,
+                  JSON.stringify(done.concat(war))
+                );
+              }
+            }
+            if ($('#exportProgressBar')) {
+              $('#exportProgressBar').val(i);
+            }
+            if ($('#exportNumber')) {
+              $('#exportNumber').text(i);
+            }
+            if ($('#exportTimeRemaining')) {
+              $('#exportTimeRemaining').text((wait * (data.length - i)) / 1000);
+            }
+            if (i < data.length) {
+              if (window.plugin.pnav.abort) {
+                saveState();
+                window.plugin.pnav.abort = false;
+                window.plugin.pnav.wip = false;
+              } else {
+                if (i % 10 == 0) {
+                  // sometimes save the state in case someone exits IITC Mobile without using the Back Button
+                  saveState();
+                }
+                var entry = data[i];
+                let lat = entry.lat;
+                let lng = entry.lng;
+                // escaping Backslashes and Hyphens in Portal Names
+                let name = entry.name
+                  .replaceAll('\\', '\\\\')
+                  .replaceAll('"', '\\"');
+                let prefix = window.plugin.pnav.settings.prefix;
+                let ex = Boolean(entry.isEx);
+                let options = ex ? ' "ex_eligible: 1"' : '';
+                let request = window.plugin.pnav.request;
+                var params = {
+                  username: window.plugin.pnav.settings.name,
+                  avatar_url: '',
+                  content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`
+                };
+                request.open('POST', window.plugin.pnav.settings.webhookUrl);
+                request.setRequestHeader('Content-type', 'application/json');
+                request.onload = function () {
+                  if (request.status == 204 || request.status == 200) {
+                    i++;
+                    setTimeout(doit, wait);
+                  } else {
+                    console.log(`status code ${request.status}`);
+                    setTimeout(doit, 3 * wait);
+                  }
+                };
+                request.onerror = function () {
+                  setTimeout(doit, 3 * wait);
+                };
+                request.send(JSON.stringify(params), false);
+                // console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
+              }
+            } else {
+              $('#exportState').text('Export Ready!');
+              okayButton.text('OK');
+              okayButton.prop('title', '');
+              window.plugin.pnav.wip = false;
+              saveState();
+              window.onbeforeunload = null;
+            }
+          };
 
-      var dialog = window.dialog({
-        id: 'bulkExportProgress',
-        html: `
+          var dialog = window.dialog({
+            id: 'bulkExportProgress',
+            html: `
               <h3 id="exportState">Exporting...</h3>
               <p>
                 <label>
@@ -458,36 +445,40 @@ function wrapper (plugin_info) {
               <label id="exportTimeRemaining">${Math.round((wait * data.length) / 1000)}</label>
               <label>s</label>
         `,
-        width: 'auto',
-        title: 'PokeNav Bulk Export Progress'
-      });
+            width: 'auto',
+            title: 'PokeNav Bulk Export Progress'
+          });
 
-      // console.log(dialog);
+          // console.log(dialog);
 
-      let thisDialog = dialog.parent();
-      // console.log(thisDialog);
-      var okayButton = $('.ui-button', thisDialog).not('.ui-dialog-titlebar-button');
-      okayButton.text('Pause');
-      okayButton.prop(
-        'title',
-        'store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.'
-      );
-      okayButton.on('click', function () {
-        window.plugin.pnav.abort = true;
-      });
+          let thisDialog = dialog.parent();
+          // console.log(thisDialog);
+          var okayButton = $('.ui-button', thisDialog).not('.ui-dialog-titlebar-button');
+          okayButton.text('Pause');
+          okayButton.prop(
+            'title',
+            'store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.'
+          );
+          okayButton.on('click', function () {
+            window.plugin.pnav.abort = true;
+          });
 
-      $('.ui-button.ui-dialog-titlebar-button-close', thisDialog).on(
-        'click',
-        function () {
-          window.plugin.pnav.abort = true;
+          $('.ui-button.ui-dialog-titlebar-button-close', thisDialog).on(
+            'click',
+            function () {
+              window.plugin.pnav.abort = true;
+            }
+          );
+
+          doit();
+        } else {
+          console.log('Bulk Export already running!');
         }
-      );
-
-      doit();
-    } else {
-      console.log('Bulk Export already running!');
+      } else {
+        alert('Pogo Tools is loaded but no Data File was found!');
+      }
     }
-  }
+  };
 
   /*
    *the idea of the following function was taken from https://stackoverflow.com/a/14561433
