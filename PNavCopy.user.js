@@ -6,7 +6,7 @@
 // @category       Misc
 // @downloadURL    https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.4
+// @version        1.4.1
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info to clipboard or send it to Discord in the format the PokeNav Discord bot needs.
 // @include        http*://intel.ingress.com/*
@@ -114,7 +114,6 @@ function wrapper (plugin_info) {
           localStorage[`plugin-pnav-done-${type}`].includes(window.plugin.pnav.selectedGuid)
         ) {
           alert('this location has already been exported! If you are sure this is not the case, try resetting the Export State in settings.');
-          // TODO include "reset Export State" Button in settings that deletes all plugin-pnav-todo and plugin-pnav-done entries from LocalStorage.
         } else {
           sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
           if (localStorage[`plugin-pnav-done-${type}`]) {
@@ -170,6 +169,7 @@ function wrapper (plugin_info) {
           <input id="pnavRadius" style="width:70px" type="number" min="0" step="0.001" value="${window.plugin.pnav.settings.radius}"/>
           </label>
         </p>
+        <p><button type="Button" style="width:100%" title="erase all Export History" onclick="window.plugin.pnav.deleteExportState();return false;">Erase Location Export History</button></p>
         `;
     if (window.plugin.pogo) {
       html += `
@@ -290,6 +290,21 @@ function wrapper (plugin_info) {
         }
       }
     });
+  };
+
+  window.plugin.pnav.deleteExportState = function () {
+    if (localStorage['plugin-pnav-todo-pokestop']) {
+      localStorage.removeItem('plugin-pnav-todo-pokestop');
+    }
+    if (localStorage['plugin-pnav-todo-gym']) {
+      localStorage.removeItem('plugin-pnav-todo-gym');
+    }
+    if (localStorage['plugin-pnav-done-pokestop']) {
+      localStorage.removeItem('plugin-pnav-done-pokestop');
+    }
+    if (localStorage['plugin-pnav-done-gym']) {
+      localStorage.removeItem('plugin-pnav-done-gym');
+    }
   };
 
   /**
