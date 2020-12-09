@@ -109,8 +109,26 @@ function wrapper (plugin_info) {
           window.plugin.pnav.settings.radius
         ) {
           alert('this location is outside the specified Community Area!');
+        } else if (
+          localStorage[`plugin-pnav-done-${type}`] &&
+          localStorage[`plugin-pnav-done-${type}`].includes(window.plugin.pnav.selectedGuid)
+        ) {
+          alert('this location has already been exported! If you are sure this is not the case, try resetting the Export State in settings.');
+          // TODO include "reset Export State" Button in settings that deletes all plugin-pnav-todo and plugin-pnav-done entries from LocalStorage.
         } else {
           sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+          if (localStorage[`plugin-pnav-done-${type}`]) {
+            // i think parsing and stringifying again is too resource intensive just to add one item at the end... at least if i know how the entry should be structured...
+            let newDone = localStorage[`plugin-pnav-done-${type}`];
+            if (newDone.length == 2) {
+              newDone = newDone.replace(']', `"${window.plugin.pnav.selectedGuid}"]`);
+            } else {
+              newDone = newDone.replace(']', `,"${window.plugin.pnav.selectedGuid}"]`);
+            }
+            localStorage[`plugin-pnav-done-${type}`] = newDone;
+          } else {
+            localStorage[`plugin-pnav-done-${type}`] = JSON.stringify([window.plugin.pnav.selectedGuid]);
+          }
           console.log('sent!');
         }
       } else {
@@ -310,34 +328,40 @@ function wrapper (plugin_info) {
     );
   }
 
+  /**
+   * fetch previous data from local storage and add
+   * @param {string} type - expected values pokestop or gym
+   * @return {object[] | null} returns the data to export or null if Pogo Tools Data was not found.
+   */
   function gatherExportData (type) {
     var pogoData = JSON.parse(localStorage['plugin-pogo']);
     if (pogoData && pogoData[`${type}s`]) {
       pogoData = pogoData[`${type}s`];
       // console.log(pogoData);
-      var exportData;
+      var exportData = [];
       if (localStorage[`plugin-pnav-todo-${type}`]) {
         exportData = JSON.parse(localStorage[`plugin-pnav-todo-${type}`]);
-      } else {
-        exportData = [];
-        var keys = Object.keys(pogoData);
-        var done = localStorage[`plugin-pnav-done-${type}`]
-          ? JSON.parse(localStorage[`plugin-pnav-done-${type}`])
-          : null;
-        keys.forEach(function (key) {
-          var obj = pogoData[key];
-          if (
-            (!window.plugin.pnav.settings.lat ||
+      }
+      var keys = Object.keys(pogoData);
+      var done = localStorage[`plugin-pnav-done-${type}`]
+        ? JSON.parse(localStorage[`plugin-pnav-done-${type}`])
+        : null;
+      keys.forEach(function (key) {
+        var obj = pogoData[key];
+        if (
+          (!window.plugin.pnav.settings.lat ||
               !window.plugin.pnav.settings.lng ||
               !window.plugin.pnav.settings.radius ||
               checkDistance(obj.lat, obj.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
-            (!done || !done.includes(key))
-          ) {
-            exportData.push(pogoData[key]);
-          }
-        });
-        localStorage.setItem(`plugin-pnav-todo-${type}`, JSON.stringify(exportData));
-      }
+          (!done || !done.includes(key)) &&
+          (!exportData.find(function (object) {
+            return object.guid && object.guid === key;
+          }))
+        ) {
+          exportData.push(pogoData[key]);
+        }
+      });
+      localStorage.setItem(`plugin-pnav-todo-${type}`, JSON.stringify(exportData));
       return exportData;
     }
     return null;
