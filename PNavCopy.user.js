@@ -144,28 +144,28 @@ function wrapper (plugin_info) {
     var html = `
         <p id="prefix">
           <label title="Input the Prefix for the PokeNav Bot here. Default Prefix is $.">
-            PokeNav Prefix: 
+            PokeNav Prefix:
             <input type="text" id="pnavprefix" pattern="^.$" value="${window.plugin.pnav.settings.prefix}" placeholder="$" style="width:15px"/>
           </label>
         </p>
         <p id="webhook"><label title="Paste the URL of the WebHook you created in your Server's Admin Channel here. If left blank, the Commands are copied to Clipboard.">
-            Discord WebHook URL: 
+            Discord WebHook URL:
             <input type="url" style="width:100%" id="pnavhookurl" value="${window.plugin.pnav.settings.webhookUrl}" pattern="${validURL}"/>
         </label></p>
         <p>
           <Label title="The Name that will be displayed if you send to the PokeNav channel. Default is your Ingess Codename.">
-            Name: 
+            Name:
             <input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/>
           </label>
         </p>
         <p>
           <label id="center" title="Paste the Center Coordinate of your Community here (you can view it typing ${window.plugin.pnav.settings.prefix}show settings in Admin Channel)">
-          Community Center: 
+          Community Center:
           <input id="pnavCenter" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${window.plugin.pnav.settings.lat != '' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
           </label>
           <br>
           <label id="radius" title="Enter the specified Community Radius here.">
-          Community Radius: 
+          Community Radius:
           <input id="pnavRadius" style="width:70px" type="number" min="0" step="0.001" value="${window.plugin.pnav.settings.radius}"/>
           </label>
         </p>
@@ -571,6 +571,26 @@ function wrapper (plugin_info) {
     request.send(JSON.stringify(params), false);
   }
 
+  function waitForPogoButtons (mutationList, invokingObserver) {
+    mutationList.forEach(function (mutation) {
+      // WIP check if one of the added nodes is the pogoButtons class
+      if (mutation.type === 'childList' && mutation.addedNodes) {
+        console.log(mutation.addedNodes);
+        mutation.addedNodes.forEach((node) => {
+          if (node.className == 'PogoButtons') {
+            console.log('there is PogoButtons!');
+            $(node).after(`
+             <a style="position:absolute;right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
+             `);
+            $(node).css('display', 'inline');
+            // we don't need to look for the class anymore because we just found what we wanted ;-)
+            invokingObserver.disconnect();
+          }
+        });
+      }
+    });
+  }
+
   var setup = function () {
     console.log('azaza');
     if (localStorage['plugin-pnav-settings']) {
@@ -578,12 +598,14 @@ function wrapper (plugin_info) {
     }
     $('#toolbox').append('<a title="Configure PokeNav" style="margin-left:4px" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
+    const observer = new MutationObserver(waitForPogoButtons);
+
     window.addHook('portalSelected', function (data) {
       console.log(data);
       var guid = data.selectedPortalGuid;
       window.plugin.pnav.selectedGuid = guid;
-      setTimeout(function () {
-        if ($('.PogoButtons').length == 0) {
+      if (!window.plugin.pogo) {
+        setTimeout(function () {
           $('#portaldetails').append(`
           <div id="PNav" style="color:#fff;display:flex">
             <Label>
@@ -603,14 +625,11 @@ function wrapper (plugin_info) {
             </a>
           </div>
         `);
-        } else {
-          $('.PogoButtons').append(`
-        <a style="margin-left:auto;margin-right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
-        `);
-          $('.PogoButtons').css('display', 'flex');
-          $('.PogoButtons').css('align-items', 'baseline');
-        }
-      }, 5);
+        }, 0);
+      } else {
+        // wait for the Pogo Buttons to get added
+        observer.observe($('#portaldetails')[0], {'childList': true});
+      }
     });
   };
 
