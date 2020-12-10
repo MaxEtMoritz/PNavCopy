@@ -573,12 +573,11 @@ function wrapper (plugin_info) {
 
   function waitForPogoButtons (mutationList, invokingObserver) {
     mutationList.forEach(function (mutation) {
-      // WIP check if one of the added nodes is the pogoButtons class
       if (mutation.type === 'childList' && mutation.addedNodes) {
-        console.log(mutation.addedNodes);
+        // console.log(mutation.addedNodes);
         mutation.addedNodes.forEach((node) => {
           if (node.className == 'PogoButtons') {
-            console.log('there is PogoButtons!');
+            // console.log('there is PogoButtons!');
             $(node).after(`
              <a style="position:absolute;right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
              `);
@@ -591,14 +590,24 @@ function wrapper (plugin_info) {
     });
   }
 
+  function waitForPogoStatus (mutationList, invokingObserver) {
+    mutationList.forEach(function (mutation) {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        $('.PogoStatus').append('<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">Copy PokeNav</a>');
+        invokingObserver.disconnect();
+      }
+    });
+  }
+
   var setup = function () {
     console.log('azaza');
     if (localStorage['plugin-pnav-settings']) {
       window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
     }
-    $('#toolbox').append('<a title="Configure PokeNav" style="margin-left:4px" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
+    $('#toolbox').append('<a title="Configure PokeNav" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
-    const observer = new MutationObserver(waitForPogoButtons);
+    const detailsObserver = new MutationObserver(waitForPogoButtons);
+    const statusObserver = new MutationObserver(waitForPogoStatus);
 
     window.addHook('portalSelected', function (data) {
       console.log(data);
@@ -620,7 +629,7 @@ function wrapper (plugin_info) {
               <input type="radio" name="type" value="ex" id="PNavEx"/>
               Ex Gym
             </label>
-            <a style="margin-left:auto;margin-right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
+            <a style="margin-left:auto;margin-right:5px${window.isSmartphone()?';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1':''}" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
               Copy PokeNav
             </a>
           </div>
@@ -628,7 +637,11 @@ function wrapper (plugin_info) {
         }, 0);
       } else {
         // wait for the Pogo Buttons to get added
-        observer.observe($('#portaldetails')[0], {'childList': true});
+        detailsObserver.observe($('#portaldetails')[0], {'childList': true});
+        // if running on mobile, also wait for the Buttons in Status bar to get added and add it there.
+        if (window.isSmartphone()) {
+          statusObserver.observe($('.PogoStatus')[0], {'childList': true});
+        }
       }
     });
   };
