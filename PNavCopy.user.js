@@ -315,31 +315,18 @@ function wrapper (plugin_info) {
    */
   function saveState (data, type, index) {
 
-    /** @type {string[]} */
+    /** @type {object} */
     var done = localStorage[`plugin-pnav-done-${type}`]
       ? JSON.parse(localStorage[`plugin-pnav-done-${type}`])
-      : [];
-    let todo = data.slice(index);
-    if (todo.length > 0) {
-      localStorage.setItem(
-        `plugin-pnav-todo-${type}`,
-        JSON.stringify(todo)
-      );
-    } else {
-      localStorage.removeItem(`plugin-pnav-todo-${type}`);
-    }
+      : {};
     const addToDone = data.slice(0, index);
-    console.log(addToDone);
-
-    /** @type {string[]} */
-    var guidsToAdd = [];
-    addToDone.forEach(function (entry) {
-      guidsToAdd.push(entry.guid);
-      console.log(entry.guid);
+    // console.log(addToDone);
+    addToDone.forEach(function (object) {
+      done[object.guid] = object;
     });
     localStorage.setItem(
       `plugin-pnav-done-${type}`,
-      JSON.stringify(done.concat(guidsToAdd))
+      JSON.stringify(done)
     );
   }
 
@@ -351,32 +338,25 @@ function wrapper (plugin_info) {
   function gatherExportData (type) {
     var pogoData = JSON.parse(localStorage['plugin-pogo']);
     if (pogoData && pogoData[`${type}s`]) {
-      pogoData = pogoData[`${type}s`];
+      pogoData = Object.values(pogoData[`${type}s`]);
       // console.log(pogoData);
-      var exportData = [];
-      if (localStorage[`plugin-pnav-todo-${type}`]) {
-        exportData = JSON.parse(localStorage[`plugin-pnav-todo-${type}`]);
-      }
-      var keys = Object.keys(pogoData);
-      var done = localStorage[`plugin-pnav-done-${type}`]
+
+      /** @type object[] */
+      const done = localStorage[`plugin-pnav-done-${type}`]
         ? JSON.parse(localStorage[`plugin-pnav-done-${type}`])
         : null;
-      keys.forEach(function (key) {
-        var obj = pogoData[key];
-        if (
-          (!window.plugin.pnav.settings.lat ||
-              !window.plugin.pnav.settings.lng ||
-              !window.plugin.pnav.settings.radius ||
-              checkDistance(obj.lat, obj.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
-          (!done || !done.includes(key)) &&
-          (!exportData.find(function (object) {
-            return object.guid && object.guid === key;
-          }))
-        ) {
-          exportData.push(pogoData[key]);
-        }
+      const doneGuids = done ? Object.keys(done) : null;
+      const distanceNotCheckable =
+        !window.plugin.pnav.settings.lat ||
+        !window.plugin.pnav.settings.lng ||
+        !window.plugin.pnav.settings.radius;
+      var exportData = pogoData.filter(function (object) {
+        return (
+          (!doneGuids || !doneGuids.includes(object.guid)) &&
+          (distanceNotCheckable ||
+              checkDistance(object.lat, object.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius)
+        );
       });
-      localStorage.setItem(`plugin-pnav-todo-${type}`, JSON.stringify(exportData));
       return exportData;
     }
     return null;
