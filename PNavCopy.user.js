@@ -293,12 +293,6 @@ function wrapper (plugin_info) {
   };
 
   window.plugin.pnav.deleteExportState = function () {
-    if (localStorage['plugin-pnav-todo-pokestop']) {
-      localStorage.removeItem('plugin-pnav-todo-pokestop');
-    }
-    if (localStorage['plugin-pnav-todo-gym']) {
-      localStorage.removeItem('plugin-pnav-todo-gym');
-    }
     if (localStorage['plugin-pnav-done-pokestop']) {
       localStorage.removeItem('plugin-pnav-done-pokestop');
     }
@@ -328,6 +322,120 @@ function wrapper (plugin_info) {
       `plugin-pnav-done-${type}`,
       JSON.stringify(done)
     );
+  }
+
+  window.plugin.pnav.bulkModify = function () {
+    if (window.plugin.pogo) {
+      const changeList = checkForModifications();
+      const modDialog = window.dialog({
+        id: 'pNavmodDialog',
+        title: 'PokeNav Bulk Modification',
+        html: ``,
+        width: 'auto',
+        height: 'auto'
+      });
+      // TODO design Dialog, send stop info message and trigger sendModCommand then.
+    }
+  };
+
+  function sendModCommand (pNavId, changes) {
+    let command = '';
+    if (changes.type && changes.type === 'none') {
+      command = `${window.plugin.pnav.settings.prefix}delete poi ${pNavId}`;
+    } else {
+      command = `${window.plugin.pnav.settings.prefix}update poi ${pNavId}`;
+      for (const [
+        key,
+        value
+      ] of Object.entries(changes)) {
+        command += ` "${key}: ${value}"`;
+      }
+      // TODO ex_eligible is atm true/false and not 0/1!
+    }
+    sendMessage(command);
+  }
+
+  function checkForModifications () {
+    const pNavStops = localStorage['plugin-pnav-done-pokestop'];
+    const pNavGyms = localStorage['plugin-pnav-done-gym'];
+    const pogoData = localStorage['plugin-pogo'];
+    const pogoStops = pogoData && pogoData.pokestops ? pogoData.pokestops : {};
+    const keysStops = Object.keys(pogoStops);
+    const pogoGyms = pogoData && pogoData.gyms ? pogoData.gyms : {};
+    const keysGyms = Object.keys(pogoGyms);
+    var changeList = [];
+    if (pNavStops && pogoData) {
+      Object.values(pNavStops).forEach(function (stop) {
+        let detectedChanges = {};
+        let originalData;
+        if (!keysStops.includes(stop.guid)) {
+          if (keysGyms.includes(stop.guid)) {
+            detectedChanges.type = 'gym';
+            originalData = pogoGyms[stop.guid];
+            if (originalData.isEx) {
+              detectedChanges.ex_eligible = true;
+            }
+          } else {
+            detectedChanges.type = 'none';
+          }
+        } else {
+          originalData = pogoStops[stop.guid];
+        }
+        // compare data
+        if (originalData) {
+          if (originalData.name !== stop.name) {
+            detectedChanges.name = originalData.name;
+          }
+          if (originalData.lat !== stop.lat) {
+            detectedChanges.latitude = originalData.lat;
+          }
+          if (originalData.lng !== stop.lng) {
+            detectedChanges.longitude = originalData.lng;
+          }
+        }
+        if (Object.keys(detectedChanges).length > 0) {
+          detectedChanges.oldName = stop.name;
+          changeList.push(detectedChanges);
+        }
+      });
+    }
+    if (pNavGyms && pogoData) {
+      Object.values(pNavGyms).forEach(function (gym) {
+        let detectedChanges = {};
+        let originalData;
+        if (!keysGyms.includes(gym.guid)) {
+          if (keysStops.includes(gym.guid)) {
+            detectedChanges.type = 'pokestop';
+            originalData = pogoStops[gym.guid];
+          } else {
+            detectedChanges.type = 'none';
+          }
+        } else {
+          originalData = pogoGyms[gym.guid];
+        }
+        // compare data
+        if (originalData) {
+          if (originalData.name !== gym.name) {
+            detectedChanges.name = originalData.name;
+          }
+          if (originalData.lat !== gym.lat) {
+            detectedChanges.latitude = originalData.lat;
+          }
+          if (originalData.lng !== gym.lng) {
+            detectedChanges.longitude = originalData.lng;
+          }
+          if (originalData.isEx !== gym.isEx) {
+            const newEx = originalData.isEx ? originalData.isEx : false;
+            detectedChanges.ex_eligible = newEx;
+          }
+        }
+        if (Object.keys(detectedChanges).length > 0) {
+          detectedChanges.oldName = gym.name;
+          changeList.push(detectedChanges);
+        }
+      });
+    }
+    return changeList;
   }
 
   /**
@@ -585,6 +693,7 @@ function wrapper (plugin_info) {
       window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
     }
     $('#toolbox').append('<a title="Configure PokeNav" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
+    $('#toolbox').append('<a title="Configure PokeNav" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.test();}return false;" accesskey="s">test</a>');
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
     const detailsObserver = new MutationObserver(waitForPogoButtons);
     const statusObserver = new MutationObserver(waitForPogoStatus);
