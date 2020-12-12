@@ -327,14 +327,48 @@ function wrapper (plugin_info) {
   window.plugin.pnav.bulkModify = function () {
     if (window.plugin.pogo) {
       const changeList = checkForModifications();
-      const modDialog = window.dialog({
-        id: 'pNavmodDialog',
-        title: 'PokeNav Bulk Modification',
-        html: ``,
-        width: 'auto',
-        height: 'auto'
-      });
-      // TODO design Dialog, send stop info message and trigger sendModCommand then.
+      const html = `
+        <h3>
+          The following Poi was modified in PoGo Tools:
+        </h3>
+        <h3 id="pNavOldPoiName"/>
+        <label>The following has changed:</label>
+        <ul id="pNavChangesMade"/>
+        <label>
+          PokeNav ID:
+          <input id="pNavPoiId" type="number" min="0" step="1"/>
+        </label>
+        <a id="pNavPoiInfo" title="Sends the PoI Information Command for the PoI.">
+          Send PoI Info Command
+        </a>
+        <a id="pNavModCommand" title="You must input the PokeNav location ID before you can send the modification command!" style="color:dark_gray">
+          Send Modification Command
+        </a>
+      `;
+      if (changeList.length > 0) {
+        const modDialog = window.dialog({
+          id: 'pNavmodDialog',
+          title: 'PokeNav Bulk Modification',
+          html,
+          width: 'auto',
+          height: 'auto',
+          buttons: {
+            'Skip one' () {
+              // TODO skip one
+            }
+          }
+        });
+        changeList.forEach(function (poi) {
+          $('#pNavOldPoiName', modDialog).text(poi.oldName);
+          for (const [
+            key,
+            value
+          ] of Object.entries(poi)) {
+            $('#pNavChangesMade', modDialog).append(`<li>${key}: ${value}</li>`);
+          }
+        });
+        // TODO design Dialog, send stop info message and trigger sendModCommand then.
+      }
     }
   };
 
@@ -350,7 +384,6 @@ function wrapper (plugin_info) {
       ] of Object.entries(changes)) {
         command += ` "${key}: ${value}"`;
       }
-      // TODO ex_eligible is atm true/false and not 0/1!
     }
     sendMessage(command);
   }
@@ -373,7 +406,7 @@ function wrapper (plugin_info) {
             detectedChanges.type = 'gym';
             originalData = pogoGyms[stop.guid];
             if (originalData.isEx) {
-              detectedChanges.ex_eligible = true;
+              detectedChanges.ex_eligible = 1;
             }
           } else {
             detectedChanges.type = 'none';
@@ -426,7 +459,7 @@ function wrapper (plugin_info) {
           }
           if (originalData.isEx !== gym.isEx) {
             const newEx = originalData.isEx ? originalData.isEx : false;
-            detectedChanges.ex_eligible = newEx;
+            detectedChanges.ex_eligible = newEx ? 1 : 0;
           }
         }
         if (Object.keys(detectedChanges).length > 0) {
