@@ -175,6 +175,7 @@ function wrapper (plugin_info) {
       html += `
             <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExport('gym');return false;">Export all PogoTools Gyms</button></p>
             <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">Export all PogoTools Stops</button></p>
+            <p><button type="Button" style="width:100%" title="Check if the Pogo Tools Data was modified and start Upload process of modifications" onclick="window.plugin.pnav.bulkModify();return false;">Check for Modifications</button></p>
             `;
     }
 
@@ -327,6 +328,7 @@ function wrapper (plugin_info) {
   window.plugin.pnav.bulkModify = function () {
     if (window.plugin.pogo) {
       const changeList = checkForModifications();
+      console.log(changeList);
       const html = `
         <h3>
           The following Poi was modified in PoGo Tools:
@@ -338,10 +340,11 @@ function wrapper (plugin_info) {
           PokeNav ID:
           <input id="pNavPoiId" type="number" min="0" step="1"/>
         </label>
+        <br>
         <a id="pNavPoiInfo" title="Sends the PoI Information Command for the PoI.">
           Send PoI Info Command
         </a>
-        <a id="pNavModCommand" title="You must input the PokeNav location ID before you can send the modification command!" style="color:dark_gray">
+        <a id="pNavModCommand" title="You must input the PokeNav location ID before you can send the modification command!" style="color:darkgray;cursor:default;text-decoration:none">
           Send Modification Command
         </a>
       `;
@@ -354,23 +357,152 @@ function wrapper (plugin_info) {
           height: 'auto',
           buttons: {
             'Skip one' () {
-              // TODO skip one
+              i++;
+              if (i == changeList.length) {
+                modDialog.dialog('close');
+              } else {
+                poi = changeList[i];
+                updateUI(modDialog, poi);
+                $('#pNavModCommand', modDialog).css('color', 'darkgray');
+                $('#pNavModCommand', modDialog).css('cursor', 'default');
+                $('#pNavModCommand', modDialog).css('text-decoration', 'none');
+                $('#pNavModCommand', modDialog).prop('title', 'You must input the PokeNav location ID before you can send the modification command!');
+              }
             }
           }
         });
-        changeList.forEach(function (poi) {
-          $('#pNavOldPoiName', modDialog).text(poi.oldName);
-          for (const [
-            key,
-            value
-          ] of Object.entries(poi)) {
-            $('#pNavChangesMade', modDialog).append(`<li>${key}: ${value}</li>`);
+        var i = 0;
+        var poi = changeList[i];
+        $('#pNavPoiInfo', modDialog).on('click', function () {
+          sendMessage(`${window.plugin.pnav.settings.prefix}${poi.oldType}-info ${poi.oldName}`);
+          $('#pNavModCommand', modDialog).prop('style', '');
+          $('#pNavModCommand', modDialog).prop('title', 'send the Command to modify the PoI');
+        });
+        $('#pNavModCommand', modDialog).on('click', function () {
+          if ($('#pNavPoiId', modDialog).val() && new RegExp('^\\d*$').test($('#pNavPoiId', modDialog).val())) {
+            sendModCommand($('#pNavPoiId', modDialog).val(), poi);
+            updateDone(poi);
+            i++;
+            if (i == changeList.length) {
+              modDialog.dialog('close');
+            } else {
+              poi = changeList[i];
+              updateUI(modDialog, poi);
+              $('#pNavModCommand', modDialog).css('color', 'darkgray');
+              $('#pNavModCommand', modDialog).css('cursor', 'default');
+              $('#pNavModCommand', modDialog).css('text-decoration', 'none');
+              $('#pNavModCommand', modDialog).prop('title', 'You must input the PokeNav location ID before you can send the modification command!');
+            }
           }
         });
+        updateUI(modDialog, poi);
         // TODO design Dialog, send stop info message and trigger sendModCommand then.
       }
     }
   };
+
+  function updateDone (poi) {
+    console.log('hiu');
+    // Does not work yet.
+    var stop = localStorage['plugin-pnav-done-pokestop'] ? JSON.parse(localStorage['plugin-pnav-done-pokestop']) : {};
+    var gym = localStorage['plugin-pnav-done-gym'] ? JSON.parse(localStorage['plugin-pnav-done-gym']) : {};
+    if (poi.oldType === 'stop') {
+      if (poi.type) {
+        if (poi.type === 'none') {
+          // delete it
+          delete stop[poi.guid];
+          localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(stop);
+          return;
+        } else {
+          // swap type
+          let currpoi = stop[poi.guid];
+          delete stop[poi.guid];
+          gym[poi.guid] = currpoi;
+          localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(stop);
+          if (poi.latitude) {
+            gym[poi.guid].lat = poi.latitude;
+          }
+          if (poi.longitude) {
+            gym[poi.guid].lng = poi.longitude;
+          }
+          if (poi.name) {
+            gym[poi.guid].name = poi.name;
+          }
+          if (poi.ex_eligible) {
+            gym[poi.guid].isEx = Boolean(poi.ex_eligible);
+          }
+          localStorage['plugin-pnav-done-gym'] = JSON.stringify(gym);
+          return;
+        }
+      }
+      if (poi.latitude) {
+        stop[poi.guid].lat = poi.latitude;
+      }
+      if (poi.longitude) {
+        stop[poi.guid].lng = poi.longitude;
+      }
+      if (poi.name) {
+        stop[poi.guid].name = poi.name;
+      }
+      localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(stop);
+    } else {
+      if (poi.type) {
+        if (poi.type === 'none') {
+          // delete it
+          delete gym[poi.guid];
+          localStorage['plugin-pnav-done-gym'] = JSON.stringify(gym);
+          return;
+        } else {
+          // swap type
+          let currpoi = gym[poi.guid];
+          delete gym[poi.guid];
+          stop[poi.guid] = currpoi;
+          localStorage['plugin-pnav-done-gym'] = JSON.stringify(gym);
+          if (poi.latitude) {
+            stop[poi.guid].lat = poi.latitude;
+          }
+          if (poi.longitude) {
+            stop[poi.guid].lng = poi.longitude;
+          }
+          if (poi.name) {
+            stop[poi.guid].name = poi.name;
+          }
+          if (poi.ex_eligible) {
+            stop[poi.guid].isEx = Boolean(poi.ex_eligible);
+          }
+          localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(stop);
+          return;
+        }
+      }
+      if (poi.latitude) {
+        gym[poi.guid].lat = poi.latitude;
+      }
+      if (poi.longitude) {
+        gym[poi.guid].lng = poi.longitude;
+      }
+      if (poi.name) {
+        gym[poi.guid].name = poi.name;
+      }
+      if (poi.ex_eligible) {
+        gym[poi.guid].isEx = Boolean(poi.ex_eligible);
+        console.log('been there!');
+      }
+      localStorage['plugin-pnav-done-gym'] = JSON.stringify(gym);
+    }
+  }
+
+  function updateUI (dialog, poi) {
+    $('#pNavOldPoiName', dialog).text(poi.oldName);
+    $('#pNavChangesMade', dialog).empty();
+    for (const [
+      key,
+      value
+    ] of Object.entries(poi)) {
+      if (key !== 'oldName' && key !== 'oldType' && key !== 'guid') {
+        $('#pNavChangesMade', dialog).append(`<li>${key}=> ${value}</li>`);
+      }
+    }
+  }
 
   function sendModCommand (pNavId, changes) {
     let command = '';
@@ -382,17 +514,19 @@ function wrapper (plugin_info) {
         key,
         value
       ] of Object.entries(changes)) {
-        command += ` "${key}: ${value}"`;
+        if (key !== 'oldType' && key !== 'oldName' && key !== 'guid') {
+          command += ` "${key}: ${value}"`;
+        }
       }
     }
     sendMessage(command);
   }
 
   function checkForModifications () {
-    const pNavStops = localStorage['plugin-pnav-done-pokestop'];
-    const pNavGyms = localStorage['plugin-pnav-done-gym'];
-    const pogoData = localStorage['plugin-pogo'];
-    const pogoStops = pogoData && pogoData.pokestops ? pogoData.pokestops : {};
+    const pNavStops = localStorage['plugin-pnav-done-pokestop'] ? JSON.parse(localStorage['plugin-pnav-done-pokestop']) : {};
+    const pNavGyms = localStorage['plugin-pnav-done-gym'] ? JSON.parse(localStorage['plugin-pnav-done-gym']) : {};
+    const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
+    const pogoStops = (pogoData && pogoData.pokestops) ? pogoData.pokestops : {};
     const keysStops = Object.keys(pogoStops);
     const pogoGyms = pogoData && pogoData.gyms ? pogoData.gyms : {};
     const keysGyms = Object.keys(pogoGyms);
@@ -428,6 +562,8 @@ function wrapper (plugin_info) {
         }
         if (Object.keys(detectedChanges).length > 0) {
           detectedChanges.oldName = stop.name;
+          detectedChanges.oldType = 'stop';
+          detectedChanges.guid = stop.guid;
           changeList.push(detectedChanges);
         }
       });
@@ -464,6 +600,8 @@ function wrapper (plugin_info) {
         }
         if (Object.keys(detectedChanges).length > 0) {
           detectedChanges.oldName = gym.name;
+          detectedChanges.oldType = 'gym';
+          detectedChanges.guid = gym.guid;
           changeList.push(detectedChanges);
         }
       });
