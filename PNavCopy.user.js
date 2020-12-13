@@ -100,41 +100,45 @@ function wrapper (plugin_info) {
           type = 'pokestop';
         }
       }
-      if (window.plugin.pnav.settings.webhookUrl) {
-        if (
-          window.plugin.pnav.settings.lat &&
-          window.plugin.pnav.settings.lng &&
-          window.plugin.pnav.settings.radius &&
-          checkDistance(lat, lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
-          window.plugin.pnav.settings.radius
-        ) {
-          alert('this location is outside the specified Community Area!');
-        } else if (
-          localStorage[`plugin-pnav-done-${type}`] &&
-          localStorage[`plugin-pnav-done-${type}`].includes(window.plugin.pnav.selectedGuid)
-        ) {
-          alert('this location has already been exported! If you are sure this is not the case, try resetting the Export State in settings.');
-        } else {
-          sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
-          if (localStorage[`plugin-pnav-done-${type}`]) {
-            // i think parsing and stringifying again is too resource intensive just to add one item at the end... at least if i know how the entry should be structured...
-            let newDone = localStorage[`plugin-pnav-done-${type}`];
-            if (newDone.length == 2) {
-              newDone = newDone.replace(']', `"${window.plugin.pnav.selectedGuid}"]`);
-            } else {
-              newDone = newDone.replace(']', `,"${window.plugin.pnav.selectedGuid}"]`);
-            }
-            localStorage[`plugin-pnav-done-${type}`] = newDone;
-          } else {
-            localStorage[`plugin-pnav-done-${type}`] = JSON.stringify([window.plugin.pnav.selectedGuid]);
-          }
-          console.log('sent!');
-        }
+      var done = localStorage[`plugin-pnav-done-${type}`] ? JSON.parse(localStorage[`plugin-pnav-done-${type}`]) : {};
+      if (
+        window.plugin.pnav.settings.lat &&
+        window.plugin.pnav.settings.lng &&
+        window.plugin.pnav.settings.radius &&
+        checkDistance(lat, lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
+        window.plugin.pnav.settings.radius
+      ) {
+        alert('this location is outside the specified Community Area!');
+      } else if (
+        done[window.plugin.pnav.selectedGuid]
+      ) {
+        alert('this location has already been exported! If you are sure this is not the case, try resetting the Export State in settings.');
       } else {
-        input.show();
-        input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
-        copyfieldvalue('copyInput');
-        input.hide();
+        if (window.plugin.pnav.settings.webhookUrl) {
+          sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+          let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : null;
+          if (pogoData && pogoData[type] && pogoData[`${type}.${window.plugin.pnav.selectedGuid}`]) {
+            done[window.plugin.pnav.selectedGuid] = pogoData[window.plugin.pnav.selectedGuid];
+          } else {
+            var newObject = {
+              'guid': String(window.plugin.pnav.selectedGuid),
+              'name': String(portal.options.data.title),
+              'lat': String(lat),
+              'lng': String(lng)
+            };
+            if ($('#PNavEx').prop('checked')) {
+              newObject.isEx = true;
+            }
+            done[window.plugin.pnav.selectedGuid] = newObject;
+          }
+          localStorage[`plugin-pnav-done-${type}`] = JSON.stringify(done);
+          console.log('sent!');
+        } else {
+          input.show();
+          input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+          copyfieldvalue('copyInput');
+          input.hide();
+        }
       }
     }
   };
@@ -341,12 +345,12 @@ function wrapper (plugin_info) {
           <input id="pNavPoiId" type="number" min="0" step="1"/>
         </label>
         <br>
-        <a id="pNavPoiInfo" title="Sends the PoI Information Command for the PoI.">
+        <button type="Button" class="ui-button" id="pNavPoiInfo" title="Sends the PoI Information Command for the PoI.">
           Send PoI Info Command
-        </a>
-        <a id="pNavModCommand" title="You must input the PokeNav location ID before you can send the modification command!" style="color:darkgray;cursor:default;text-decoration:none">
+        </button>
+        <button type="Button" class="ui-button" id="pNavModCommand" title="You must input the PokeNav location ID before you can send the modification command!" style="color:darkgray;cursor:default;text-decoration:none">
           Send Modification Command
-        </a>
+        </button>
       `;
       if (changeList.length > 0) {
         const modDialog = window.dialog({
@@ -363,10 +367,6 @@ function wrapper (plugin_info) {
               } else {
                 poi = changeList[i];
                 updateUI(modDialog, poi);
-                $('#pNavModCommand', modDialog).css('color', 'darkgray');
-                $('#pNavModCommand', modDialog).css('cursor', 'default');
-                $('#pNavModCommand', modDialog).css('text-decoration', 'none');
-                $('#pNavModCommand', modDialog).prop('title', 'You must input the PokeNav location ID before you can send the modification command!');
               }
             }
           }
@@ -382,10 +382,12 @@ function wrapper (plugin_info) {
           const value = e.target.valueAsNumber;
           if (valid && value && value > 0) {
             $('#pNavModCommand', modDialog).prop('style', '');
+            $('#pNavModCommand', modDialog).prop('title', 'Send the PoI Modification Command to Discord');
           } else {
             $('#pNavModCommand', modDialog).css('color', 'darkgray');
             $('#pNavModCommand', modDialog).css('cursor', 'default');
             $('#pNavModCommand', modDialog).css('text-decoration', 'none');
+            $('#pNavModCommand', modDialog).css('border', '1px solid darkgray');
             $('#pNavModCommand', modDialog).prop('title', 'You must input the PokeNav location ID before you can send the modification command!');
           }
         });
@@ -399,10 +401,6 @@ function wrapper (plugin_info) {
             } else {
               poi = changeList[i];
               updateUI(modDialog, poi);
-              $('#pNavModCommand', modDialog).css('color', 'darkgray');
-              $('#pNavModCommand', modDialog).css('cursor', 'default');
-              $('#pNavModCommand', modDialog).css('text-decoration', 'none');
-              $('#pNavModCommand', modDialog).prop('title', 'You must input the PokeNav location ID before you can send the modification command!');
             }
           }
         });
@@ -428,6 +426,7 @@ function wrapper (plugin_info) {
       }
       localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(pNavStops);
     } else if (Object.keys(pogoGyms).includes(poi.guid)) {
+      debugger;
       pNavGyms[poi.guid] = pogoGyms[poi.guid];
       if (Object.keys(pNavStops).includes(poi.guid)) {
         delete pNavStops[poi.guid];
@@ -549,6 +548,11 @@ function wrapper (plugin_info) {
       }
     }
     $('#pNavPoiId', dialog).val('');
+    $('#pNavModCommand', dialog).css('color', 'darkgray');
+    $('#pNavModCommand', dialog).css('border', '1px solid darkgray');
+    $('#pNavModCommand', dialog).css('cursor', 'default');
+    $('#pNavModCommand', dialog).css('text-decoration', 'none');
+    $('#pNavModCommand', dialog).prop('title', 'You must input the PokeNav location ID before you can send the modification command!');
   }
 
   function sendModCommand (pNavId, changes) {
@@ -574,6 +578,7 @@ function wrapper (plugin_info) {
     const pNavGyms = localStorage['plugin-pnav-done-gym'] ? JSON.parse(localStorage['plugin-pnav-done-gym']) : {};
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoStops = (pogoData && pogoData.pokestops) ? pogoData.pokestops : {};
+    console.log(pogoStops);
     const keysStops = Object.keys(pogoStops);
     const pogoGyms = pogoData && pogoData.gyms ? pogoData.gyms : {};
     const keysGyms = Object.keys(pogoGyms);
@@ -600,10 +605,13 @@ function wrapper (plugin_info) {
           if (originalData.name !== stop.name) {
             detectedChanges.name = originalData.name;
           }
-          if (originalData.lat !== stop.lat) {
+          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
+          if (originalData.lat != stop.lat) {
+            debugger;
             detectedChanges.latitude = originalData.lat;
           }
-          if (originalData.lng !== stop.lng) {
+          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
+          if (originalData.lng != stop.lng) {
             detectedChanges.longitude = originalData.lng;
           }
         }
@@ -634,10 +642,12 @@ function wrapper (plugin_info) {
           if (originalData.name !== gym.name) {
             detectedChanges.name = originalData.name;
           }
-          if (originalData.lat !== gym.lat) {
+          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
+          if (originalData.lat != gym.lat) {
             detectedChanges.latitude = originalData.lat;
           }
-          if (originalData.lng !== gym.lng) {
+          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
+          if (originalData.lng != gym.lng) {
             detectedChanges.longitude = originalData.lng;
           }
           if (originalData.isEx !== gym.isEx) {
