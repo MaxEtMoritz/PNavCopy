@@ -165,15 +165,28 @@ function wrapper (plugin_info) {
         <p>
           <label id="center" title="Paste the Center Coordinate of your Community here (you can view it typing ${window.plugin.pnav.settings.prefix}show settings in Admin Channel)">
           Community Center:
-          <input id="pnavCenter" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${window.plugin.pnav.settings.lat != '' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
+          <input id="pnavCenter" style="width:140px" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${window.plugin.pnav.settings.lat != '' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
           </label>
           <br>
-          <label id="radius" title="Enter the specified Community Radius here.">
-          Community Radius:
-          <input id="pnavRadius" style="width:70px" type="number" min="0" step="0.001" value="${window.plugin.pnav.settings.radius}"/>
+          <label id="radius" title="Enter the specified Community Radius in kilometers here.">
+          Community Radius (Km):
+          <input id="pnavRadius" style="width:41px;appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="0.001" value="${window.plugin.pnav.settings.radius}"/>
           </label>
         </p>
-        <p><button type="Button" style="width:100%" title="erase all Export History" onclick="window.plugin.pnav.deleteExportState();return false;">Erase Location Export History</button></p>
+        <p><button type="Button" id="btnEraseHistory" style="width:100%" title="erase all Export History" onclick="
+          window.plugin.pnav.deleteExportState();
+          $(this).css('color','green');
+          $(this).css('border','1px solid green')
+          $(this).text('Erased!');
+          setTimeout(function () {
+            if($('#btnEraseHistory').length > 0){
+              $('#btnEraseHistory').css('color', '');
+              $('#btnEraseHistory').css('border', '');
+              $('#btnEraseHistory').text('Erase Location Export History');
+            }
+          }, 1000);
+          return false;
+        ">Erase Location Export History</button></p>
         `;
     if (window.plugin.pogo) {
       html += `
@@ -295,6 +308,8 @@ function wrapper (plugin_info) {
         }
       }
     });
+    // unfocus all input fields to prevent the explanation tooltips to pop up
+    $('input', container).blur();
   };
 
   window.plugin.pnav.deleteExportState = function () {
@@ -334,6 +349,7 @@ function wrapper (plugin_info) {
       const changeList = checkForModifications();
       console.log(changeList);
       const html = `
+        <label>Modification </label><label id=pNavModNrCur>1</label><label> of </label><label id="pNavModNrMax"/>
         <h3>
           The following Poi was modified in PoGo Tools:
         </h3>
@@ -342,7 +358,7 @@ function wrapper (plugin_info) {
         <ul id="pNavChangesMade"/>
         <label>
           PokeNav ID:
-          <input id="pNavPoiId" type="number" min="0" step="1"/>
+          <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="1"/>
         </label>
         <br>
         <button type="Button" class="ui-button" id="pNavPoiInfo" title="Sends the PoI Information Command for the PoI.">
@@ -366,7 +382,7 @@ function wrapper (plugin_info) {
                 modDialog.dialog('close');
               } else {
                 poi = changeList[i];
-                updateUI(modDialog, poi);
+                updateUI(modDialog, poi, i);
               }
             }
           }
@@ -400,11 +416,12 @@ function wrapper (plugin_info) {
               modDialog.dialog('close');
             } else {
               poi = changeList[i];
-              updateUI(modDialog, poi);
+              updateUI(modDialog, poi, i);
             }
           }
         });
-        updateUI(modDialog, poi);
+        $('#pNavModNrMax', modDialog).text(changeList.length);
+        updateUI(modDialog, poi, i);
         // TODO design Dialog, send stop info message and trigger sendModCommand then.
       } else {
         alert('No modifications of PogoTools data detected!');
@@ -426,7 +443,6 @@ function wrapper (plugin_info) {
       }
       localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(pNavStops);
     } else if (Object.keys(pogoGyms).includes(poi.guid)) {
-      debugger;
       pNavGyms[poi.guid] = pogoGyms[poi.guid];
       if (Object.keys(pNavStops).includes(poi.guid)) {
         delete pNavStops[poi.guid];
@@ -536,15 +552,16 @@ function wrapper (plugin_info) {
    *  }
    *}
    */
-  function updateUI (dialog, poi) {
+  function updateUI (dialog, poi, i) {
     $('#pNavOldPoiName', dialog).text(poi.oldName);
+    $('#pNavModNrCur', dialog).text(i + 1);
     $('#pNavChangesMade', dialog).empty();
     for (const [
       key,
       value
     ] of Object.entries(poi)) {
       if (key !== 'oldName' && key !== 'oldType' && key !== 'guid') {
-        $('#pNavChangesMade', dialog).append(`<li>${key}=> ${value}</li>`);
+        $('#pNavChangesMade', dialog).append(`<li>${key} => ${value}</li>`);
       }
     }
     $('#pNavPoiId', dialog).val('');
@@ -566,7 +583,11 @@ function wrapper (plugin_info) {
         value
       ] of Object.entries(changes)) {
         if (key !== 'oldType' && key !== 'oldName' && key !== 'guid') {
-          command += ` "${key}: ${value}"`;
+          if (key === 'name') {
+            command += ` "${key}: ${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+          } else {
+            command += ` "${key}: ${value}"`;
+          }
         }
       }
     }
@@ -607,7 +628,6 @@ function wrapper (plugin_info) {
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
           if (originalData.lat != stop.lat) {
-            debugger;
             detectedChanges.latitude = originalData.lat;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
