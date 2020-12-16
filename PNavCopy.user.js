@@ -108,30 +108,18 @@ function wrapper (plugin_info) {
         checkDistance(lat, lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
         window.plugin.pnav.settings.radius
       ) {
-        alert('this location is outside the specified Community Area!');
+        alert('This location is outside the specified Community Area!');
       } else if (
         done[window.plugin.pnav.selectedGuid]
       ) {
-        alert('this location has already been exported! If you are sure this is not the case, try resetting the Export State in settings.');
+        alert('This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.');
+        input.show();
+        input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+        copyfieldvalue('copyInput');
+        input.hide();
       } else {
         if (window.plugin.pnav.settings.webhookUrl) {
           sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
-          let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : null;
-          if (pogoData && pogoData[type] && pogoData[`${type}.${window.plugin.pnav.selectedGuid}`]) {
-            done[window.plugin.pnav.selectedGuid] = pogoData[window.plugin.pnav.selectedGuid];
-          } else {
-            var newObject = {
-              'guid': String(window.plugin.pnav.selectedGuid),
-              'name': String(portal.options.data.title),
-              'lat': String(lat),
-              'lng': String(lng)
-            };
-            if ($('#PNavEx').prop('checked')) {
-              newObject.isEx = true;
-            }
-            done[window.plugin.pnav.selectedGuid] = newObject;
-          }
-          localStorage[`plugin-pnav-done-${type}`] = JSON.stringify(done);
           console.log('sent!');
         } else {
           input.show();
@@ -139,6 +127,22 @@ function wrapper (plugin_info) {
           copyfieldvalue('copyInput');
           input.hide();
         }
+        let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : null;
+        if (pogoData && pogoData[type] && pogoData[`${type}.${window.plugin.pnav.selectedGuid}`]) {
+          done[window.plugin.pnav.selectedGuid] = pogoData[window.plugin.pnav.selectedGuid];
+        } else {
+          var newObject = {
+            'guid': String(window.plugin.pnav.selectedGuid),
+            'name': String(portal.options.data.title),
+            'lat': String(lat),
+            'lng': String(lng)
+          };
+          if ($('#PNavEx').prop('checked')) {
+            newObject.isEx = true;
+          }
+          done[window.plugin.pnav.selectedGuid] = newObject;
+        }
+        localStorage[`plugin-pnav-done-${type}`] = JSON.stringify(done);
       }
     }
   };
@@ -190,8 +194,8 @@ function wrapper (plugin_info) {
         `;
     if (window.plugin.pogo) {
       html += `
-            <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="Grab the File where all Gyms are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExport('gym');return false;">Export all PogoTools Gyms</button></p>
-            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="Grab the File where all Stops are stored by PoGoTools and send them one by one via Web Hook. This can take much time!" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">Export all PogoTools Stops</button></p>
+            <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="Grab the File where all Gyms are stored by PoGo Tools and send them one by one via WebHook. This can take much time!" onclick="window.plugin.pnav.bulkExport('gym');return false;">Export all Pogo Tools Gyms</button></p>
+            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="Grab the File where all Stops are stored by PoGo Tools and send them one by one via WebHook. This can take much time!" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">Export all Pogo Tools Stops</button></p>
             <p><button type="Button" style="width:100%" title="Check if the Pogo Tools Data was modified and start Upload process of modifications" onclick="window.plugin.pnav.bulkModify();return false;">Check for Modifications</button></p>
             `;
     }
@@ -347,7 +351,8 @@ function wrapper (plugin_info) {
   window.plugin.pnav.bulkModify = function () {
     if (window.plugin.pogo) {
       const changeList = checkForModifications();
-      console.log(changeList);
+      // console.log(changeList);
+      const send = Boolean(window.plugin.pnav.settings.webhookUrl);
       const html = `
         <label>Modification </label><label id=pNavModNrCur>1</label><label> of </label><label id="pNavModNrMax"/>
         <h3>
@@ -361,11 +366,11 @@ function wrapper (plugin_info) {
           <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="1"/>
         </label>
         <br>
-        <button type="Button" class="ui-button" id="pNavPoiInfo" title="Sends the PoI Information Command for the PoI.">
-          Send PoI Info Command
+        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${send ? 'Sends' : 'Copies'} the Poi Information Command for the Poi.">
+          ${send ? 'Send' : 'Copy'} Poi Info Command
         </button>
-        <button type="Button" class="ui-button" id="pNavModCommand" title="You must input the PokeNav location ID before you can send the modification command!" style="color:darkgray;cursor:default;text-decoration:none">
-          Send Modification Command
+        <button type="Button" class="ui-button" id="pNavModCommand" title="You must input the PokeNav location ID before you can ${send ? 'send' : 'copy'} the modification command!" style="color:darkgray;cursor:default;text-decoration:none">
+          ${send ? 'Send' : 'Copy'} Modification Command
         </button>
       `;
       if (changeList.length > 0) {
@@ -390,7 +395,15 @@ function wrapper (plugin_info) {
         var i = 0;
         var poi = changeList[i];
         $('#pNavPoiInfo', modDialog).on('click', function () {
-          sendMessage(`${window.plugin.pnav.settings.prefix}${poi.oldType}-info ${poi.oldName}`);
+          if (window.plugin.pnav.settings.webhookUrl) {
+            sendMessage(`${window.plugin.pnav.settings.prefix}${poi.oldType}-info ${poi.oldName}`);
+          } else {
+            const input = $('#copyInput');
+            input.show();
+            input.val(`${window.plugin.pnav.settings.prefix}${poi.oldType}-info ${poi.oldName}`);
+            copyfieldvalue('copyInput');
+            input.hide();
+          }
         });
         $('#pNavPoiId', modDialog).on('input', function (e) {
           // console.log(e);
@@ -398,13 +411,13 @@ function wrapper (plugin_info) {
           const value = e.target.valueAsNumber;
           if (valid && value && value > 0) {
             $('#pNavModCommand', modDialog).prop('style', '');
-            $('#pNavModCommand', modDialog).prop('title', 'Send the PoI Modification Command to Discord');
+            $('#pNavModCommand', modDialog).prop('title', `${send ? 'Send' : 'Copy'} the Poi Modification Command`);
           } else {
             $('#pNavModCommand', modDialog).css('color', 'darkgray');
             $('#pNavModCommand', modDialog).css('cursor', 'default');
             $('#pNavModCommand', modDialog).css('text-decoration', 'none');
             $('#pNavModCommand', modDialog).css('border', '1px solid darkgray');
-            $('#pNavModCommand', modDialog).prop('title', 'You must input the PokeNav location ID before you can send the modification command!');
+            $('#pNavModCommand', modDialog).prop('title', `You must input the PokeNav location ID before you can ${send ? 'send' : 'copy'} the modification command!`);
           }
         });
         $('#pNavModCommand', modDialog).on('click', function () {
@@ -422,9 +435,8 @@ function wrapper (plugin_info) {
         });
         $('#pNavModNrMax', modDialog).text(changeList.length);
         updateUI(modDialog, poi, i);
-        // TODO design Dialog, send stop info message and trigger sendModCommand then.
       } else {
-        alert('No modifications of PogoTools data detected!');
+        alert('No modifications of Pogo Tools data detected!');
       }
     }
   };
@@ -569,7 +581,7 @@ function wrapper (plugin_info) {
     $('#pNavModCommand', dialog).css('border', '1px solid darkgray');
     $('#pNavModCommand', dialog).css('cursor', 'default');
     $('#pNavModCommand', dialog).css('text-decoration', 'none');
-    $('#pNavModCommand', dialog).prop('title', 'You must input the PokeNav location ID before you can send the modification command!');
+    $('#pNavModCommand', dialog).prop('title', `You must input the PokeNav location ID before you can ${window.plugin.pnav.settings.webhookUrl ? 'send' : 'copy'} the modification command!`);
   }
 
   function sendModCommand (pNavId, changes) {
@@ -591,7 +603,15 @@ function wrapper (plugin_info) {
         }
       }
     }
-    sendMessage(command);
+    if (window.plugin.pnav.settings.webhookUrl) {
+      sendMessage(command);
+    } else {
+      const input = $('#copyInput');
+      input.show();
+      input.val(command);
+      copyfieldvalue('copyInput');
+      input.hide();
+    }
   }
 
   function checkForModifications () {
@@ -626,11 +646,11 @@ function wrapper (plugin_info) {
           if (originalData.name !== stop.name) {
             detectedChanges.name = originalData.name;
           }
-          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
+          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
           if (originalData.lat != stop.lat) {
             detectedChanges.latitude = originalData.lat;
           }
-          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
+          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
           if (originalData.lng != stop.lng) {
             detectedChanges.longitude = originalData.lng;
           }
@@ -662,11 +682,11 @@ function wrapper (plugin_info) {
           if (originalData.name !== gym.name) {
             detectedChanges.name = originalData.name;
           }
-          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
+          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
           if (originalData.lat != gym.lat) {
             detectedChanges.latitude = originalData.lat;
           }
-          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in PogoTools. Maybe there's a bug with that...
+          // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
           if (originalData.lng != gym.lng) {
             detectedChanges.longitude = originalData.lng;
           }
@@ -725,7 +745,7 @@ function wrapper (plugin_info) {
     if (!window.plugin.pnav.timer) {
       var data = gatherExportData(type);
       if (!data) {
-        alert('There was a problem reading the PogoTools Data File.');
+        alert('There was a problem reading the Pogo Tools Data File.');
         return;
       }
       var i = 0;
@@ -915,7 +935,7 @@ function wrapper (plugin_info) {
           if (node.className == 'PogoButtons') {
             // console.log('there is PogoButtons!');
             $(node).after(`
-             <a style="position:absolute;right:5px" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">Copy PokeNav</a>
+             <a style="position:absolute;right:5px" title="${window.plugin.pnav.settings.webhookUrl ? 'Send the Location create Command to Discord via WebHook':'Copy the Location create Command to Clipboard'}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">${window.plugin.pnav.settings.webhookUrl ? 'Send to' : 'Copy'} PokeNav</a>
              `);
             $(node).css('display', 'inline');
             // we don't need to look for the class anymore because we just found what we wanted ;-)
@@ -929,7 +949,7 @@ function wrapper (plugin_info) {
   function waitForPogoStatus (mutationList, invokingObserver) {
     mutationList.forEach(function (mutation) {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        $('.PogoStatus').append('<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">Copy PokeNav</a>');
+        $('.PogoStatus').append(`<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">${window.plugin.pnav.settings.webhookUrl ? 'Send to' : 'Copy'} PokeNav</a>`);
         invokingObserver.disconnect();
       }
     });
@@ -944,7 +964,7 @@ function wrapper (plugin_info) {
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
     const detailsObserver = new MutationObserver(waitForPogoButtons);
     const statusObserver = new MutationObserver(waitForPogoStatus);
-
+    const send = Boolean(window.plugin.pnav.settings.webhookUrl);
     window.addHook('portalSelected', function (data) {
       console.log(data);
       var guid = data.selectedPortalGuid;
@@ -965,8 +985,8 @@ function wrapper (plugin_info) {
               <input type="radio" name="type" value="ex" id="PNavEx"/>
               Ex Gym
             </label>
-            <a style="margin-left:auto;margin-right:5px${window.isSmartphone()?';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1':''}" title="Copy the PokeNav Command to Clipboard or post to Discord via WebHook" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
-              Copy PokeNav
+            <a style="margin-left:auto;margin-right:5px${window.isSmartphone()?';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1':''}" title="${send?'Send the Location create Command to Discord via WebHook':'Copy the Location create Command to Clipboard'}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
+              ${send ? 'Send to' : 'Copy'} PokeNav
             </a>
           </div>
         `);
