@@ -78,6 +78,7 @@ function wrapper (plugin_info) {
       var lng = latlng.lng;
       var opt = ' ';
       var type = '';
+      var isEx;
 
       /** @type {string} */
       var prefix = window.plugin.pnav.settings.prefix;
@@ -88,19 +89,20 @@ function wrapper (plugin_info) {
           type = 'gym';
           if ($('#PogoGymEx').prop('checked') == true) {
             opt += '"ex_eligible: 1"';
+            isEx = true;
           }
         }
       } else {
         if (document.getElementById('PNavEx').checked) {
           type = 'gym';
           opt += '"ex_eligible: 1"';
+          isEx = true;
         } else if (document.getElementById('PNavGym').checked) {
           type = 'gym';
         } else {
           type = 'pokestop';
         }
       }
-      var done = localStorage[`plugin-pnav-done-${type}`] ? JSON.parse(localStorage[`plugin-pnav-done-${type}`]) : {};
       if (
         window.plugin.pnav.settings.lat &&
         window.plugin.pnav.settings.lng &&
@@ -109,40 +111,53 @@ function wrapper (plugin_info) {
         window.plugin.pnav.settings.radius
       ) {
         alert('This location is outside the specified Community Area!');
-      } else if (
-        done[window.plugin.pnav.selectedGuid]
-      ) {
-        alert('This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.');
-        input.show();
-        input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
-        copyfieldvalue('copyInput');
-        input.hide();
       } else {
-        if (window.plugin.pnav.settings.webhookUrl) {
-          sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
-          console.log('sent!');
-        } else {
+        var done = localStorage[`plugin-pnav-done-${type}`] ? JSON.parse(localStorage[`plugin-pnav-done-${type}`]) : {};
+        var changes = checkForSingleModification({
+          type,
+          guid: window.plugin.pnav.selectedGuid,
+          name,
+          isEx,
+          lat,
+          lng
+        });
+        if (changes) {
+          window.plugin.pnav.bulkModify([changes]);
+        } else if (
+          done[window.plugin.pnav.selectedGuid]
+        ) {
+          alert('This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.');
           input.show();
           input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
           copyfieldvalue('copyInput');
           input.hide();
-        }
-        let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : null;
-        if (pogoData && pogoData[type] && pogoData[`${type}.${window.plugin.pnav.selectedGuid}`]) {
-          done[window.plugin.pnav.selectedGuid] = pogoData[window.plugin.pnav.selectedGuid];
         } else {
-          var newObject = {
-            'guid': String(window.plugin.pnav.selectedGuid),
-            'name': String(portal.options.data.title),
-            'lat': String(lat),
-            'lng': String(lng)
-          };
-          if ($('#PNavEx').prop('checked')) {
-            newObject.isEx = true;
+          if (window.plugin.pnav.settings.webhookUrl) {
+            sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+            console.log('sent!');
+          } else {
+            input.show();
+            input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+            copyfieldvalue('copyInput');
+            input.hide();
           }
-          done[window.plugin.pnav.selectedGuid] = newObject;
+          let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : null;
+          if (pogoData && pogoData[type] && pogoData[`${type}.${window.plugin.pnav.selectedGuid}`]) {
+            done[window.plugin.pnav.selectedGuid] = pogoData[window.plugin.pnav.selectedGuid];
+          } else {
+            var newObject = {
+              'guid': String(window.plugin.pnav.selectedGuid),
+              'name': String(portal.options.data.title),
+              'lat': String(lat),
+              'lng': String(lng)
+            };
+            if ($('#PNavEx').prop('checked')) {
+              newObject.isEx = true;
+            }
+            done[window.plugin.pnav.selectedGuid] = newObject;
+          }
+          localStorage[`plugin-pnav-done-${type}`] = JSON.stringify(done);
         }
-        localStorage[`plugin-pnav-done-${type}`] = JSON.stringify(done);
       }
     }
   };
@@ -348,15 +363,15 @@ function wrapper (plugin_info) {
     );
   }
 
-  window.plugin.pnav.bulkModify = function () {
-    if (window.plugin.pogo) {
-      const changeList = checkForModifications();
+  window.plugin.pnav.bulkModify = function (changes) {
+    const changeList = changes && changes instanceof Array ? changes : checkForModifications();
+    if (changeList && changeList.length > 0) {
       // console.log(changeList);
       const send = Boolean(window.plugin.pnav.settings.webhookUrl);
       const html = `
         <label>Modification </label><label id=pNavModNrCur>1</label><label> of </label><label id="pNavModNrMax"/>
         <h3>
-          The following Poi was modified in PoGo Tools:
+          The following Poi was modified:
         </h3>
         <h3 id="pNavOldPoiName"/>
         <label>The following has changed:</label>
@@ -376,7 +391,7 @@ function wrapper (plugin_info) {
       if (changeList.length > 0) {
         const modDialog = window.dialog({
           id: 'pNavmodDialog',
-          title: 'PokeNav Bulk Modification',
+          title: 'PokeNav Modification(s)',
           html,
           width: 'auto',
           height: 'auto',
@@ -436,7 +451,7 @@ function wrapper (plugin_info) {
         $('#pNavModNrMax', modDialog).text(changeList.length);
         updateUI(modDialog, poi, i);
       } else {
-        alert('No modifications of Pogo Tools data detected!');
+        alert('No modifications detected!');
       }
     }
   };
@@ -619,7 +634,7 @@ function wrapper (plugin_info) {
     const pNavGyms = localStorage['plugin-pnav-done-gym'] ? JSON.parse(localStorage['plugin-pnav-done-gym']) : {};
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoStops = (pogoData && pogoData.pokestops) ? pogoData.pokestops : {};
-    console.log(pogoStops);
+    // console.log(pogoStops);
     const keysStops = Object.keys(pogoStops);
     const pogoGyms = pogoData && pogoData.gyms ? pogoData.gyms : {};
     const keysGyms = Object.keys(pogoGyms);
@@ -704,6 +719,66 @@ function wrapper (plugin_info) {
       });
     }
     return changeList;
+  }
+
+  /**
+   * Checks if a single Poi has been modified
+   * @param {{
+   * type: string,
+   * guid: string,
+   * name: string,
+   * lat: (string|number),
+   * lng: (string|number),
+   * isEx:(boolean|undefined)
+   * }} currentData
+   * @return {{
+   * oldType: string,
+   * oldName: string,
+   * guid: string,
+   * latitude:(string|undefined),
+   * longitude:(string|undefined),
+   * name: (string|undefined),
+   * type:(string|undefined),
+   * ex_eligible:(number|undefined)
+   * } | null} returns the found changes or null if none were found or a problem occurred.
+   */
+  function checkForSingleModification (currentData) {
+    let changes = {};
+    const pNavStops = localStorage['plugin-pnav-done-pokestop'] ? JSON.parse(localStorage['plugin-pnav-done-pokestop']) : {};
+    const pNavGyms = localStorage['plugin-pnav-done-gym'] ? JSON.parse(localStorage['plugin-pnav-done-gym']) : {};
+    var savedData;
+    if (pNavStops[currentData.guid]) {
+      savedData = pNavStops[currentData.guid];
+      savedData.type = 'pokestop';
+    } else if (pNavGyms[currentData.guid]) {
+      savedData = pNavGyms[currentData.guid];
+      savedData.type = 'gym';
+    } else {
+      return null;
+    }
+    if (currentData.type !== savedData.type) {
+      changes.type = currentData.type;
+    }
+    if (currentData.lat != savedData.lat) {
+      changes.latitude = currentData.lat.toString();
+    }
+    if (currentData.lng != savedData.lng) {
+      changes.longitude = currentData.lng.toString();
+    }
+    if (currentData.name != savedData.name) {
+      changes.name = currentData.name;
+    }
+    if (currentData.isEx !== savedData.isEx) {
+      changes.ex_eligible = currentData.isEx?1:0;
+    }
+    if (Object.keys(changes).length > 0) {
+      changes.oldName = savedData.name;
+      changes.oldType = savedData.type;
+      changes.guid = savedData.guid;
+      return changes;
+    } else {
+      return null;
+    }
   }
 
   /**
