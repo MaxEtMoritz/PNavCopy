@@ -55,22 +55,13 @@ function wrapper (plugin_info) {
   // use own namespace for plugin
   window.plugin.pnav = function () { };
   var selectedGuid = null;
-  window.plugin.pnav.settings = {
-    webhookUrl: '',
-    name: window.PLAYER.nickname,
-    radius: '',
-    lat: '',
-    lng: '',
-    prefix: '$',
-    language: 'en'
-  };
   var pNavData = {
     pokestop: {},
     gym: {}
   };
   const request = new XMLHttpRequest();
 
-  var strings = {
+  const strings = {
     en: {
       alertAlreadyExported: 'This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.',
       alertExportRunning: 'Settings not saved because Export was running. Pause the Export and then try again!',
@@ -138,9 +129,29 @@ function wrapper (plugin_info) {
       sendTo: 'Send to'
     }
   };
+// TODO settings is undefined!
+  window.plugin.pnav.settings = {
+    webhookUrl: '',
+    name: window.PLAYER.nickname,
+    radius: '',
+    lat: '',
+    lng: '',
+    prefix: '$',
+    language: detectLanguage()
+  };
+
+  function detectLanguage() {
+    let lang = navigator.language;
+    console.log(lang);
+    lang = lang.split('-')[0].toLowerCase();
+    if (Object.keys(strings).includes(lang))
+      return lang;
+    else
+      return 'en';
+  }
 
   function getString (id) {
-    if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && strings(strings[window.plugin.pnav.settings.language])[id]) {
+    if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && (strings[window.plugin.pnav.settings.language])[id]) {
       return (strings[window.plugin.pnav.settings.language])[id];
     } else if (strings.en && strings.en[id]) {
       return strings.en[id];
@@ -426,6 +437,7 @@ function wrapper (plugin_info) {
     Object.keys(strings).forEach(function (key) {
       languageDropdown.append(`<option value="${key}">${key}</option>`);
     });
+    languageDropdown.val(window.plugin.pnav.settings.language);
   };
 
   window.plugin.pnav.deleteExportState = function () {
