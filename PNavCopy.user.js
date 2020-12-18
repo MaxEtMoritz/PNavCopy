@@ -122,12 +122,25 @@ function wrapper (plugin_info) {
         alertNoModifications: 'No modifications detected!',
         alertProblemPogoTools: 'There was a problem reading the Pogo Tools Data File.',
         exportStateTextReady: 'Export Ready!',
-        exportStateTextExporting: 'Exporting...'
+        exportStateTextExporting: 'Exporting...',
+        exportProgressBarDescription: 'Progress:',
+        exportTimeRemainingDescription: 'Time remaining: ',
+        bulkExportProgressTitle: 'PokeNav Bulk Export Progress',
+        bulkExportProgressButtonText: 'Pause',
+        bulkExportProgressButtonTitle: 'Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.',
+        PogoButtonsTitleSend: 'Send the Location create Command to Discord via WebHook',
+        PogoButtonsTitleCopy: 'Copy the Location create Command to Clipboard',
+        sendTo: 'Send to',
+        pokeNavSettingsTitle: 'Configure PokeNav',
+        pokeNavSettingsText: 'PokeNav Settings',
+        PNavStopDescription: 'Stop',
+        PNavGymDescription: 'Gym',
+        PNavExDescription: 'Ex Gym'
       }
     };
 
-    if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && strings[`${window.plugin.pnav.settings.language}.${id}`]) {
-      return strings[`${window.plugin.pnav.settings.language}.${id}`];
+    if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && strings(strings[window.plugin.pnav.settings.language])[id]) {
+      return (strings[window.plugin.pnav.settings.language])[id];
     } else if (strings.en && strings.en[id]) {
       return strings.en[id];
     } else {
@@ -194,7 +207,7 @@ function wrapper (plugin_info) {
         if (changes) {
           window.plugin.pnav.bulkModify([changes]);
         } else if (
-          pNavData[`${type}.${selectedGuid}`]
+          (pNavData[type])[selectedGuid]
         ) {
           alert(getString('alertAlreadyExported'));
           input.show();
@@ -211,9 +224,10 @@ function wrapper (plugin_info) {
             copyfieldvalue('copyInput');
             input.hide();
           }
-          let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : null;
-          if (pogoData && pogoData[type] && pogoData[`${type}.${selectedGuid}`]) {
-            pNavData[`${type}.${selectedGuid}`] = pogoData[selectedGuid];
+          // TODO whyever he doesn't find the entry in Pogo Tools Data...
+          let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
+          if (pogoData[type] && ((pogoData[type])[selectedGuid])) {
+            (pNavData[type])[selectedGuid] = pogoData[selectedGuid];
           } else {
             var newObject = {
               'guid': String(selectedGuid),
@@ -224,7 +238,7 @@ function wrapper (plugin_info) {
             if ($('#PNavEx').prop('checked')) {
               newObject.isEx = true;
             }
-            pNavData[`${type}.${selectedGuid}`] = newObject;
+            (pNavData[type])[selectedGuid] = newObject;
           }
           saveToLocalStorage();
         }
@@ -282,7 +296,7 @@ function wrapper (plugin_info) {
     if (window.plugin.pogo) {
       html += `
             <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="${getString('btnBulkExportGymsTitle')}" onclick="window.plugin.pnav.bulkExport('gym');return false;">${getString('btnBulkExportGymsText')}</button></p>
-            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="${getString('btnBulkExportStopsTitle')}" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">${getString('btnBulkExportGymsText')}</button></p>
+            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="${getString('btnBulkExportStopsTitle')}" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">${getString('btnBulkExportStopsText')}</button></p>
             <p><button type="Button" id="btnBulkModify" style="width:100%" title="${getString('btnBulkModifyTitle')}" onclick="window.plugin.pnav.bulkModify();return false;">${getString('btnBulkModifyText')}</button></p>
             `;
     }
@@ -424,7 +438,7 @@ function wrapper (plugin_info) {
     const addToDone = data.slice(0, index);
     // console.log(addToDone);
     addToDone.forEach(function (object) {
-      pNavData[`${type}.${object.guid}`] = object;
+      (pNavData[type])[object.guid] = object;
     });
     saveToLocalStorage();
   }
@@ -852,19 +866,19 @@ function wrapper (plugin_info) {
               <h3 id="exportState">${getString('exportStateTextExporting')}</h3>
               <p>
                 <label>
-                  Progress:
+                  ${getString('exportProgressBarDescription')}
                   <progress id="exportProgressBar" value="0" max="${data.length}"/>
                 </label>
               </p>
               <label id="exportNumber">0</label>
-              <label> of ${data.length}</label>
+              <label>${getString('of')} ${data.length}</label>
               <br>
-              <label>Time remaining: </label>
+              <label>${getString('exportTimeRemainingDescription')}</label>
               <label id="exportTimeRemaining">${Math.round((wait * data.length) / 1000)}</label>
               <label>s</label>
         `,
         width: 'auto',
-        title: 'PokeNav Bulk Export Progress',
+        title: getString('bulkExportProgressTitle'),
         buttons: {
           OK () {
             saveState(data, type, i);
@@ -880,10 +894,10 @@ function wrapper (plugin_info) {
       let thisDialog = dialog.parent();
       // console.log(thisDialog);
       var okayButton = $('.ui-button', thisDialog).not('.ui-dialog-titlebar-button');
-      okayButton.text('Pause');
+      okayButton.text(getString('bulkExportProgressButtonText'));
       okayButton.prop(
         'title',
-        'store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.'
+        getString('bulkExportProgressButtonTitle')
       );
 
       $('.ui-button.ui-dialog-titlebar-button-close', thisDialog).on(
@@ -971,7 +985,7 @@ function wrapper (plugin_info) {
           if (node.className == 'PogoButtons') {
             // console.log('there is PogoButtons!');
             $(node).after(`
-             <a style="position:absolute;right:5px" title="${window.plugin.pnav.settings.webhookUrl ? 'Send the Location create Command to Discord via WebHook':'Copy the Location create Command to Clipboard'}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">${window.plugin.pnav.settings.webhookUrl ? 'Send to' : 'Copy'} PokeNav</a>
+             <a style="position:absolute;right:5px" title="${window.plugin.pnav.settings.webhookUrl ? getString('PogoButtonsTitleSend'):getString('PogoButtonsTitleCopy')}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">${window.plugin.pnav.settings.webhookUrl ? getString('sendTo') : getString('Copy')} PokeNav</a>
              `);
             $(node).css('display', 'inline');
             // we don't need to look for the class anymore because we just found what we wanted ;-)
@@ -985,7 +999,7 @@ function wrapper (plugin_info) {
   function waitForPogoStatus (mutationList, invokingObserver) {
     mutationList.forEach(function (mutation) {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        $('.PogoStatus').append(`<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">${window.plugin.pnav.settings.webhookUrl ? 'Send to' : 'Copy'} PokeNav</a>`);
+        $('.PogoStatus').append(`<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">${window.plugin.pnav.settings.webhookUrl ? getString('sendTo') : getString('Copy')} PokeNav</a>`);
         invokingObserver.disconnect();
       }
     });
@@ -1002,7 +1016,7 @@ function wrapper (plugin_info) {
     if (localStorage['plugin-pnav-done-gym']) {
       pNavData.gym = JSON.parse(localStorage.getItem('plugin-pnav-done-gym'));
     }
-    $('#toolbox').append('<a title="Configure PokeNav" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
+    $('#toolbox').append(`<a title="${getString('pokeNavSettingsTitle')}" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">${getString('pokeNavSettingsText')}</a>`);
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
     const detailsObserver = new MutationObserver(waitForPogoButtons);
     const statusObserver = new MutationObserver(waitForPogoStatus);
@@ -1017,18 +1031,18 @@ function wrapper (plugin_info) {
           <div id="PNav" style="color:#fff;display:flex">
             <Label>
               <input type="radio" checked="true" name="type" value="stop" id="PNavStop"/>
-              Stop
+              ${getString('PNavStopDescription')}
             </label>
             <Label>
               <input type="radio" name="type" value="gym" id="PNavGym"/>
-              Gym
+              ${getString('PNavGymDescription')}
             </label>
             <Label>
               <input type="radio" name="type" value="ex" id="PNavEx"/>
-              Ex Gym
+              ${getString('PNavExDescription')}
             </label>
-            <a style="margin-left:auto;margin-right:5px${window.isSmartphone()?';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1':''}" title="${send?'Send the Location create Command to Discord via WebHook':'Copy the Location create Command to Clipboard'}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
-              ${send ? 'Send to' : 'Copy'} PokeNav
+            <a style="margin-left:auto;margin-right:5px${window.isSmartphone()?';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1':''}" title="${send ? getString('PogoButtonsTitleSend'):getString('PogoButtonsTitleCopy')}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
+              ${send ? getString('sendTo') : getString('Copy')} PokeNav
             </a>
           </div>
         `);
