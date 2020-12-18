@@ -54,24 +54,91 @@ function wrapper (plugin_info) {
 
   // use own namespace for plugin
   window.plugin.pnav = function () { };
-  window.plugin.pnav.selectedGuid = null;
+  var selectedGuid = null;
   window.plugin.pnav.settings = {
     webhookUrl: '',
     name: window.PLAYER.nickname,
     radius: '',
     lat: '',
     lng: '',
-    prefix: '$'
+    prefix: '$',
+    language: 'en'
   };
   var pNavData = {
     pokestop: {},
     gym: {}
   };
-  window.plugin.pnav.request = new XMLHttpRequest();
+  const request = new XMLHttpRequest();
+
+  function getString (id) {
+    var strings = {
+      en: {
+        alertOutsideArea: 'This location is outside the specified Community Area!',
+        alertAlreadyExported: 'This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.',
+        pnavprefixTitle: 'Input the Prefix for the PokeNav Bot here. Default Prefix is $.',
+        pnavprefixDescription: 'PokeNav Prefix:',
+        pnavhookurlTitle: "Paste the URL of the WebHook you created in your Server's Admin Channel here. If left blank, the Commands are copied to Clipboard.",
+        pnavhookurlDescription: 'Discord WebHook URL:',
+        pnavCodenameTitle: 'The Name that will be displayed if you send to the PokeNav channel. Default is your Ingess Codename.',
+        pnavCodenameDescription: 'Name:',
+        pnavCenterTitle: `Paste the Center Coordinate of your Community here (you can view it typing ${window.plugin.pnav.settings.prefix}show settings in Admin Channel)`,
+        pnavCenterDescription: 'Community Center:',
+        pnavRadiusTitle: 'Enter the specified Community Radius in kilometers here.',
+        pnavRadiusDescription: 'Community Radius (Km):',
+        btnEraseHistoryTitle: 'Delete all collected Export History.',
+        btnEraseHistoryTextSuccess: 'Deleted!',
+        btnEraseHistoryTextDefault: 'Delete Location Export History',
+        btnBulkExportGymsTitle: 'Grab the File where all Gyms are stored by PoGo Tools and send them one by one via WebHook. This can take much time!',
+        btnBulkExportGymsText: 'Export all Pogo Tools Gyms',
+        btnBulkExportStopsTitle: 'Grab the File where all Stops are stored by PoGo Tools and send them one by one via WebHook. This can take much time!',
+        btnBulkExportStopsText: 'Export all Pogo Tools Stops',
+        btnBulkModifyTitle: 'Check if the Pogo Tools Data was modified and start Upload process of modifications',
+        btnBulkModifyText: 'Check for Modifications',
+        pnavsettingsTitle: 'PokeNav Settings',
+        lblErrorWHText: 'Invalid URL! Please delete or correct it!',
+        lblErrorPfText: 'Prefix must be only one Character!',
+        lblErrorRdText: 'Invalid Radius! Please check if it is a valid Number!',
+        lblErrorCnText: 'Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!',
+        alertExportRunning: 'Settings not saved because Export was running. Pause the Export and then try again!',
+        Modification: 'Modification ',
+        of: ' of ',
+        pNavOldPoiNameDescription: 'The following Poi was modified:',
+        pNavChangesMadeDescription: 'The following has changed:',
+        pNavPoiIdDescription: 'PokeNav ID:',
+        sends: 'Sends',
+        copies: 'Copies',
+        pNavPoiInfoTitle: ' the Poi Information Command for the Poi.',
+        pNavPoiInfoText: ' Poi Info Command',
+        Send: 'Send',
+        Copy: 'Copy',
+        pNavModCommandTitleDisabled1: 'You must input the PokeNav location ID before you can ',
+        pNavModCommandTitleDisabled2: ' the modification command!',
+        pNavModCommandTitleEnabled: ' the modification command.',
+        send: 'send',
+        copy: 'copy',
+        pNavModCommandText: ' Modification Command',
+        pNavmodDialogTitle: 'PokeNav Modification(s)',
+        pNavmodDialogSkip: 'Skip one',
+        alertNoModifications: 'No modifications detected!',
+        alertProblemPogoTools: 'There was a problem reading the Pogo Tools Data File.',
+        exportStateTextReady: 'Export Ready!',
+        exportStateTextExporting: 'Exporting...'
+      }
+    };
+
+    if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && strings[`${window.plugin.pnav.settings.language}.${id}`]) {
+      return strings[`${window.plugin.pnav.settings.language}.${id}`];
+    } else if (strings.en && strings.en[id]) {
+      return strings.en[id];
+    } else {
+      return id;
+    }
+  }
+
   window.plugin.pnav.copy = function () {
     var input = $('#copyInput');
     if (window.selectedPortal) {
-      var portal = window.portals[window.plugin.pnav.selectedGuid];
+      var portal = window.portals[selectedGuid];
       // escaping Backslashes and Hyphens in Portal Names
       /** @type {string} */
       var name = portal.options.data.title
@@ -114,11 +181,11 @@ function wrapper (plugin_info) {
         checkDistance(lat, lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
         window.plugin.pnav.settings.radius
       ) {
-        alert('This location is outside the specified Community Area!');
+        alert(getString('alertOutsideArea'));
       } else {
         var changes = checkForSingleModification({
           type,
-          guid: window.plugin.pnav.selectedGuid,
+          guid: selectedGuid,
           name,
           isEx,
           lat,
@@ -127,9 +194,9 @@ function wrapper (plugin_info) {
         if (changes) {
           window.plugin.pnav.bulkModify([changes]);
         } else if (
-          pNavData[`${type}.${window.plugin.pnav.selectedGuid}`]
+          pNavData[`${type}.${selectedGuid}`]
         ) {
-          alert('This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.');
+          alert(getString('alertAlreadyExported'));
           input.show();
           input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
           copyfieldvalue('copyInput');
@@ -145,11 +212,11 @@ function wrapper (plugin_info) {
             input.hide();
           }
           let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : null;
-          if (pogoData && pogoData[type] && pogoData[`${type}.${window.plugin.pnav.selectedGuid}`]) {
-            pNavData[`${type}.${window.plugin.pnav.selectedGuid}`] = pogoData[window.plugin.pnav.selectedGuid];
+          if (pogoData && pogoData[type] && pogoData[`${type}.${selectedGuid}`]) {
+            pNavData[`${type}.${selectedGuid}`] = pogoData[selectedGuid];
           } else {
             var newObject = {
-              'guid': String(window.plugin.pnav.selectedGuid),
+              'guid': String(selectedGuid),
               'name': String(portal.options.data.title),
               'lat': String(lat),
               'lng': String(lng)
@@ -157,7 +224,7 @@ function wrapper (plugin_info) {
             if ($('#PNavEx').prop('checked')) {
               newObject.isEx = true;
             }
-            pNavData[`${type}.${window.plugin.pnav.selectedGuid}`] = newObject;
+            pNavData[`${type}.${selectedGuid}`] = newObject;
           }
           saveToLocalStorage();
         }
@@ -169,52 +236,54 @@ function wrapper (plugin_info) {
     var validURL = '^https?://discord(app)?.com/api/webhooks/[0-9]*/.*';
     var html = `
         <p id="prefix">
-          <label title="Input the Prefix for the PokeNav Bot here. Default Prefix is $.">
-            PokeNav Prefix:
+          <label title="${getString('pnavprefixTitle')}">
+            ${getString('pnavprefixDescription')}
             <input type="text" id="pnavprefix" pattern="^.$" value="${window.plugin.pnav.settings.prefix}" placeholder="$" style="width:15px"/>
           </label>
         </p>
-        <p id="webhook"><label title="Paste the URL of the WebHook you created in your Server's Admin Channel here. If left blank, the Commands are copied to Clipboard.">
-            Discord WebHook URL:
+        <p id="webhook">
+          <label title="${getString('pnavhookurlTitle')}">
+            ${getString('pnavhookurlDescription')}
             <input type="url" style="width:100%" id="pnavhookurl" value="${window.plugin.pnav.settings.webhookUrl}" pattern="${validURL}"/>
-        </label></p>
+          </label>
+        </p>
         <p>
-          <Label title="The Name that will be displayed if you send to the PokeNav channel. Default is your Ingess Codename.">
-            Name:
+          <Label title="${getString('pnavCodenameTitle')}">
+            ${getString('pnavCodenameDescription')}
             <input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/>
           </label>
         </p>
         <p>
-          <label id="center" title="Paste the Center Coordinate of your Community here (you can view it typing ${window.plugin.pnav.settings.prefix}show settings in Admin Channel)">
-          Community Center:
+          <label id="center" title="${getString('pnavCenterTitle')}">
+          ${getString('pnavCenterDescription')}
           <input id="pnavCenter" style="width:140px" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${window.plugin.pnav.settings.lat != '' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
           </label>
           <br>
-          <label id="radius" title="Enter the specified Community Radius in kilometers here.">
-          Community Radius (Km):
+          <label id="radius" title="${getString('pnavRadiusTitle')}">
+          ${getString('pnavRadiusDescription')}
           <input id="pnavRadius" style="width:41px;appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="0.001" value="${window.plugin.pnav.settings.radius}"/>
           </label>
         </p>
-        <p><button type="Button" id="btnEraseHistory" style="width:100%" title="erase all Export History" onclick="
+        <p><button type="Button" id="btnEraseHistory" style="width:100%" title="${getString('btnEraseHistoryTitle')}" onclick="
           window.plugin.pnav.deleteExportState();
           $(this).css('color','green');
           $(this).css('border','1px solid green')
-          $(this).text('Erased!');
+          $(this).text('${getString('btnEraseHistoryTextSuccess')}');
           setTimeout(function () {
             if($('#btnEraseHistory').length > 0){
               $('#btnEraseHistory').css('color', '');
               $('#btnEraseHistory').css('border', '');
-              $('#btnEraseHistory').text('Erase Location Export History');
+              $('#btnEraseHistory').text('${getString('btnEraseHistoryTextDefault')}');
             }
           }, 1000);
           return false;
-        ">Erase Location Export History</button></p>
+        ">${getString('btnEraseHistoryTextDefault')}</button></p>
         `;
     if (window.plugin.pogo) {
       html += `
-            <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="Grab the File where all Gyms are stored by PoGo Tools and send them one by one via WebHook. This can take much time!" onclick="window.plugin.pnav.bulkExport('gym');return false;">Export all Pogo Tools Gyms</button></p>
-            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="Grab the File where all Stops are stored by PoGo Tools and send them one by one via WebHook. This can take much time!" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">Export all Pogo Tools Stops</button></p>
-            <p><button type="Button" style="width:100%" title="Check if the Pogo Tools Data was modified and start Upload process of modifications" onclick="window.plugin.pnav.bulkModify();return false;">Check for Modifications</button></p>
+            <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="${getString('btnBulkExportGymsTitle')}" onclick="window.plugin.pnav.bulkExport('gym');return false;">${getString('btnBulkExportGymsText')}</button></p>
+            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="${getString('btnBulkExportStopsTitle')}" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">${getString('btnBulkExportGymsText')}</button></p>
+            <p><button type="Button" id="btnBulkModify" style="width:100%" title="${getString('btnBulkModifyTitle')}" onclick="window.plugin.pnav.bulkModify();return false;">${getString('btnBulkModifyText')}</button></p>
             `;
     }
 
@@ -223,7 +292,7 @@ function wrapper (plugin_info) {
       width: 'auto',
       height: 'auto',
       html,
-      title: 'PokeNav Settings',
+      title: getString('pnavsettingsTitle'),
       buttons: {
         OK () {
           let allOK = true;
@@ -237,7 +306,7 @@ function wrapper (plugin_info) {
             }
           } else {
             if ($('#lblErrorWH').length == 0) {
-              $('#webhook').after('<label id="lblErrorWH" style="color:red">invalid URL! please delete or correct it!</label>');
+              $('#webhook').after(`<label id="lblErrorWH" style="color:red">${getString('lblErrorWHText')}</label>`);
             }
             allOK = false;
           }
@@ -254,7 +323,7 @@ function wrapper (plugin_info) {
           } else {
             allOK = false;
             if ($('#lblErrorPf').length == 0) {
-              $('#prefix').after(`<label id="lblErrorPf" style="color:red">Prefix must be only one Character!</label>`);
+              $('#prefix').after(`<label id="lblErrorPf" style="color:red">${getString('lblErrorPfText')}</label>`);
             }
           }
           if (!$('#pnavRadius').val()) {
@@ -272,7 +341,7 @@ function wrapper (plugin_info) {
             }
           } else {
             if ($('#lblErrorRd').length == 0) {
-              $('#radius').after(`<label id="lblErrorRd" style="color:red"><br>Invalid Radius! Please check if it is a valid Number!</label>`);
+              $('#radius').after(`<label id="lblErrorRd" style="color:red"><br>${getString('lblErrorRdText')}</label>`);
             }
             allOK = false;
           }
@@ -305,7 +374,7 @@ function wrapper (plugin_info) {
               }
             } else {
               if ($('#lblErrorCn').length == 0) {
-                $('#center').after('<label id="lblErrorCn" style="color:red"><br>Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!</label>');
+                $('#center').after(`<label id="lblErrorCn" style="color:red"><br>${getString('lblErrorCnText')}</label>`);
               }
               allOK = false;
             }
@@ -324,7 +393,7 @@ function wrapper (plugin_info) {
               container.dialog('close');
             }
           } else {
-            alert('Settings not saved because Export was running. Pause the Export and then try again!');
+            alert(getString('alertExportRunning'));
             container.dialog('close');
           }
         }
@@ -366,29 +435,29 @@ function wrapper (plugin_info) {
       // console.log(changeList);
       const send = Boolean(window.plugin.pnav.settings.webhookUrl);
       const html = `
-        <label>Modification </label><label id=pNavModNrCur>1</label><label> of </label><label id="pNavModNrMax"/>
+        <label>${getString('Modification')}</label><label id=pNavModNrCur>1</label><label>${getString('of')}</label><label id="pNavModNrMax"/>
         <h3>
-          The following Poi was modified:
+          ${getString('pNavOldPoiNameDescription')}
         </h3>
         <h3 id="pNavOldPoiName"/>
-        <label>The following has changed:</label>
+        <label>${getString('pNavChangesMadeDescription')}</label>
         <ul id="pNavChangesMade"/>
         <label>
-          PokeNav ID:
+          ${getString('pNavPoiIdDescription')}
           <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="1"/>
         </label>
         <br>
-        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${send ? 'Sends' : 'Copies'} the Poi Information Command for the Poi.">
-          ${send ? 'Send' : 'Copy'} Poi Info Command
+        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${send ? getString('sends') : getString('copies')}${getString('pNavPoiInfoTitle')}">
+          ${send ? getString('Send') : getString('Copy')}${getString('pNavPoiInfoText')}
         </button>
-        <button type="Button" class="ui-button" id="pNavModCommand" title="You must input the PokeNav location ID before you can ${send ? 'send' : 'copy'} the modification command!" style="color:darkgray;cursor:default;text-decoration:none">
-          ${send ? 'Send' : 'Copy'} Modification Command
+        <button type="Button" class="ui-button" id="pNavModCommand" title="${getString('pNavModCommandTitleDisabled1')}${send ? getString('send') : getString('copy')}${getString('pNavModCommandTitleDisabled2')}" style="color:darkgray;cursor:default;text-decoration:none">
+          ${send ? getString('Send') : getString('Copy')}${getString('pNavModCommandText')}
         </button>
       `;
       if (changeList.length > 0) {
         const modDialog = window.dialog({
           id: 'pNavmodDialog',
-          title: 'PokeNav Modification(s)',
+          title: getString('pNavmodDialogTitle'),
           html,
           width: 'auto',
           height: 'auto',
@@ -404,6 +473,8 @@ function wrapper (plugin_info) {
             }
           }
         });
+        $('.ui-button', modDialog.parent()).not('.ui-dialog-titlebar-button')
+          .text(getString('pNavmodDialogSkip'));
         var i = 0;
         var poi = changeList[i];
         $('#pNavPoiInfo', modDialog).on('click', function () {
@@ -423,13 +494,13 @@ function wrapper (plugin_info) {
           const value = e.target.valueAsNumber;
           if (valid && value && value > 0) {
             $('#pNavModCommand', modDialog).prop('style', '');
-            $('#pNavModCommand', modDialog).prop('title', `${send ? 'Send' : 'Copy'} the Poi Modification Command`);
+            $('#pNavModCommand', modDialog).prop('title', `${send ? getString('Send') : getString('Copy')}${getString('pNavModCommandTitleEnabled')}`);
           } else {
             $('#pNavModCommand', modDialog).css('color', 'darkgray');
             $('#pNavModCommand', modDialog).css('cursor', 'default');
             $('#pNavModCommand', modDialog).css('text-decoration', 'none');
             $('#pNavModCommand', modDialog).css('border', '1px solid darkgray');
-            $('#pNavModCommand', modDialog).prop('title', `You must input the PokeNav location ID before you can ${send ? 'send' : 'copy'} the modification command!`);
+            $('#pNavModCommand', modDialog).prop('title', `${getString('pNavModCommandTitleDisabled1')}${send ? getString('send') : getString('copy')}${getString('pNavModCommandTitleDisabled2')}`);
           }
         });
         $('#pNavModCommand', modDialog).on('click', function () {
@@ -448,7 +519,7 @@ function wrapper (plugin_info) {
         $('#pNavModNrMax', modDialog).text(changeList.length);
         updateUI(modDialog, poi, i);
       } else {
-        alert('No modifications detected!');
+        alert(getString('alertNoModifications'));
       }
     }
   };
@@ -494,7 +565,7 @@ function wrapper (plugin_info) {
     $('#pNavModCommand', dialog).css('border', '1px solid darkgray');
     $('#pNavModCommand', dialog).css('cursor', 'default');
     $('#pNavModCommand', dialog).css('text-decoration', 'none');
-    $('#pNavModCommand', dialog).prop('title', `You must input the PokeNav location ID before you can ${window.plugin.pnav.settings.webhookUrl ? 'send' : 'copy'} the modification command!`);
+    $('#pNavModCommand', dialog).prop('title', `${getString('pNavModCommandTitleDisabled1')}${window.plugin.pnav.settings.webhookUrl ? getString('send') : getString('copy')}${getString('pNavModCommandTitleDisabled2')}`);
   }
 
   function sendModCommand (pNavId, changes) {
@@ -712,7 +783,7 @@ function wrapper (plugin_info) {
     if (!window.plugin.pnav.timer) {
       var data = gatherExportData(type);
       if (!data) {
-        alert('There was a problem reading the Pogo Tools Data File.');
+        alert(getString('alertProblemPogoTools'));
         return;
       }
       var i = 0;
@@ -747,7 +818,6 @@ function wrapper (plugin_info) {
           let prefix = window.plugin.pnav.settings.prefix;
           let ex = Boolean(entry.isEx);
           let options = ex ? ' "ex_eligible: 1"' : '';
-          let request = window.plugin.pnav.request;
           var params = {
             username: window.plugin.pnav.settings.name,
             avatar_url: '',
@@ -766,7 +836,7 @@ function wrapper (plugin_info) {
           // console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
 
         } else {
-          $('#exportState').text('Export Ready!');
+          $('#exportState').text(getString('exportStateTextReady'));
           okayButton.text('OK');
           okayButton.prop('title', '');
           saveState(data, type, i);
@@ -775,11 +845,11 @@ function wrapper (plugin_info) {
           window.onbeforeunload = null;
         }
       }, wait);
-
+      // TODO fetch all strings below this to the top!
       var dialog = window.dialog({
         id: 'bulkExportProgress',
         html: `
-              <h3 id="exportState">Exporting...</h3>
+              <h3 id="exportState">${getString('exportStateTextExporting')}</h3>
               <p>
                 <label>
                   Progress:
@@ -883,7 +953,6 @@ function wrapper (plugin_info) {
 
   // source: Oscar Zanota on Dev.to (https://dev.to/oskarcodes/send-automated-discord-messages-through-webhooks-using-javascript-1p01)
   function sendMessage (msg) {
-    let request = window.plugin.pnav.request;
     var params = {
       username: window.plugin.pnav.settings.name,
       avatar_url: '',
@@ -941,7 +1010,7 @@ function wrapper (plugin_info) {
     window.addHook('portalSelected', function (data) {
       console.log(data);
       var guid = data.selectedPortalGuid;
-      window.plugin.pnav.selectedGuid = guid;
+      selectedGuid = guid;
       if (!window.plugin.pogo) {
         setTimeout(function () {
           $('#portaldetails').append(`
