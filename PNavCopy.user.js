@@ -63,6 +63,10 @@ function wrapper (plugin_info) {
     lng: '',
     prefix: '$'
   };
+  var pNavData = {
+    pokestop: {},
+    gym: {}
+  };
   window.plugin.pnav.request = new XMLHttpRequest();
   window.plugin.pnav.copy = function () {
     var input = $('#copyInput');
@@ -112,7 +116,6 @@ function wrapper (plugin_info) {
       ) {
         alert('This location is outside the specified Community Area!');
       } else {
-        var done = localStorage[`plugin-pnav-done-${type}`] ? JSON.parse(localStorage[`plugin-pnav-done-${type}`]) : {};
         var changes = checkForSingleModification({
           type,
           guid: window.plugin.pnav.selectedGuid,
@@ -124,7 +127,7 @@ function wrapper (plugin_info) {
         if (changes) {
           window.plugin.pnav.bulkModify([changes]);
         } else if (
-          done[window.plugin.pnav.selectedGuid]
+          pNavData[`${type}.${window.plugin.pnav.selectedGuid}`]
         ) {
           alert('This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.');
           input.show();
@@ -143,7 +146,7 @@ function wrapper (plugin_info) {
           }
           let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : null;
           if (pogoData && pogoData[type] && pogoData[`${type}.${window.plugin.pnav.selectedGuid}`]) {
-            done[window.plugin.pnav.selectedGuid] = pogoData[window.plugin.pnav.selectedGuid];
+            pNavData[`${type}.${window.plugin.pnav.selectedGuid}`] = pogoData[window.plugin.pnav.selectedGuid];
           } else {
             var newObject = {
               'guid': String(window.plugin.pnav.selectedGuid),
@@ -154,9 +157,9 @@ function wrapper (plugin_info) {
             if ($('#PNavEx').prop('checked')) {
               newObject.isEx = true;
             }
-            done[window.plugin.pnav.selectedGuid] = newObject;
+            pNavData[`${type}.${window.plugin.pnav.selectedGuid}`] = newObject;
           }
-          localStorage[`plugin-pnav-done-${type}`] = JSON.stringify(done);
+          saveToLocalStorage();
         }
       }
     }
@@ -338,6 +341,8 @@ function wrapper (plugin_info) {
     if (localStorage['plugin-pnav-done-gym']) {
       localStorage.removeItem('plugin-pnav-done-gym');
     }
+    pNavData.pokestop = {};
+    pNavData.gym = {};
   };
 
   /**
@@ -347,20 +352,12 @@ function wrapper (plugin_info) {
    * @param {number} index
    */
   function saveState (data, type, index) {
-
-    /** @type {object} */
-    var done = localStorage[`plugin-pnav-done-${type}`]
-      ? JSON.parse(localStorage[`plugin-pnav-done-${type}`])
-      : {};
     const addToDone = data.slice(0, index);
     // console.log(addToDone);
     addToDone.forEach(function (object) {
-      done[object.guid] = object;
+      pNavData[`${type}.${object.guid}`] = object;
     });
-    localStorage.setItem(
-      `plugin-pnav-done-${type}`,
-      JSON.stringify(done)
-    );
+    saveToLocalStorage();
   }
 
   window.plugin.pnav.bulkModify = function (changes) {
@@ -460,31 +457,24 @@ function wrapper (plugin_info) {
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoGyms = pogoData.gyms ? pogoData.gyms : {};
     const pogoStops = pogoData.stops ? pogoData.stops : {};
-    const pNavStops = localStorage['plugin-pnav-done-pokestop'] ? JSON.parse(localStorage['plugin-pnav-done-pokestop']) : {};
-    const pNavGyms = localStorage['plugin-pnav-done-gym'] ? JSON.parse(localStorage['plugin-pnav-done-gym']) : {};
     if (Object.keys(pogoStops).includes(poi.guid)) {
-      pNavStops[poi.guid] = pogoStops[poi.guid];
-      if (Object.keys(pNavGyms).includes(poi.guid)) {
-        delete pNavGyms[poi.guid];
-        localStorage['plugin-pnav-done-gym'] = JSON.stringify(pNavGyms);
+      pNavData.pokestop[poi.guid] = pogoStops[poi.guid];
+      if (Object.keys(pNavData.gym).includes(poi.guid)) {
+        delete pNavData.gym[poi.guid];
       }
-      localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(pNavStops);
     } else if (Object.keys(pogoGyms).includes(poi.guid)) {
-      pNavGyms[poi.guid] = pogoGyms[poi.guid];
-      if (Object.keys(pNavStops).includes(poi.guid)) {
-        delete pNavStops[poi.guid];
-        localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(pNavStops);
+      pNavData.gym[poi.guid] = pogoGyms[poi.guid];
+      if (Object.keys(pNavData.pokestop).includes(poi.guid)) {
+        delete pNavData.pokestop[poi.guid];
       }
-      localStorage['plugin-pnav-done-gym'] = JSON.stringify(pNavGyms);
     } else {
       if (poi.oldType === 'gym') {
-        delete pNavGyms[poi.guid];
-        localStorage['plugin-pnav-done-gym'] = JSON.stringify(pNavGyms);
+        delete pNavData.gym[poi.guid];
       } else {
-        delete pNavStops[poi.guid];
-        localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(pNavStops);
+        delete pNavData.pokestop[poi.guid];
       }
     }
+    saveToLocalStorage();
   }
 
   function updateUI (dialog, poi, i) {
@@ -538,8 +528,6 @@ function wrapper (plugin_info) {
   }
 
   function checkForModifications () {
-    const pNavStops = localStorage['plugin-pnav-done-pokestop'] ? JSON.parse(localStorage['plugin-pnav-done-pokestop']) : {};
-    const pNavGyms = localStorage['plugin-pnav-done-gym'] ? JSON.parse(localStorage['plugin-pnav-done-gym']) : {};
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoStops = (pogoData && pogoData.pokestops) ? pogoData.pokestops : {};
     // console.log(pogoStops);
@@ -547,8 +535,8 @@ function wrapper (plugin_info) {
     const pogoGyms = pogoData && pogoData.gyms ? pogoData.gyms : {};
     const keysGyms = Object.keys(pogoGyms);
     var changeList = [];
-    if (pNavStops && pogoData) {
-      Object.values(pNavStops).forEach(function (stop) {
+    if (pogoData) {
+      Object.values(pNavData.pokestop).forEach(function (stop) {
         let detectedChanges = {};
         let originalData;
         if (!keysStops.includes(stop.guid)) {
@@ -585,9 +573,7 @@ function wrapper (plugin_info) {
           changeList.push(detectedChanges);
         }
       });
-    }
-    if (pNavGyms && pogoData) {
-      Object.values(pNavGyms).forEach(function (gym) {
+      Object.values(pNavData.gym).forEach(function (gym) {
         let detectedChanges = {};
         let originalData;
         if (!keysGyms.includes(gym.guid)) {
@@ -629,6 +615,11 @@ function wrapper (plugin_info) {
     return changeList;
   }
 
+  function saveToLocalStorage () {
+    localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(pNavData.pokestop);
+    localStorage['plugin-pnav-done-gym'] = JSON.stringify(pNavData.gym);
+  }
+
   /**
    * Checks if a single Poi has been modified
    * @param {{
@@ -652,14 +643,12 @@ function wrapper (plugin_info) {
    */
   function checkForSingleModification (currentData) {
     let changes = {};
-    const pNavStops = localStorage['plugin-pnav-done-pokestop'] ? JSON.parse(localStorage['plugin-pnav-done-pokestop']) : {};
-    const pNavGyms = localStorage['plugin-pnav-done-gym'] ? JSON.parse(localStorage['plugin-pnav-done-gym']) : {};
     var savedData;
-    if (pNavStops[currentData.guid]) {
-      savedData = pNavStops[currentData.guid];
+    if (pNavData.pokestop[currentData.guid]) {
+      savedData = pNavData.pokestop[currentData.guid];
       savedData.type = 'pokestop';
-    } else if (pNavGyms[currentData.guid]) {
-      savedData = pNavGyms[currentData.guid];
+    } else if (pNavData.gym[currentData.guid]) {
+      savedData = pNavData.gym[currentData.guid];
       savedData.type = 'gym';
     } else {
       return null;
@@ -695,16 +684,11 @@ function wrapper (plugin_info) {
    * @return {object[] | null} returns the data to export or null if Pogo Tools Data was not found.
    */
   function gatherExportData (type) {
-    var pogoData = JSON.parse(localStorage['plugin-pogo']);
-    if (pogoData && pogoData[`${type}s`]) {
+    var pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
+    if (pogoData[`${type}s`]) {
       pogoData = Object.values(pogoData[`${type}s`]);
       // console.log(pogoData);
-
-      /** @type object[] */
-      const done = localStorage[`plugin-pnav-done-${type}`]
-        ? JSON.parse(localStorage[`plugin-pnav-done-${type}`])
-        : null;
-      const doneGuids = done ? Object.keys(done) : null;
+      const doneGuids = Object.keys(pNavData[type]);
       const distanceNotCheckable =
         !window.plugin.pnav.settings.lat ||
         !window.plugin.pnav.settings.lng ||
@@ -942,6 +926,12 @@ function wrapper (plugin_info) {
     console.log('azaza');
     if (localStorage['plugin-pnav-settings']) {
       window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
+    }
+    if (localStorage['plugin-pnav-done-pokestop']) {
+      pNavData.pokestop = JSON.parse(localStorage.getItem('plugin-pnav-done-pokestop'));
+    }
+    if (localStorage['plugin-pnav-done-gym']) {
+      pNavData.gym = JSON.parse(localStorage.getItem('plugin-pnav-done-gym'));
     }
     $('#toolbox').append('<a title="Configure PokeNav" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">PokeNav Settings</a>');
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
