@@ -54,6 +54,16 @@ function wrapper (plugin_info) {
 
   // use own namespace for plugin
   window.plugin.pnav = function () { };
+  // Language is set in setup() if not already present in localStorage.
+  window.plugin.pnav.settings = {
+    webhookUrl: '',
+    name: window.PLAYER.nickname,
+    radius: '',
+    lat: '',
+    lng: '',
+    prefix: '$',
+    language: undefined
+  };
   var selectedGuid = null;
   var pNavData = {
     pokestop: {},
@@ -119,8 +129,7 @@ function wrapper (plugin_info) {
       pnavRadiusTitle: 'Enter the specified Community Radius in kilometers here.',
       pnavsettingsTitle: 'PokeNav Settings',
       PNavStopDescription: 'Stop',
-      PogoButtonsTitleCopy: 'Copy the Location create Command to Clipboard',
-      PogoButtonsTitleSend: 'Send the Location create Command to Discord via WebHook',
+      PogoButtonsTitle: [{ send: { true: '#Send', false: '#Copy' } }, ' the Location create Command to ', { send: {true:'Discord via WebHook', false: 'Clipboard' } }],
       pokeNavSettingsText: 'PokeNav Settings',
       pokeNavSettingsTitle: 'Configure PokeNav',
       send: 'send',
@@ -128,16 +137,6 @@ function wrapper (plugin_info) {
       sends: 'Sends',
       sendTo: 'Send to'
     }
-  };
-// TODO settings is undefined!
-  window.plugin.pnav.settings = {
-    webhookUrl: '',
-    name: window.PLAYER.nickname,
-    radius: '',
-    lat: '',
-    lng: '',
-    prefix: '$',
-    language: detectLanguage()
   };
 
   function detectLanguage() {
@@ -150,13 +149,59 @@ function wrapper (plugin_info) {
       return 'en';
   }
 
-  function getString (id) {
+  function getString (id, options) {
     if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && (strings[window.plugin.pnav.settings.language])[id]) {
-      return (strings[window.plugin.pnav.settings.language])[id];
+      // return (strings[window.plugin.pnav.settings.language])[id];
+      debugger;
+      var string = (strings[window.plugin.pnav.settings.language])[id];
+      if (!(typeof string === 'string')) {
+        return parseNestedString(string, options);
+      }
+      else {
+        return string;
+      }
     } else if (strings.en && strings.en[id]) {
-      return strings.en[id];
+      var string = strings.en[id];
+      if (!(typeof string === 'string')) {
+        return parseNestedString(string, options);
+      }
+      else {
+        return string;
+      }
     } else {
       return id;
+    }
+  }
+
+  function parseNestedString(object, options) {
+    debugger;
+    if (typeof object === 'string' || object instanceof String) {
+      if (object.length > 1 && object.startsWith('#')) {
+        return getString(object.substring(1), options);
+      } else {
+        return object;
+      }
+    } else if (object instanceof Array) {
+      let newString = '';
+      object.forEach(function (entry) {
+        newString += parseNestedString(entry, options);
+      });
+      return newString;
+    } else if(typeof object === 'object' && Object.keys(object).length > 0) {
+      const optionName = Object.keys(object)[0];
+      var decision = object[optionName];
+      if (Object.keys(options).includes(optionName) && Object.keys(decision).includes(options[optionName])) {
+        const optionValue = options[optionName];
+        return parseNestedString(decision[optionValue]);
+      } else if (Object.keys(decision).includes('default')) {
+        return parseNestedString(decision.default);
+      } else if(Object.keys(decision).length > 0) {
+        return parseNestedString(decision[Object.keys(decision)[0]]);
+      } else {
+        return '';
+      }
+    } else {
+      return '';
     }
   }
 
@@ -1008,7 +1053,7 @@ function wrapper (plugin_info) {
           if (node.className == 'PogoButtons') {
             // console.log('there is PogoButtons!');
             $(node).after(`
-             <a style="position:absolute;right:5px" title="${window.plugin.pnav.settings.webhookUrl ? getString('PogoButtonsTitleSend'):getString('PogoButtonsTitleCopy')}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">${window.plugin.pnav.settings.webhookUrl ? getString('sendTo') : getString('Copy')} PokeNav</a>
+             <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle',{send: Boolean(window.plugin.pnav.settings.webhookUrl)})}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">${window.plugin.pnav.settings.webhookUrl ? getString('sendTo') : getString('Copy')} PokeNav</a>
              `);
             $(node).css('display', 'inline');
             // we don't need to look for the class anymore because we just found what we wanted ;-)
@@ -1032,6 +1077,10 @@ function wrapper (plugin_info) {
     console.log('azaza');
     if (localStorage['plugin-pnav-settings']) {
       window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
+    }
+    if (!window.plugin.pnav.settings.language) {
+      window.plugin.pnav.settings.language = detectLanguage();
+      localStorage['plugin-pnav-settings'] = JSON.stringify(window.plugin.pnav.settings);
     }
     if (localStorage['plugin-pnav-done-pokestop']) {
       pNavData.pokestop = JSON.parse(localStorage.getItem('plugin-pnav-done-pokestop'));
