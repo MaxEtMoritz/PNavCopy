@@ -23,6 +23,8 @@ With This Plugin you can...
 - Copy The Command to Clipboard or use a WebHook to send it directly to the appropriate Discord channel.
 - Send all the Data already collected with PoGo Tools to PokeNav with a few Clicks.
 - Pause the Bulk export and start off where you ended it.
+- Check for modifications of Pogo Tools data automatically
+- Send or copy modification or deletion Commands for PokeNav.
 
 ## Integrations
 If you use the [Pogo tools plugin by AlfonsoML](https://gitlab.com/AlfonsoML/pogo-s2/), the info entered there is used to determine Type and Ex Eligibility if applicable. Otherwise you can choose manually.
