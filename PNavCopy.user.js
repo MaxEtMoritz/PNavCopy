@@ -6,24 +6,12 @@
 // @category       Misc
 // @downloadURL    https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.4.2
+// @version        1.5
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info to clipboard or send it to Discord in the format the PokeNav Discord bot needs.
 // @include        http*://intel.ingress.com/*
 // @grant          none
 // ==/UserScript==
-
-/* eslint no-unused-vars: 1 */
-/* eslint brace-style: ["error","1tbs"] */
-/* eslint semi: ["error", "always"] */
-/* eslint quotes: ["error", "single", {"avoidEscape": true, "allowTemplateLiterals": true}] */
-/* eslint keyword-spacing: ["error"] */
-/* eslint spaced-comment:["error", "always"] */
-/* eslint no-trailing-spaces: ["error"] */
-/* eslint prefer-template: "warn" */
-/* eslint comma-style: "error" */
-/* eslint function-call-argument-newline: ["error", "consistent"] */
-/* eslint indent: ["error", 2] */
 
 // original Plug-In is from https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/tree/master, the License of this project is provided below:
 
