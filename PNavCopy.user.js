@@ -75,6 +75,7 @@ function wrapper(plugin_info) {
     en: {
       alertAlreadyExported: 'This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.',
       alertExportRunning: 'Settings not saved because Export was running. Pause the Export and then try again!',
+      alertLanguageAfterReload: 'The new language settings will be fully in effect after a page reload.',
       alertNoModifications: 'No modifications detected!',
       alertOutsideArea: 'This location is outside the specified Community Area!',
       alertProblemPogoTools: 'There was a problem reading the Pogo Tools Data File.',
@@ -91,9 +92,6 @@ function wrapper(plugin_info) {
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.',
       bulkExportProgressTitle: 'PokeNav Bulk Export Progress',
-      copies: 'Copies',
-      copy: 'copy',
-      Copy: 'Copy',
       exportProgressBarDescription: 'Progress:',
       exportStateTextExporting: 'Exporting...',
       exportStateTextReady: 'Export Ready!',
@@ -114,28 +112,64 @@ function wrapper(plugin_info) {
       pnavhookurlDescription: 'Discord WebHook URL:',
       pnavhookurlTitle: "Paste the URL of the WebHook you created in your Server's Admin Channel here. If left blank, the Commands are copied to Clipboard.",
       pnavLanguageDescription: 'Language:',
-      pNavModCommandText: [{ send: { true: 'Send', false: 'Copy' } }, ' Modification Command'],
-      pNavModCommandTitleDisabled: ['You must input the PokeNav location ID before you can ', { send: { true: 'send', false: 'copy' } }, ' the modification command!'],
-      pNavModCommandTitleEnabled: [{ send: { true: 'Sends', false: 'Copies' } }, ' the modification command.'],
+      pNavModCommandText: [{
+        send: {
+          false: 'Copy',
+          true: 'Send'
+        }
+      }, ' Modification Command'],
+      pNavModCommandTitleDisabled: ['You must input the PokeNav location ID before you can ', {
+        send: {
+          false: 'copy',
+          true: 'send'
+        }
+      }, ' the modification command!'],
+      pNavModCommandTitleEnabled: [{
+        send: {
+          false: 'Copies',
+          true: 'Sends'
+        }
+      }, ' the modification command.'],
       pNavmodDialogTitle: 'PokeNav Modification(s)',
       pNavOldPoiNameDescription: 'The following Poi was modified:',
       pNavPoiIdDescription: 'PokeNav ID:',
-      pNavPoiInfoText: [{ send: { true: 'Send', false: 'Copy' } }, ' Poi Info Command'],
-      pNavPoiInfoTitle: [{ send: { true: 'Sends', false: 'Copies' } }, ' the Poi Information Command for the Poi.'],
+      pNavPoiInfoText: [{
+        send: {
+          false: 'Copy',
+          true: 'Send'
+        }
+      }, ' Poi Info Command'],
+      pNavPoiInfoTitle: [{
+        send: {
+          false: 'Copies',
+          true: 'Sends'
+        }
+      }, ' the Poi Information Command for the Poi.'],
       pnavprefixDescription: 'PokeNav Prefix:',
       pnavprefixTitle: 'Input the Prefix for the PokeNav Bot here. Default Prefix is $.',
       pnavRadiusDescription: 'Community Radius (Km):',
       pnavRadiusTitle: 'Enter the specified Community Radius in kilometers here.',
       pnavsettingsTitle: 'PokeNav Settings',
       PNavStopDescription: 'Stop',
-      PogoButtonsTitle: [{ send: { true: '#Send', false: '#Copy' } }, ' the Location create Command to ', { send: { true: 'Discord via WebHook', false: 'Clipboard' } }],
-      PogoButtonsText: [{ send: { true: 'Send to', false: 'Copy' } }, ' PokeNav'],
+      PogoButtonsText: [{
+        send: {
+          false: 'Copy',
+          true: 'Send to'
+        }
+      }, ' PokeNav'],
+      PogoButtonsTitle: [{
+        send: {
+          false: 'Copy',
+          true: 'Send'
+        }
+      }, ' the Location create Command to ', {
+        send: {
+          false: 'Clipboard',
+          true: 'Discord via WebHook'
+        }
+      }],
       pokeNavSettingsText: 'PokeNav Settings',
-      pokeNavSettingsTitle: 'Configure PokeNav',
-      send: 'send',
-      Send: 'Send',
-      sends: 'Sends',
-      sendTo: 'Send to'
+      pokeNavSettingsTitle: 'Configure PokeNav'
     }
   };
 
@@ -187,7 +221,7 @@ function wrapper(plugin_info) {
     } else if (typeof object === 'object' && Object.keys(object).length > 0) {
       const optionName = Object.keys(object)[0];
       var decision = object[optionName];
-      if (Object.keys(options).includes(optionName) && Object.keys(decision).includes(String(options[optionName]))) {
+      if (options && Object.keys(options).includes(optionName) && Object.keys(decision).includes(String(options[optionName]))) {
         const optionValue = String(options[optionName]);
         return parseNestedString(decision[optionValue]);
       } else if (Object.keys(decision).includes('default')) {
@@ -373,7 +407,12 @@ function wrapper(plugin_info) {
       buttons: {
         OK() {
           let allOK = true;
-          window.plugin.pnav.settings.language = $('#pnavLanguage', container).val();
+          if (window.plugin.pnav.settings.language !== $('#pnavLanguage', container).val()) {
+            alert(getString('alertLanguageAfterReload'));
+            window.plugin.pnav.settings.language = $('#pnavLanguage', container).val();
+          } else {
+            window.plugin.pnav.settings.language = $('#pnavLanguage', container).val();
+          }
           if (
             !$('#pnavhookurl').val() ||
             new RegExp(validURL).test($('#pnavhookurl').val())
