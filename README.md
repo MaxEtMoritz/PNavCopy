@@ -4,21 +4,35 @@ IITC Plugin that copies Portal Info to Clipboard or sends it directly to Discord
 ```<Bot prefix ($ by default)>create poi <type> "<name>" <latitude> <longitude> "ex-eligibility: 1" (if Ex Gym)```
 
 
-### Features
-- Classify a portal manually as Stop, Gym or EX Gym or use the Info already collected with Pogo Tools (see Integrations section)
+## Prerequisites
+To use this IITC Plugin, you need
+- An Account for Niantic's game Ingress
+- If you want to use your Computer (recommended), you need a Userscript Manager for your Browser (e.g. [Tampermonkey](https://www.tampermonkey.net/)) and a Version of IITC installed ([IITC](https://iitc.me/desktop/) or [IITC-CE](https://iitc.app/download_desktop.html)). Alternatively you can use the Browser Addon "IITC Button" available for [Chrome](https://chrome.google.com/webstore/detail/iitc-button/febaefghpimpenpigafpolgljcfkeakn) and [Firefox](https://addons.mozilla.org/de/firefox/addon/iitc-button/).
+- If you want to use your Smartphone instead, you have to install IITC Mobile ([Play Store](https://play.google.com/store/apps/details?id=com.cradle.iitc_mobile), [GitLab](https://gitlab.com/ruslan.levitskiy/iitc-mobile)) or IITC CE Mobile ([Play Store](https://play.google.com/store/apps/details?id=org.exarhteam.iitc_mobile), [GitHub](https://github.com/IITC-CE/ingress-intel-total-conversion)) for Android. For IPhone you can only use IITC Mobile (not tested with this Plugin!) ([App Store](https://apps.apple.com/app/iitc-mobile/id1032695947), [GitHub](https://github.com/HubertZhang/IITC-Mobile)).
+
+
+## Installation
+To install the Plugin, click **[here](https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js)**.
+
+You should be asked if you want to install an external Plugin. Confirm the Installation and you are done!
+
+
+## Features
+With This Plugin you can...
+- Classify a portal manually as Stop, Gym or EX Gym or use the Info already collected with Pogo Tools (see [Integrations section](https://github.com/MaxEtMoritz/PNavCopy#integrations))
 - Copy The Command to Clipboard or use a WebHook to send it directly to the appropriate Discord channel.
 - Send all the Data already collected with PoGo Tools to PokeNav with a few Clicks.
 - Pause the Bulk export and start off where you ended it.
 
-### Integrations
+## Integrations
 If you use the [Pogo tools plugin by AlfonsoML](https://gitlab.com/AlfonsoML/pogo-s2/), the info entered there is used to determine Type and Ex Eligibility if applicable. Otherwise you can choose manually.
 
 If you use the Plugin, you also have the option to upload all gathered Data at once.
 
-### Original Source
-The Plugin is based on a plugin included in a [Fork of the original IITC Mobile App](https://gitlab.com/ruslan.levitskiy/iitc-mobile) ([direct link to the Plugin](https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/blob/master/app/src/main/assets/plugins/portal-link-copier.user.js))
+## Original Source
+The Plugin is based on a plugin included in a [Fork of the original IITC Mobile App](https://gitlab.com/ruslan.levitskiy/iitc-mobile) ([direct link to the Plugin](https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/blob/master/app/src/main/assets/plugins/portal-link-copier.user.js)).
 
-### Note
+## Note
 The Plugin is not the very best code style and the code may not be very "error-friendly" because i am in no way an expert in JavaScript at the moment, but the important thing for me was to get it work, and it does exacly that, nothing more :wink:
 
 ## Web Hook How-to:
