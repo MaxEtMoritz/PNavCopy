@@ -866,6 +866,13 @@ function wrapper(plugin_info) {
    */
   function gatherExportData(type) {
     var pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
+    const modified = checkForModifications();
+    const exportBlacklist = [];
+    modified.forEach(function (modification) {
+      if (modification.type && modification.type === type) {
+        exportBlacklist.push(modification.guid);
+      }
+    });
     if (pogoData[`${type}s`]) {
       pogoData = Object.values(pogoData[`${type}s`]);
       // console.log(pogoData);
@@ -878,7 +885,8 @@ function wrapper(plugin_info) {
         return (
           (!doneGuids || !doneGuids.includes(object.guid)) &&
           (distanceNotCheckable ||
-            checkDistance(object.lat, object.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius)
+            checkDistance(object.lat, object.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
+          !exportBlacklist.includes(object.guid)
         );
       });
       return exportData;
