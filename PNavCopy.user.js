@@ -158,6 +158,105 @@ function wrapper(plugin_info) {
       }],
       pokeNavSettingsText: 'PokeNav Settings',
       pokeNavSettingsTitle: 'Configure PokeNav'
+    },
+    de: {
+      alertAlreadyExported: 'Dieser Poi wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuche, den Export-Status in den Einstellungen zurückzusetzen.',
+      alertExportRunning: 'Die Einstellungen wurden nicht gespeichert, da der Daten-Export läuft. Pausiere den Export und versuche es noch mal!',
+      alertLanguageAfterReload: 'Die neuen Spracheinstellungen werden vollständig erst nach erneutem Laden der Seite wirksam!',
+      alertNoModifications: 'Keine Änderungen gefunden!',
+      alertOutsideArea: 'Dieser Poi liegt nicht in den angegebenen Community-Grenzen!',
+      alertProblemPogoTools: 'Es ist ein Problem beim Lesen der Pogo-Tools-Daten aufgetreten!',
+      btnBulkExportGymsText: 'Exportiere alle Pogo Tools Arenen',
+      btnBulkExportGymsTitle: 'Exportiere alle Arenen aus Pogo Tools eine nach der Anderen über den angegebenen WebHook. Dies kann eine Weile dauern!',
+      btnBulkExportStopsText: 'Exportiere alle Pogo Tools Stops',
+      btnBulkExportStopsTitle: 'Exportiere alle Pokestops aus Pogo Tools einer nach dem Anderen über den angegebenen WebHook. Dies kann eine Weile dauern!',
+      btnBulkModifyText: 'Prüfe auf Änderungen',
+      btnBulkModifyTitle: 'Prüft die Pogo-Tools-Daten auf Änderungen und beginnt den Upload-Prozess der Änderungen.',
+      btnEraseHistoryTextDefault: 'Lösche Export-Historie',
+      btnEraseHistoryTextSuccess: 'Gelöscht!',
+      btnEraseHistoryTitle: 'Lösche die gesamte bisher gesammelte Export-Historie.',
+      btnSkipText: 'Änderung überspringen',
+      bulkExportProgressButtonText: 'Pause',
+      bulkExportProgressButtonTitle: 'Speichert den Fortschritt lokal und beendet den Export. Starten Sie zum Fortsetzen des Exports diesen in den Einstellungen neu.',
+      bulkExportProgressTitle: 'Fortschritt des PokeNav Massen-Exports',
+      exportProgressBarDescription: 'Fortschritt:',
+      exportStateTextExporting: 'Exportiere...',
+      exportStateTextReady: 'Export Abgeschlossen!',
+      exportTimeRemainingDescription: 'Verbleibende Zeit: ',
+      lblErrorCnText: 'Ungültiges Koordinaten-Format! Bitte geben Sie sie wie Folgt ein: 00.0...00, 0.0...00!',
+      lblErrorPfText: 'Präfix darf nur ein Zeichen sein!',
+      lblErrorRdText: 'Ungüliger Radius! Bitte überprüfen Sie, ob Sie eine gültige Zahl eingegeben haben!',
+      lblErrorWHText: 'Ungültige URL! Bitte löschen oder korrigieren Sie sie!',
+      Modification: 'Änderung ',
+      of: ' von ',
+      pnavCenterDescription: 'Community-Mittelpunkt:',
+      pnavCenterTitle: `Fügen Sie die Mittelpunkt-Koordinate Ihrer Community hier ein. Sie können sie abrufen, indem Sie "${window.plugin.pnav.settings.prefix}show settings" in den PokeNav Administratoren-Kanal eigeben.`,
+      pNavChangesMadeDescription: 'Folgendes wurde geändert:',
+      pnavCodenameDescription: 'Name:',
+      pnavCodenameTitle: 'Der Name, der beim Senden über den WebHook angezeigt wird. Standardmäßig ist es Ihr Ingress-Codename.',
+      PNavExDescription: 'Ex-Arena',
+      PNavGymDescription: 'Arena',
+      pnavhookurlDescription: 'Discord WebHook URL:',
+      pnavhookurlTitle: "Geben Sie die URL des WebHooks, den Sie in Ihrem Administrations-Channel angelegt haben, hier ein. Ist dieses Feld leer, werden die Kommandos in die Zwischenablage kopiert.",
+      pnavLanguageDescription: 'Sprache:',
+      pNavModCommandText: [{
+        send: {
+          false: 'Kopiere',
+          true: 'Sende'
+        }
+      }, ' Änderungs-Befehl'],
+      pNavModCommandTitleDisabled: ['Sie müssen die PokeNav Poi-ID eingeben bevor Sie den Änderungs-Befehl ', {
+        send: {
+          false: 'kopieren',
+          true: 'senden'
+        }
+      }, ' können!'],
+      pNavModCommandTitleEnabled: [{
+        send: {
+          false: 'Kopiert',
+          true: 'Sendet'
+        }
+      }, ' den Änderungs-Befehl.'],
+      pNavmodDialogTitle: 'PokeNav Änderung(en)',
+      pNavOldPoiNameDescription: 'Folgender Poi wurde geändert:',
+      pNavPoiIdDescription: 'PokeNav ID:',
+      pNavPoiInfoText: [{
+        send: {
+          false: 'Kopiere',
+          true: 'Sende'
+        }
+      }, ' Poi Informations-Befehl'],
+      pNavPoiInfoTitle: [{
+        send: {
+          false: 'Kopiert',
+          true: 'Sendet'
+        }
+      }, ' den Poi Informations-Befehl für diesen Poi.'],
+      pnavprefixDescription: 'PokeNav Präfix:',
+      pnavprefixTitle: 'Geben Sie hier die Präfix des PokeNav-Bots ein. Die Standard-Präfix ist $.',
+      pnavRadiusDescription: 'Community-Radius (Km):',
+      pnavRadiusTitle: 'Geben Sie hier den Radius ihrer Community in Kilometern ein.',
+      pnavsettingsTitle: 'PokeNav-Einstellungen',
+      PNavStopDescription: 'Stop',
+      PogoButtonsText: [{
+        send: {
+          false: 'Kopiere',
+          true: 'An'
+        }
+      }, ' PokeNav', { send: { true: ' senden', false: '' } }],
+      PogoButtonsTitle: [{
+        send: {
+          false: 'Kopiere',
+          true: 'Sende'
+        }
+      }, ' den Poi-Befehl ', {
+        send: {
+          false: 'in die Zwischenablage.',
+          true: 'an Discord über den WebHook.'
+        }
+      }],
+      pokeNavSettingsText: 'PokeNav-Einstellungen',
+      pokeNavSettingsTitle: 'Konfigurieren Sie PokeNav'
     }
   };
 
@@ -396,8 +495,8 @@ function wrapper(plugin_info) {
         OK() {
           let allOK = true;
           if (window.plugin.pnav.settings.language !== $('#pnavLanguage', container).val()) {
-            alert(getString('alertLanguageAfterReload'));
             window.plugin.pnav.settings.language = $('#pnavLanguage', container).val();
+            alert(getString('alertLanguageAfterReload'));
           } else {
             window.plugin.pnav.settings.language = $('#pnavLanguage', container).val();
           }
