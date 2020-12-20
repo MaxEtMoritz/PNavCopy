@@ -45,3 +45,9 @@ If you created the Web Hook, copy the Web Hook URL and paste it into the Text Bo
 __Note:__ Have in mind that anyone who has the Web Hook URL and knows how to post to Web Hooks can send any Message he likes to the Channel, so be cautious who you give the Web Hook URL to.
 
 __Second Note:__ Some Bots ignore Messages sent via Web Hooks or other Bots, but the PokeNav Bot doesn't at the moment (PokeNav v 1.89.2). No Guarantee that this will stay like that forever...
+
+## How to contribute?
+You can contribute by...
+- translating this Plugin into your native language. A guide on how to translate can be found [here](/Translating.md).
+- contributing Code to the plugin. Please fork this repository, open a new branch for your Changes and open a pull request if you are done. I will then take a look at it and if i consider it good, i'll merge it into the test branch and later on into main if everything is working.
+- reporting Bugs and other issues.
