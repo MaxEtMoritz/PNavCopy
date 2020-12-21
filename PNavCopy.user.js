@@ -1188,7 +1188,7 @@ function wrapper(plugin_info) {
           if (node.className == 'PogoButtons') {
             // console.log('there is PogoButtons!');
             $(node).after(`
-             <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">${getString('PogoButtonsText', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}</a>
+             <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">${getString('PogoButtonsText', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}</a>
              `);
             $(node).css('display', 'inline');
             // we don't need to look for the class anymore because we just found what we wanted ;-)
@@ -1252,7 +1252,7 @@ function wrapper(plugin_info) {
               <input type="radio" name="type" value="ex" id="PNavEx"/>
               ${getString('PNavExDescription')}
             </label>
-            <a style="${window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''}" title="${getString('PogoButtonsTitle', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
+            <a style="${window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''}" title="${getString('PogoButtonsTitle', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">
               ${getString('PogoButtonsText', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}
             </a>
           </div>
