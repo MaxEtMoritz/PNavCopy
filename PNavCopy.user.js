@@ -34,7 +34,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function wrapper(plugin_info) {
+function wrapper (plugin_info) {
   // ensure plugin framework is there, even if iitc is not yet loaded
   if (typeof window.plugin !== 'function') window.plugin = function () { };
 
@@ -50,7 +50,7 @@ function wrapper(plugin_info) {
     lat: '',
     lng: '',
     prefix: '$',
-    language: undefined
+    language: null
   };
   var selectedGuid = null;
   var pNavData = {
@@ -100,63 +100,86 @@ function wrapper(plugin_info) {
       pnavhookurlDescription: 'Discord WebHook URL:',
       pnavhookurlTitle: "Paste the URL of the WebHook you created in your Server's Admin Channel here. If left blank, the Commands are copied to Clipboard.",
       pnavLanguageDescription: 'Language:',
-      pNavModCommandText: [{
-        send: {
-          false: 'Copy',
-          true: 'Send'
-        }
-      }, ' Modification Command'],
-      pNavModCommandTitleDisabled: ['You must input the PokeNav location ID before you can ', {
-        send: {
-          false: 'copy',
-          true: 'send'
-        }
-      }, ' the modification command!'],
-      pNavModCommandTitleEnabled: [{
-        send: {
-          false: 'Copies',
-          true: 'Sends'
-        }
-      }, ' the modification command.'],
+      pNavModCommandText: [
+        {
+          send: {
+            false: 'Copy',
+            true: 'Send'
+          }
+        },
+        ' Modification Command'
+      ],
+      pNavModCommandTitleDisabled: [
+        'You must input the PokeNav location ID before you can ',
+        {
+          send: {
+            false: 'copy',
+            true: 'send'
+          }
+        },
+        ' the modification command!'
+      ],
+      pNavModCommandTitleEnabled: [
+        {
+          send: {
+            false: 'Copies',
+            true: 'Sends'
+          }
+        },
+        ' the modification command.'
+      ],
       pNavmodDialogTitle: 'PokeNav Modification(s)',
       PNavNoneDescription: 'None',
       pNavOldPoiNameDescription: 'The following Poi was modified:',
       pNavPoiIdDescription: 'PokeNav ID:',
-      pNavPoiInfoText: [{
-        send: {
-          false: 'Copy',
-          true: 'Send'
-        }
-      }, ' Poi Info Command'],
-      pNavPoiInfoTitle: [{
-        send: {
-          false: 'Copies',
-          true: 'Sends'
-        }
-      }, ' the Poi Information Command for the Poi.'],
+      pNavPoiInfoText: [
+        {
+          send: {
+            false: 'Copy',
+            true: 'Send'
+          }
+        },
+        ' Poi Info Command'
+      ],
+      pNavPoiInfoTitle: [
+        {
+          send: {
+            false: 'Copies',
+            true: 'Sends'
+          }
+        },
+        ' the Poi Information Command for the Poi.'
+      ],
       pnavprefixDescription: 'PokeNav Prefix:',
       pnavprefixTitle: 'Input the Prefix for the PokeNav Bot here. Default Prefix is $.',
       pnavRadiusDescription: 'Community Radius (Km):',
       pnavRadiusTitle: 'Enter the specified Community Radius in kilometers here.',
       pnavsettingsTitle: 'PokeNav Settings',
       PNavStopDescription: 'Stop',
-      PogoButtonsText: [{
-        send: {
-          false: 'Copy',
-          true: 'Send to'
+      PogoButtonsText: [
+        {
+          send: {
+            false: 'Copy',
+            true: 'Send to'
+          }
+        },
+        ' PokeNav'
+      ],
+      PogoButtonsTitle: [
+        {
+          send: {
+            false: 'Copy',
+            true: 'Send'
+          }
+        },
+        ' the Location create Command to ',
+        {
+          send: {
+            false: 'Clipboard',
+            true: 'Discord via WebHook'
+          }
         }
-      }, ' PokeNav'],
-      PogoButtonsTitle: [{
-        send: {
-          false: 'Copy',
-          true: 'Send'
-        }
-      }, ' the Location create Command to ', {
-        send: {
-          false: 'Clipboard',
-          true: 'Discord via WebHook'
-        }
-      }],
+      ],
       pokeNavSettingsText: 'PokeNav Settings',
       pokeNavSettingsTitle: 'Configure PokeNav'
     },
@@ -198,95 +221,119 @@ function wrapper(plugin_info) {
       PNavExDescription: 'Ex-Arena',
       PNavGymDescription: 'Arena',
       pnavhookurlDescription: 'Discord WebHook URL:',
-      pnavhookurlTitle: "Geben Sie die URL des WebHooks, den Sie in Ihrem Administrations-Channel angelegt haben, hier ein. Ist dieses Feld leer, werden die Kommandos in die Zwischenablage kopiert.",
+      pnavhookurlTitle: 'Geben Sie die URL des WebHooks, den Sie in Ihrem Administrations-Channel angelegt haben, hier ein. Ist dieses Feld leer, werden die Kommandos in die Zwischenablage kopiert.',
       pnavLanguageDescription: 'Sprache:',
-      pNavModCommandText: [{
-        send: {
-          false: 'Kopiere',
-          true: 'Sende'
-        }
-      }, ' Änderungs-Befehl'],
-      pNavModCommandTitleDisabled: ['Sie müssen die PokeNav Poi-ID eingeben bevor Sie den Änderungs-Befehl ', {
-        send: {
-          false: 'kopieren',
-          true: 'senden'
-        }
-      }, ' können!'],
-      pNavModCommandTitleEnabled: [{
-        send: {
-          false: 'Kopiert',
-          true: 'Sendet'
-        }
-      }, ' den Änderungs-Befehl.'],
+      pNavModCommandText: [
+        {
+          send: {
+            false: 'Kopiere',
+            true: 'Sende'
+          }
+        },
+        ' Änderungs-Befehl'
+      ],
+      pNavModCommandTitleDisabled: [
+        'Sie müssen die PokeNav Poi-ID eingeben bevor Sie den Änderungs-Befehl ',
+        {
+          send: {
+            false: 'kopieren',
+            true: 'senden'
+          }
+        },
+        ' können!'
+      ],
+      pNavModCommandTitleEnabled: [
+        {
+          send: {
+            false: 'Kopiert',
+            true: 'Sendet'
+          }
+        },
+        ' den Änderungs-Befehl.'
+      ],
       pNavmodDialogTitle: 'PokeNav Änderung(en)',
       PNavNoneDescription: 'Nichts',
       pNavOldPoiNameDescription: 'Folgender Poi wurde geändert:',
       pNavPoiIdDescription: 'PokeNav ID:',
-      pNavPoiInfoText: [{
-        send: {
-          false: 'Kopiere',
-          true: 'Sende'
-        }
-      }, ' Poi Informations-Befehl'],
-      pNavPoiInfoTitle: [{
-        send: {
-          false: 'Kopiert',
-          true: 'Sendet'
-        }
-      }, ' den Poi Informations-Befehl für diesen Poi.'],
+      pNavPoiInfoText: [
+        {
+          send: {
+            false: 'Kopiere',
+            true: 'Sende'
+          }
+        },
+        ' Poi Informations-Befehl'
+      ],
+      pNavPoiInfoTitle: [
+        {
+          send: {
+            false: 'Kopiert',
+            true: 'Sendet'
+          }
+        },
+        ' den Poi Informations-Befehl für diesen Poi.'
+      ],
       pnavprefixDescription: 'PokeNav Präfix:',
       pnavprefixTitle: 'Geben Sie hier die Präfix des PokeNav-Bots ein. Die Standard-Präfix ist $.',
       pnavRadiusDescription: 'Community-Radius (Km):',
       pnavRadiusTitle: 'Geben Sie hier den Radius ihrer Community in Kilometern ein.',
       pnavsettingsTitle: 'PokeNav-Einstellungen',
       PNavStopDescription: 'Stop',
-      PogoButtonsText: [{
-        send: {
-          false: 'Kopiere',
-          true: 'An'
+      PogoButtonsText: [
+        {
+          send: {
+            false: 'Kopiere',
+            true: 'An'
+          }
+        },
+        ' PokeNav',
+        {send: {true: ' senden',
+          false: ''}}
+      ],
+      PogoButtonsTitle: [
+        {
+          send: {
+            false: 'Kopiere',
+            true: 'Sende'
+          }
+        },
+        ' den Poi-Befehl ',
+        {
+          send: {
+            false: 'in die Zwischenablage.',
+            true: 'an Discord über den WebHook.'
+          }
         }
-      }, ' PokeNav', { send: { true: ' senden', false: '' } }],
-      PogoButtonsTitle: [{
-        send: {
-          false: 'Kopiere',
-          true: 'Sende'
-        }
-      }, ' den Poi-Befehl ', {
-        send: {
-          false: 'in die Zwischenablage.',
-          true: 'an Discord über den WebHook.'
-        }
-      }],
+      ],
       pokeNavSettingsText: 'PokeNav-Einstellungen',
       pokeNavSettingsTitle: 'Konfigurieren Sie PokeNav'
     }
   };
 
-  function detectLanguage() {
+  function detectLanguage () {
     let lang = navigator.language;
     console.log(lang);
     lang = lang.split('-')[0].toLowerCase();
-    if (Object.keys(strings).includes(lang))
+    if (Object.keys(strings).includes(lang)) {
       return lang;
-    else
+    } else {
       return 'en';
+    }
   }
 
-  function getString(id, options) {
+  function getString (id, options) {
     if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && (strings[window.plugin.pnav.settings.language])[id]) {
       var string = (strings[window.plugin.pnav.settings.language])[id];
       if (!(typeof string === 'string')) {
         return parseNestedString(string, options);
-      }
-      else {
+      } else {
         return string;
       }
     } else if (strings.en && strings.en[id]) {
       var string = strings.en[id];
       if (!(typeof string === 'string')) {
         return parseNestedString(string, options);
-      }
-      else {
+      } else {
         return string;
       }
     } else {
@@ -294,7 +341,7 @@ function wrapper(plugin_info) {
     }
   }
 
-  function parseNestedString(object, options) {
+  function parseNestedString (object, options) {
     if (typeof object === 'string' || object instanceof String) {
       if (object.length > 1 && object.startsWith('#')) {
         return getString(object.substring(1), options);
@@ -493,7 +540,7 @@ function wrapper(plugin_info) {
       html,
       title: getString('pnavsettingsTitle'),
       buttons: {
-        OK() {
+        OK () {
           let allOK = true;
           if (window.plugin.pnav.settings.language !== $('#pnavLanguage', container).val()) {
             window.plugin.pnav.settings.language = $('#pnavLanguage', container).val();
@@ -630,7 +677,7 @@ function wrapper(plugin_info) {
    * @param {string} type
    * @param {number} index
    */
-  function saveState(data, type, index) {
+  function saveState (data, type, index) {
     const addToDone = data.slice(0, index);
     // console.log(addToDone);
     addToDone.forEach(function (object) {
@@ -657,11 +704,11 @@ function wrapper(plugin_info) {
           <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="1"/>
         </label>
         <br>
-        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${getString('pNavPoiInfoTitle', { send: send })}">
-          ${getString('pNavPoiInfoText', { send: send })}
+        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${getString('pNavPoiInfoTitle', {send})}">
+          ${getString('pNavPoiInfoText', {send})}
         </button>
-        <button type="Button" class="ui-button" id="pNavModCommand" title="${getString('pNavModCommandTitleDisabled', { send: send })}" style="color:darkgray;cursor:default;text-decoration:none">
-          ${getString('pNavModCommandText', { send: send })}
+        <button type="Button" class="ui-button" id="pNavModCommand" title="${getString('pNavModCommandTitleDisabled', {send})}" style="color:darkgray;cursor:default;text-decoration:none">
+          ${getString('pNavModCommandText', {send})}
         </button>
       `;
       const modDialog = window.dialog({
@@ -674,7 +721,7 @@ function wrapper(plugin_info) {
           Skip: {
             id: 'btnSkip',
             text: getString('btnSkipText'),
-            click() {
+            click () {
               i++;
               if (i == changeList.length) {
                 modDialog.dialog('close');
@@ -705,13 +752,13 @@ function wrapper(plugin_info) {
         const value = e.target.valueAsNumber;
         if (valid && value && value > 0) {
           $('#pNavModCommand', modDialog).prop('style', '');
-          $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleEnabled', { send: send }));
+          $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleEnabled', {send}));
         } else {
           $('#pNavModCommand', modDialog).css('color', 'darkgray');
           $('#pNavModCommand', modDialog).css('cursor', 'default');
           $('#pNavModCommand', modDialog).css('text-decoration', 'none');
           $('#pNavModCommand', modDialog).css('border', '1px solid darkgray');
-          $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleDisabled', { send: send }));
+          $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleDisabled', {send}));
         }
       });
       $('#pNavModCommand', modDialog).on('click', function () {
@@ -734,7 +781,7 @@ function wrapper(plugin_info) {
     }
   };
 
-  function updateDone(poi) {
+  function updateDone (poi) {
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoGyms = pogoData.gyms ? pogoData.gyms : {};
     const pogoStops = pogoData.stops ? pogoData.stops : {};
@@ -758,7 +805,7 @@ function wrapper(plugin_info) {
     saveToLocalStorage();
   }
 
-  function updateUI(dialog, poi, i) {
+  function updateUI (dialog, poi, i) {
     $('#pNavOldPoiName', dialog).text(poi.oldName);
     $('#pNavModNrCur', dialog).text(i + 1);
     $('#pNavChangesMade', dialog).empty();
@@ -775,10 +822,10 @@ function wrapper(plugin_info) {
     $('#pNavModCommand', dialog).css('border', '1px solid darkgray');
     $('#pNavModCommand', dialog).css('cursor', 'default');
     $('#pNavModCommand', dialog).css('text-decoration', 'none');
-    $('#pNavModCommand', dialog).prop('title', getString('pNavModCommandTitleDisabled', { send: Boolean(window.plugin.pnav.settings.webhookUrl) }));
+    $('#pNavModCommand', dialog).prop('title', getString('pNavModCommandTitleDisabled', {send: Boolean(window.plugin.pnav.settings.webhookUrl)}));
   }
 
-  function sendModCommand(pNavId, changes) {
+  function sendModCommand (pNavId, changes) {
     let command = '';
     if (changes.type && changes.type === 'none') {
       command = `${window.plugin.pnav.settings.prefix}delete poi ${pNavId}`;
@@ -808,7 +855,7 @@ function wrapper(plugin_info) {
     }
   }
 
-  function checkForModifications() {
+  function checkForModifications () {
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoStops = (pogoData && pogoData.pokestops) ? pogoData.pokestops : {};
     // console.log(pogoStops);
@@ -896,7 +943,7 @@ function wrapper(plugin_info) {
     return changeList;
   }
 
-  function saveToLocalStorage() {
+  function saveToLocalStorage () {
     localStorage['plugin-pnav-done-pokestop'] = JSON.stringify(pNavData.pokestop);
     localStorage['plugin-pnav-done-gym'] = JSON.stringify(pNavData.gym);
   }
@@ -922,7 +969,7 @@ function wrapper(plugin_info) {
    * ex_eligible:(number|undefined)
    * } | null} returns the found changes or null if none were found or a problem occurred.
    */
-  function checkForSingleModification(currentData) {
+  function checkForSingleModification (currentData) {
     let changes = {};
     var savedData;
     if (pNavData.pokestop[currentData.guid]) {
@@ -964,7 +1011,7 @@ function wrapper(plugin_info) {
    * @param {string} type - expected values pokestop or gym
    * @return {object[] | null} returns the data to export or null if Pogo Tools Data was not found.
    */
-  function gatherExportData(type) {
+  function gatherExportData (type) {
     var pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const modified = checkForModifications();
     const exportBlacklist = [];
@@ -1083,7 +1130,7 @@ function wrapper(plugin_info) {
         width: 'auto',
         title: getString('bulkExportProgressTitle'),
         buttons: {
-          OK() {
+          OK () {
             saveState(data, type, i);
             clearInterval(window.plugin.pnav.timer);
             window.plugin.pnav.timer = null;
@@ -1129,7 +1176,7 @@ function wrapper(plugin_info) {
    * @param {number} lon2
    * @return {number}
    */
-  function checkDistance(lat1, lon1, lat2, lon2) {
+  function checkDistance (lat1, lon1, lat2, lon2) {
     const R = 6371;
     var x1 = lat2 - lat1;
     var dLat = (x1 * Math.PI) / 180;
@@ -1150,7 +1197,7 @@ function wrapper(plugin_info) {
    * @param {string} id - the id of the input field to copy from
    * @return {bool} - returns if copying was successful
    */
-  function copyfieldvalue(id) {
+  function copyfieldvalue (id) {
     var field = document.getElementById(id);
     field.focus();
     field.setSelectionRange(0, field.value.length);
@@ -1158,7 +1205,7 @@ function wrapper(plugin_info) {
     return copySelectionText();
   }
 
-  function copySelectionText() {
+  function copySelectionText () {
     var copysuccess;
     try {
       copysuccess = document.execCommand('copy');
@@ -1169,7 +1216,7 @@ function wrapper(plugin_info) {
   }
 
   // source: Oscar Zanota on Dev.to (https://dev.to/oskarcodes/send-automated-discord-messages-through-webhooks-using-javascript-1p01)
-  function sendMessage(msg) {
+  function sendMessage (msg) {
     var params = {
       username: window.plugin.pnav.settings.name,
       avatar_url: '',
@@ -1180,7 +1227,7 @@ function wrapper(plugin_info) {
     request.send(JSON.stringify(params), false);
   }
 
-  function waitForPogoButtons(mutationList, invokingObserver) {
+  function waitForPogoButtons (mutationList, invokingObserver) {
     mutationList.forEach(function (mutation) {
       if (mutation.type === 'childList' && mutation.addedNodes) {
         // console.log(mutation.addedNodes);
@@ -1188,7 +1235,7 @@ function wrapper(plugin_info) {
           if (node.className == 'PogoButtons') {
             // console.log('there is PogoButtons!');
             $(node).after(`
-             <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">${getString('PogoButtonsText', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}</a>
+             <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">${getString('PogoButtonsText', {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>
              `);
             $(node).css('display', 'inline');
             // we don't need to look for the class anymore because we just found what we wanted ;-)
@@ -1199,10 +1246,10 @@ function wrapper(plugin_info) {
     });
   }
 
-  function waitForPogoStatus(mutationList, invokingObserver) {
+  function waitForPogoStatus (mutationList, invokingObserver) {
     mutationList.forEach(function (mutation) {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        $('.PogoStatus').append(`<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">${getString('PogoButtonsText', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}</a>`);
+        $('.PogoStatus').append(`<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">${getString('PogoButtonsText', {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>`);
         invokingObserver.disconnect();
       }
     });
@@ -1252,18 +1299,18 @@ function wrapper(plugin_info) {
               <input type="radio" name="type" value="ex" id="PNavEx"/>
               ${getString('PNavExDescription')}
             </label>
-            <a style="${window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''}" title="${getString('PogoButtonsTitle', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">
-              ${getString('PogoButtonsText', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}
+            <a style="${window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''}" title="${getString('PogoButtonsTitle', {send})}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">
+              ${getString('PogoButtonsText', {send})}
             </a>
           </div>
         `);
         }, 0);
       } else {
         // wait for the Pogo Buttons to get added
-        detailsObserver.observe($('#portaldetails')[0], { 'childList': true });
+        detailsObserver.observe($('#portaldetails')[0], {'childList': true});
         // if running on mobile, also wait for the Buttons in Status bar to get added and add it there.
         if (window.isSmartphone()) {
-          statusObserver.observe($('.PogoStatus')[0], { 'childList': true });
+          statusObserver.observe($('.PogoStatus')[0], {'childList': true});
         }
       }
     });
