@@ -119,6 +119,7 @@ function wrapper(plugin_info) {
         }
       }, ' the modification command.'],
       pNavmodDialogTitle: 'PokeNav Modification(s)',
+      PNavNoneDescription: 'None',
       pNavOldPoiNameDescription: 'The following Poi was modified:',
       pNavPoiIdDescription: 'PokeNav ID:',
       pNavPoiInfoText: [{
@@ -218,6 +219,7 @@ function wrapper(plugin_info) {
         }
       }, ' den Änderungs-Befehl.'],
       pNavmodDialogTitle: 'PokeNav Änderung(en)',
+      PNavNoneDescription: 'Nichts',
       pNavOldPoiNameDescription: 'Folgender Poi wurde geändert:',
       pNavPoiIdDescription: 'PokeNav ID:',
       pNavPoiInfoText: [{
@@ -335,7 +337,7 @@ function wrapper(plugin_info) {
       var lat = latlng.lat;
       var lng = latlng.lng;
       var opt = ' ';
-      var type = '';
+      var type = 'none';
       var isEx;
 
       /** @type {string} */
@@ -357,7 +359,7 @@ function wrapper(plugin_info) {
           isEx = true;
         } else if (document.getElementById('PNavGym').checked) {
           type = 'gym';
-        } else {
+        } else if (document.getElementById('PNavStop').checked) {
           type = 'pokestop';
         }
       }
@@ -381,14 +383,14 @@ function wrapper(plugin_info) {
         if (changes) {
           window.plugin.pnav.bulkModify([changes]);
         } else if (
-          (pNavData[type])[selectedGuid]
+          type !== 'none' && (pNavData[type])[selectedGuid]
         ) {
           alert(getString('alertAlreadyExported'));
           input.show();
           input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
           copyfieldvalue('copyInput');
           input.hide();
-        } else {
+        } else if (type !== 'none') {
           if (window.plugin.pnav.settings.webhookUrl) {
             sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
             console.log('sent!');
@@ -1233,9 +1235,13 @@ function wrapper(plugin_info) {
       if (!window.plugin.pogo) {
         setTimeout(function () {
           $('#portaldetails').append(`
-          <div id="PNav" style="color:#fff;display:flex">
+          <div id="PNav" style="color:#fff">
             <Label>
-              <input type="radio" checked="true" name="type" value="stop" id="PNavStop"/>
+              <input type="radio" checked="true" name="type" value="none" id="PNavNone"/>
+              ${getString('PNavNoneDescription')}
+            </label>
+            <Label>
+              <input type="radio" name="type" value="stop" id="PNavStop"/>
               ${getString('PNavStopDescription')}
             </label>
             <Label>
@@ -1246,7 +1252,7 @@ function wrapper(plugin_info) {
               <input type="radio" name="type" value="ex" id="PNavEx"/>
               ${getString('PNavExDescription')}
             </label>
-            <a style="margin-left:auto;margin-right:5px${window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''}" title="${getString('PogoButtonsTitle', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
+            <a style="${window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''}" title="${getString('PogoButtonsTitle', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}" onclick="window.plugin.pnav.copy();return false;" accesskey="c">
               ${getString('PogoButtonsText', { send: Boolean(window.plugin.pnav.settings.webhookUrl) })}
             </a>
           </div>
