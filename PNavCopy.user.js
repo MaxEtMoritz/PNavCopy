@@ -330,7 +330,6 @@ function wrapper(plugin_info) {
       // escaping Backslashes and Hyphens in Portal Names
       /** @type {string} */
       var name = portal.options.data.title
-        .replaceAll('\\', '\\\\')
         .replaceAll('"', '\\"');
       var latlng = portal.getLatLng();
       var lat = latlng.lat;
@@ -789,7 +788,7 @@ function wrapper(plugin_info) {
       ] of Object.entries(changes)) {
         if (key !== 'oldType' && key !== 'oldName' && key !== 'guid') {
           if (key === 'name') {
-            command += ` "${key}: ${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+            command += ` "${key}: ${value.replaceAll('"', '\\"')}"`;
           } else {
             command += ` "${key}: ${value}"`;
           }
@@ -1030,7 +1029,6 @@ function wrapper(plugin_info) {
           let lng = entry.lng;
           // escaping Backslashes and Hyphens in Portal Names
           let name = entry.name
-            .replaceAll('\\', '\\\\')
             .replaceAll('"', '\\"');
           let prefix = window.plugin.pnav.settings.prefix;
           let ex = Boolean(entry.isEx);
