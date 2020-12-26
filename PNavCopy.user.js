@@ -321,6 +321,8 @@ function wrapper (plugin_info) {
     }
   }
 
+  window.plugin.pnav.getString = getString;
+
   function getString (id, options) {
     if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && (strings[window.plugin.pnav.settings.language])[id]) {
       var string = (strings[window.plugin.pnav.settings.language])[id];
@@ -474,7 +476,7 @@ function wrapper (plugin_info) {
         <p>
           <label>
             ${getString('pnavLanguageDescription')}
-            <select id="pnavLanguage"/>
+            <select id="pnavLanguage" onchange="window.plugin.pnav.settings.language = this.value;alert(window.plugin.pnav.getString('alertLanguageAfterReload'));"/>
           </label>
         </p>
         <p id="prefix">
@@ -542,12 +544,6 @@ function wrapper (plugin_info) {
       buttons: {
         OK () {
           let allOK = true;
-          if (window.plugin.pnav.settings.language !== $('#pnavLanguage', container).val()) {
-            window.plugin.pnav.settings.language = $('#pnavLanguage', container).val();
-            alert(getString('alertLanguageAfterReload'));
-          } else {
-            window.plugin.pnav.settings.language = $('#pnavLanguage', container).val();
-          }
           if (
             !$('#pnavhookurl').val() ||
             new RegExp(validURL).test($('#pnavhookurl').val())
