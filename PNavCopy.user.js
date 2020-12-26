@@ -130,7 +130,7 @@ function wrapper (plugin_info) {
       ],
       pNavmodDialogTitle: 'PokeNav Modification(s)',
       PNavNoneDescription: 'None',
-      pNavOldPoiNameDescription: 'The following Poi was modified:',
+      pNavOldPoiNameDescription: 'The following POI was modified:',
       pNavPoiIdDescription: 'PokeNav ID:',
       pNavPoiInfoText: [
         {
@@ -139,7 +139,7 @@ function wrapper (plugin_info) {
             true: 'Send'
           }
         },
-        ' Poi Info Command'
+        ' POI Info Command'
       ],
       pNavPoiInfoTitle: [
         {
@@ -148,7 +148,7 @@ function wrapper (plugin_info) {
             true: 'Sends'
           }
         },
-        ' the Poi Information Command for the Poi.'
+        ' the POI Information Command for the POI.'
       ],
       pnavprefixDescription: 'PokeNav Prefix:',
       pnavprefixTitle: 'Input the Prefix for the PokeNav Bot here. Default Prefix is $.',
@@ -184,11 +184,11 @@ function wrapper (plugin_info) {
       pokeNavSettingsTitle: 'Configure PokeNav'
     },
     de: {
-      alertAlreadyExported: 'Dieser Poi wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuche, den Export-Status in den Einstellungen zurückzusetzen.',
+      alertAlreadyExported: 'Dieser POI wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuche, den Export-Status in den Einstellungen zurückzusetzen.',
       alertExportRunning: 'Die Einstellungen wurden nicht gespeichert, da der Daten-Export läuft. Pausiere den Export und versuche es noch mal!',
       alertLanguageAfterReload: 'Die neuen Spracheinstellungen werden vollständig erst nach erneutem Laden der Seite wirksam!',
       alertNoModifications: 'Keine Änderungen gefunden!',
-      alertOutsideArea: 'Dieser Poi liegt nicht in den angegebenen Community-Grenzen!',
+      alertOutsideArea: 'Dieser POI liegt nicht in den angegebenen Community-Grenzen!',
       alertProblemPogoTools: 'Es ist ein Problem beim Lesen der Pogo-Tools-Daten aufgetreten!',
       btnBulkExportGymsText: 'Exportiere alle Pogo Tools Arenen',
       btnBulkExportGymsTitle: 'Exportiere alle Arenen aus Pogo Tools eine nach der Anderen über den angegebenen WebHook. Dies kann eine Weile dauern!',
@@ -214,7 +214,7 @@ function wrapper (plugin_info) {
       Modification: 'Änderung ',
       of: ' von ',
       pnavCenterDescription: 'Community-Mittelpunkt:',
-      pnavCenterTitle: `Fügen Sie die Mittelpunkt-Koordinate Ihrer Community hier ein. Sie können sie abrufen, indem Sie "${window.plugin.pnav.settings.prefix}show settings" in den PokeNav Administratoren-Kanal eigeben.`,
+      pnavCenterTitle: `Fügen Sie die Mittelpunkt-Koordinate Ihrer Community hier ein. Sie können sie abrufen, indem Sie &quot;${window.plugin.pnav.settings.prefix}show settings&quot; in den PokeNav Administratoren-Kanal eigeben.`,
       pNavChangesMadeDescription: 'Folgendes wurde geändert:',
       pnavCodenameDescription: 'Name:',
       pnavCodenameTitle: 'Der Name, der beim Senden über den WebHook angezeigt wird. Standardmäßig ist es Ihr Ingress-Codename.',
@@ -233,7 +233,7 @@ function wrapper (plugin_info) {
         ' Änderungs-Befehl'
       ],
       pNavModCommandTitleDisabled: [
-        'Sie müssen die PokeNav Poi-ID eingeben bevor Sie den Änderungs-Befehl ',
+        'Sie müssen die PokeNav POI-ID eingeben bevor Sie den Änderungs-Befehl ',
         {
           send: {
             false: 'kopieren',
@@ -253,7 +253,7 @@ function wrapper (plugin_info) {
       ],
       pNavmodDialogTitle: 'PokeNav Änderung(en)',
       PNavNoneDescription: 'Nichts',
-      pNavOldPoiNameDescription: 'Folgender Poi wurde geändert:',
+      pNavOldPoiNameDescription: 'Folgender POI wurde geändert:',
       pNavPoiIdDescription: 'PokeNav ID:',
       pNavPoiInfoText: [
         {
@@ -262,7 +262,7 @@ function wrapper (plugin_info) {
             true: 'Sende'
           }
         },
-        ' Poi Informations-Befehl'
+        ' POI Informations-Befehl'
       ],
       pNavPoiInfoTitle: [
         {
@@ -271,7 +271,7 @@ function wrapper (plugin_info) {
             true: 'Sendet'
           }
         },
-        ' den Poi Informations-Befehl für diesen Poi.'
+        ' den POI Informations-Befehl für diesen POI.'
       ],
       pnavprefixDescription: 'PokeNav Präfix:',
       pnavprefixTitle: 'Geben Sie hier die Präfix des PokeNav-Bots ein. Die Standard-Präfix ist $.',
@@ -297,7 +297,7 @@ function wrapper (plugin_info) {
             true: 'Sende'
           }
         },
-        ' den Poi-Befehl ',
+        ' den POI-Befehl ',
         {
           send: {
             false: 'in die Zwischenablage.',
@@ -998,7 +998,7 @@ function wrapper (plugin_info) {
     }
     if (Object.keys(changes).length > 0) {
       changes.oldName = savedData.name;
-      changes.oldType = savedData.type;
+      changes.oldType = savedData.type === 'pokestop' ? 'stop' : savedData.type;
       changes.guid = savedData.guid;
       return changes;
     } else {
