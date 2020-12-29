@@ -6,7 +6,7 @@
 // @category       Misc
 // @downloadURL    https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.5.2
+// @version        1.5.3
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info to clipboard or send it to Discord in the format the PokeNav Discord bot needs.
 // @include        http*://intel.ingress.com/*
@@ -544,7 +544,6 @@ function wrapper (plugin_info) {
       buttons: {
         OK () {
           let allOK = true;
-          
           if (
             !$('#pnavhookurl').val() ||
             new RegExp(validURL).test($('#pnavhookurl').val())
