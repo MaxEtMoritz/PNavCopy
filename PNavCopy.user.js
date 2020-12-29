@@ -500,7 +500,7 @@ function wrapper (plugin_info) {
         <p>
           <label id="center" title="${getString('pnavCenterTitle')}">
           ${getString('pnavCenterDescription')}
-          <input id="pnavCenter" style="width:140px" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?&#92;d?&#92;d(&#92;.&#92;d+)?" value="${window.plugin.pnav.settings.lat != '' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
+          <input id="pnavCenter" style="width:140px" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?1?&#92;d?&#92;d(&#92;.&#92;d+)?$" value="${window.plugin.pnav.settings.lat != '' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
           </label>
           <br>
           <label id="radius" title="${getString('pnavRadiusTitle')}">
@@ -544,6 +544,7 @@ function wrapper (plugin_info) {
       buttons: {
         OK () {
           let allOK = true;
+          
           if (
             !$('#pnavhookurl').val() ||
             new RegExp(validURL).test($('#pnavhookurl').val())
@@ -609,11 +610,11 @@ function wrapper (plugin_info) {
             if (
               !Number.isNaN(lat) &&
               !Number.isNaN(lng) &&
-              new RegExp('^-?\\d?\\d(\\.\\d+)?, -?\\d?\\d(\\.\\d+)?$').test($('#pnavCenter').val()) &&
+              new RegExp('^-?\\d?\\d(\\.\\d+)?, -?1?\\d?\\d(\\.\\d+)?$').test($('#pnavCenter').val()) &&
               lat >= -90 &&
               lat <= 90 &&
-              lng >= -90 &&
-              lng <= 90
+              lng >= -180 &&
+              lng <= 180
             ) {
               window.plugin.pnav.settings.lat = lat;
               window.plugin.pnav.settings.lng = lng;
