@@ -43,15 +43,17 @@ function wrapper (plugin_info) {
   // use own namespace for plugin
   window.plugin.pnav = function () { };
   // Language is set in setup() if not already present in localStorage.
+  /* eslint-disable no-undefined */
   window.plugin.pnav.settings = {
-    webhookUrl: '',
+    webhookUrl: undefined,
     name: window.PLAYER.nickname,
-    radius: '',
-    lat: '',
-    lng: '',
+    radius: undefined,
+    lat: undefined,
+    lng: undefined,
     prefix: '$',
-    language: null
+    language: undefined
   };
+  /* eslint-enable no-undefined */
   var selectedGuid = null;
   var pNavData = {
     pokestop: {},
@@ -413,9 +415,9 @@ function wrapper (plugin_info) {
         }
       }
       if (
-        window.plugin.pnav.settings.lat &&
-        window.plugin.pnav.settings.lng &&
-        window.plugin.pnav.settings.radius &&
+        typeof window.plugin.pnav.settings.lat !== 'undefined' &&
+        typeof window.plugin.pnav.settings.lng !== 'undefined' &&
+        typeof window.plugin.pnav.settings.radius !== 'undefined' &&
         checkDistance(lat, lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
         window.plugin.pnav.settings.radius
       ) {
@@ -476,7 +478,7 @@ function wrapper (plugin_info) {
         <p>
           <label>
             ${getString('pnavLanguageDescription')}
-            <select id="pnavLanguage" onchange="window.plugin.pnav.settings.language = this.value;alert(window.plugin.pnav.getString('alertLanguageAfterReload'));"/>
+            <select id="pnavLanguage" onchange="window.plugin.pnav.settings.language = this.value;alert(window.plugin.pnav.getString('alertLanguageAfterReload'));"></select>
           </label>
         </p>
         <p id="prefix">
@@ -488,7 +490,7 @@ function wrapper (plugin_info) {
         <p id="webhook">
           <label title="${getString('pnavhookurlTitle')}">
             ${getString('pnavhookurlDescription')}
-            <input type="url" style="width:100%" id="pnavhookurl" value="${window.plugin.pnav.settings.webhookUrl}" pattern="${validURL}"/>
+            <input type="url" style="width:100%" id="pnavhookurl" value="${typeof window.plugin.pnav.settings.webhookUrl !== 'undefined' ? window.plugin.pnav.settings.webhookUrl : ''}" pattern="${validURL}"/>
           </label>
         </p>
         <p>
@@ -500,12 +502,12 @@ function wrapper (plugin_info) {
         <p>
           <label id="center" title="${getString('pnavCenterTitle')}">
           ${getString('pnavCenterDescription')}
-          <input id="pnavCenter" style="width:140px" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?1?&#92;d?&#92;d(&#92;.&#92;d+)?$" value="${window.plugin.pnav.settings.lat != '' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
+          <input id="pnavCenter" style="width:140px" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?1?&#92;d?&#92;d(&#92;.&#92;d+)?$" value="${typeof window.plugin.pnav.settings.lat !== 'undefined' && typeof window.plugin.pnav.settings.lng !== 'undefined' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
           </label>
           <br>
           <label id="radius" title="${getString('pnavRadiusTitle')}">
           ${getString('pnavRadiusDescription')}
-          <input id="pnavRadius" style="width:41px;appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="0.001" value="${window.plugin.pnav.settings.radius}"/>
+          <input id="pnavRadius" style="width:41px;appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="0.001" value="${typeof window.plugin.pnav.settings.radius !== 'undefined' ? window.plugin.pnav.settings.radius : ''}"/>
           </label>
         </p>
         <p><button type="Button" id="btnEraseHistory" style="width:100%" title="${getString('btnEraseHistoryTitle')}" onclick="
@@ -575,7 +577,7 @@ function wrapper (plugin_info) {
             }
           }
           if (!$('#pnavRadius').val()) {
-            window.plugin.pnav.settings.radius = '';
+            delete window.plugin.pnav.settings.radius;
             if ($('#lblErrorRd').length > 0) {
               $('#lblErrorRd').remove();
             }
@@ -594,8 +596,8 @@ function wrapper (plugin_info) {
             allOK = false;
           }
           if (!$('#pnavCenter').val()) {
-            window.plugin.pnav.settings.lat = '';
-            window.plugin.pnav.settings.lng = '';
+            delete window.plugin.pnav.settings.lat;
+            delete window.plugin.pnav.settings.lng;
             if ($('#lblErrorCn').length > 0) {
               $('#lblErrorCn').remove();
             }
@@ -1021,9 +1023,9 @@ function wrapper (plugin_info) {
       // console.log(pogoData);
       const doneGuids = Object.keys(pNavData[type]);
       const distanceNotCheckable =
-        !window.plugin.pnav.settings.lat ||
-        !window.plugin.pnav.settings.lng ||
-        !window.plugin.pnav.settings.radius;
+        typeof window.plugin.pnav.settings.lat === 'undefined' ||
+        typeof window.plugin.pnav.settings.lng === 'undefined' ||
+        typeof window.plugin.pnav.settings.radius === 'undefined';
       var exportData = pogoData.filter(function (object) {
         return (
           (!doneGuids || !doneGuids.includes(object.guid)) &&
