@@ -690,13 +690,13 @@ function wrapper (plugin_info) {
       // console.log(changeList);
       const send = Boolean(window.plugin.pnav.settings.webhookUrl);
       const html = `
-        <label>${getString('Modification')}</label><label id=pNavModNrCur>1</label><label>${getString('of')}</label><label id="pNavModNrMax"/>
+        <label>${getString('Modification')}</label><label id=pNavModNrCur>1</label><label>${getString('of')}</label><label id="pNavModNrMax"></label>
         <h3>
           ${getString('pNavOldPoiNameDescription')}
         </h3>
-        <h3 id="pNavOldPoiName"/>
+        <h3 id="pNavOldPoiName"></h3>
         <label>${getString('pNavChangesMadeDescription')}</label>
-        <ul id="pNavChangesMade"/>
+        <ul id="pNavChangesMade"></ul>
         <label>
           ${getString('pNavPoiIdDescription')}
           <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="1"/>
