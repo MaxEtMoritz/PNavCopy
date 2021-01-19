@@ -1,5 +1,5 @@
 // ==UserScript==
-/* globals $, GM_info */
+/* globals $, GM_info, L */
 // eslint-disable-next-line multiline-comment-style
 // @id             pnavcopy@maxetmoritz
 // @name           IITC plugin: Copy PokeNav Command
@@ -61,6 +61,8 @@ function wrapper (plugin_info) {
   };
   const request = new XMLHttpRequest();
 
+  var lCommBounds;
+
   const strings = {
     en: {
       alertAlreadyExported: 'This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.',
@@ -90,6 +92,7 @@ function wrapper (plugin_info) {
       lblErrorPfText: 'Prefix must be only one Character!',
       lblErrorRdText: 'Invalid Radius! Please check if it is a valid Number!',
       lblErrorWHText: 'Invalid URL! Please delete or correct it!',
+      lCommBoundsName: 'PokeNav Community',
       Modification: 'Modification ',
       of: ' of ',
       pnavCenterDescription: 'Community Center:',
@@ -186,21 +189,21 @@ function wrapper (plugin_info) {
       pokeNavSettingsTitle: 'Configure PokeNav'
     },
     de: {
-      alertAlreadyExported: 'Dieser POI wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuchen Sie, den Export-Status in den Einstellungen zurückzusetzen.',
-      alertExportRunning: 'Die Einstellungen wurden nicht gespeichert, da der Daten-Export läuft. Pausieren Sie den Export und versuchen Sie es noch mal!',
+      alertAlreadyExported: 'Dieser POI wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuche, den Export-Status in den Einstellungen zurückzusetzen.',
+      alertExportRunning: 'Die Einstellungen wurden nicht gespeichert, da der Daten-Export läuft. Pausiere den Export und versuche es noch mal!',
       alertLanguageAfterReload: 'Die neuen Spracheinstellungen werden vollständig erst nach erneutem Laden der Seite wirksam!',
       alertNoModifications: 'Keine Änderungen gefunden!',
       alertOutsideArea: 'Dieser POI liegt nicht in den angegebenen Community-Grenzen!',
       alertProblemPogoTools: 'Es ist ein Problem beim Lesen der Pogo-Tools-Daten aufgetreten!',
       btnBulkExportGymsText: 'Exportiere alle Pogo Tools Arenen',
-      btnBulkExportGymsTitle: 'Exportiert alle Arenen aus Pogo Tools eine nach der Anderen über den angegebenen WebHook. Dies kann eine Weile dauern!',
+      btnBulkExportGymsTitle: 'Exportiere alle Arenen aus Pogo Tools eine nach der Anderen über den angegebenen WebHook. Dies kann eine Weile dauern!',
       btnBulkExportStopsText: 'Exportiere alle Pogo Tools Stops',
-      btnBulkExportStopsTitle: 'Exportiert alle Pokestops aus Pogo Tools einer nach dem Anderen über den angegebenen WebHook. Dies kann eine Weile dauern!',
+      btnBulkExportStopsTitle: 'Exportiere alle Pokestops aus Pogo Tools einer nach dem Anderen über den angegebenen WebHook. Dies kann eine Weile dauern!',
       btnBulkModifyText: 'Prüfe auf Änderungen',
       btnBulkModifyTitle: 'Prüft die Pogo-Tools-Daten auf Änderungen und beginnt den Upload-Prozess der Änderungen.',
       btnEraseHistoryTextDefault: 'Lösche Export-Historie',
       btnEraseHistoryTextSuccess: 'Gelöscht!',
-      btnEraseHistoryTitle: 'Löscht die gesamte bisher gesammelte Export-Historie.',
+      btnEraseHistoryTitle: 'Lösche die gesamte bisher gesammelte Export-Historie.',
       btnSkipText: 'Änderung überspringen',
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Speichert den Fortschritt lokal und beendet den Export. Starten Sie zum Fortsetzen des Exports diesen in den Einstellungen neu.',
@@ -640,6 +643,17 @@ function wrapper (plugin_info) {
                 'plugin-pnav-settings',
                 JSON.stringify(window.plugin.pnav.settings)
               );
+              lCommBounds.clearLayers();
+              if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
+                var circle = L.circle(L.latLng([
+                  window.plugin.pnav.settings.lat,
+                  window.plugin.pnav.settings.lng
+                ]), {radius: window.plugin.pnav.settings.radius * 1000,
+                  interactive: false,
+                  fill: false,
+                  color: '#000000'});
+                lCommBounds.addLayer(circle);
+              }
               container.dialog('close');
             }
           } else {
@@ -1273,6 +1287,19 @@ function wrapper (plugin_info) {
     const detailsObserver = new MutationObserver(waitForPogoButtons);
     const statusObserver = new MutationObserver(waitForPogoStatus);
     const send = Boolean(window.plugin.pnav.settings.webhookUrl);
+    lCommBounds = new L.LayerGroup();
+    if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng&&window.plugin.pnav.settings.radius) {
+      var commCircle = L.circle(L.latLng([
+        window.plugin.pnav.settings.lat,
+        window.plugin.pnav.settings.lng
+      ]), {radius: window.plugin.pnav.settings.radius * 1000,
+        interactive: false,
+        fill: false,
+        color: '#000000'});
+      lCommBounds.addLayer(commCircle);
+      window.addLayerGroup(getString('lCommBoundsName'), lCommBounds);
+    }
+
     window.addHook('portalSelected', function (data) {
       console.log(data);
       var guid = data.selectedPortalGuid;
