@@ -186,7 +186,8 @@ function wrapper (plugin_info) {
         }
       ],
       pokeNavSettingsText: 'PokeNav Settings',
-      pokeNavSettingsTitle: 'Configure PokeNav'
+      pokeNavSettingsTitle: 'Configure PokeNav',
+      portalHighlighterName: 'PokeNav State'
     },
     de: {
       alertAlreadyExported: 'Dieser POI wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuche, den Export-Status in den Einstellungen zurückzusetzen.',
@@ -311,7 +312,8 @@ function wrapper (plugin_info) {
         }
       ],
       pokeNavSettingsText: 'PokeNav-Einstellungen',
-      pokeNavSettingsTitle: 'Konfigurieren Sie PokeNav'
+      pokeNavSettingsTitle: 'Konfigurieren Sie PokeNav',
+      portalHighlighterName: 'PokeNav-Status'
     }
   };
 
@@ -378,6 +380,27 @@ function wrapper (plugin_info) {
       return '';
     }
   }
+
+  // Highlighter that will highlight Portals according to the data that was submitted to PokeNav. PokeStops in blue, Gyms in red, Ex Gyms maybe with a yellow circle, Not yet submitted portals in gray.
+  window.plugin.pnav.highlight = function (data) {
+    const guid = data.portal.options.guid;
+    var color, fillcolor;
+    if (pNavData.pokestop[guid]) {
+      color = '#00d8ff';
+    } else if (pNavData.gym[guid]) {
+      if (pNavData.gym[guid].isEx) {
+        fillcolor = '#eec13c';
+      }
+      color='#ff0204';
+    } else {
+      color='#808080';
+    }
+    var params = window.getMarkerStyleOptions({team: window.TEAM_NONE,
+      level: 0});
+    params.color = color;
+    params.fillColor = fillcolor;
+    data.portal.setStyle(params);
+  };
 
   window.plugin.pnav.copy = function () {
     var input = $('#copyInput');
@@ -681,6 +704,11 @@ function wrapper (plugin_info) {
     }
     pNavData.pokestop = {};
     pNavData.gym = {};
+    // re-validate the highlighter if it is active.
+    // eslint-disable-next-line no-underscore-dangle
+    if (window._current_highlighter === getString('portalHighlighterName')) {
+      window.changePortalHighlights(getString('portalHighlighterName'));
+    }
   };
 
   /**
@@ -1146,6 +1174,11 @@ function wrapper (plugin_info) {
             saveState(data, type, i);
             clearInterval(window.plugin.pnav.timer);
             window.plugin.pnav.timer = null;
+            // re-validate highlighter if it is enabled.
+            // eslint-disable-next-line no-underscore-dangle
+            if (window._current_highlighter === getString('portalHighlighterName')) {
+              window.changePortalHighlights(getString('portalHighlighterName'));
+            }
             dialog.dialog('close');
           }
         }
@@ -1297,8 +1330,9 @@ function wrapper (plugin_info) {
         fill: false,
         color: '#000000'});
       lCommBounds.addLayer(commCircle);
-      window.addLayerGroup(getString('lCommBoundsName'), lCommBounds);
     }
+    window.addLayerGroup(getString('lCommBoundsName'), lCommBounds);
+    window.addPortalHighlighter(getString('portalHighlighterName'), window.plugin.pnav.highlight);
 
     window.addHook('portalSelected', function (data) {
       console.log(data);
