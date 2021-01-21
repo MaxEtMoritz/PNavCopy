@@ -26,6 +26,7 @@ With This Plugin you can...
 - Check for modifications of Pogo Tools data automatically
 - Send or copy modification or deletion Commands for PokeNav
 - View your PokeNav community bounds as a circle on the map
+- Represent the state of the export in Colors with a highlighter: PokeStops are blue, Gyms red and Ex raid gyms have a red border and yellow filling.
 
 ## Integrations
 If you use the [Pogo tools plugin by AlfonsoML](https://gitlab.com/AlfonsoML/pogo-s2/), the info entered there is used to determine Type and Ex Eligibility if applicable. Otherwise you can choose manually.
