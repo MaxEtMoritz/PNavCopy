@@ -1301,7 +1301,6 @@ function wrapper (plugin_info) {
   }
 
   var setup = function () {
-    console.log('azaza');
     if (localStorage['plugin-pnav-settings']) {
       window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
     }
@@ -1333,6 +1332,42 @@ function wrapper (plugin_info) {
     }
     window.addLayerGroup(getString('lCommBoundsName'), lCommBounds);
     window.addPortalHighlighter(getString('portalHighlighterName'), window.plugin.pnav.highlight);
+    var isLinksDisplayed = window.isLayerGroupDisplayed('Links', false);
+    var isFieldsDisplayed = window.isLayerGroupDisplayed('Fields', false);
+    $('#portal_highlight_select').on('change', function () {
+      // eslint-disable-next-line no-underscore-dangle
+      if (window._current_highlighter === getString('portalHighlighterName')) {
+        isLinksDisplayed = window.isLayerGroupDisplayed('Links', false);
+        isFieldsDisplayed = window.isLayerGroupDisplayed('Fields', false);
+        // eslint-disable-next-line no-underscore-dangle
+        const layers = window.layerChooser._layers;
+        const layerIds = Object.keys(layers);
+        layerIds.forEach(function (id) {
+          const layer = layers[id];
+          if (layer.name==='Links' || layer.name==='Fields') {
+            window.map.removeLayer(layer.layer);
+          } else if ((new RegExp('Level . Portals').test(layer.name) ||
+                      layer.name==='Resistance' ||
+                      layer.name==='Enlightened' ||
+                      layer.name==='Unclaimed/Placeholder Portals') &&
+                      !window.isLayerGroupDisplayed(layer.name, false)) {
+            window.map.addLayer(layer.layer);
+          }
+        });
+      } else if (!window.isLayerGroupDisplayed('Links', false) && !window.isLayerGroupDisplayed('Fields', false)) {
+        // eslint-disable-next-line no-underscore-dangle
+        const layers = window.layerChooser._layers;
+        const layerIds = Object.keys(layers);
+        layerIds.forEach(function (id) {
+          const layer = layers[id];
+          if ((layer.name==='Links' && isLinksDisplayed) || (layer.name==='Fields' && isFieldsDisplayed)) {
+            window.map.addLayer(layer.layer);
+          }
+        });
+        isLinksDisplayed=false;
+        isFieldsDisplayed=false;
+      }
+    });
 
     window.addHook('portalSelected', function (data) {
       console.log(data);
