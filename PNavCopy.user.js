@@ -498,6 +498,43 @@ function wrapper (plugin_info) {
     }
   };
 
+  window.plugin.pnav.exportData = function () {
+    const input=$('#copyInput');
+    input.show();
+    input.val(JSON.stringify(pNavData));
+    copyfieldvalue('copyInput');
+    input.hide();
+  };
+
+  window.plugin.pnav.importData = function () {
+    const dialog = window.dialog({id: 'importDialog',
+      width: 'auto',
+      heigth: 'auto',
+      title: getString('importDialogTitle'),
+      html: `<textarea id="importInput" style="width:100%; height:auto" title="${getString('importInputTitle')}" placeholder="${getString('importInputText')}"/>`,
+      buttons: {
+        OK: {
+          text: getString('importDialogButtonText'),
+          title: getString('importDialogButtonTitle'),
+          click () {
+            try {
+              let data = JSON.parse($('#importInput', dialog).val());
+              pNavData = data;
+              saveToLocalStorage();
+              // re-validate the highlighter if it is active.
+              // eslint-disable-next-line no-underscore-dangle
+              if (window._current_highlighter === getString('portalHighlighterName')) {
+                window.changePortalHighlights(getString('portalHighlighterName'));
+              }
+              dialog.dialog('close');
+            } catch (e) {
+              alert(getString('importInvalidFormat'));
+            }
+          }
+        }
+      }});
+  };
+
   window.plugin.pnav.showSettings = function () {
     var validURL = '^https?://discord(app)?.com/api/webhooks/[0-9]*/.*';
     var html = `
@@ -550,6 +587,21 @@ function wrapper (plugin_info) {
           }, 1000);
           return false;
         ">${getString('btnEraseHistoryTextDefault')}</button></p>
+        <p><aside>
+          <button type="Button" id="btnExport" title="${getString('btnExportTitle')}" onclick="
+          window.plugin.pnav.exportData();
+          $(this).css('color','green');
+          $(this).css('border','1px solid green')
+          $(this).text('${getString('btnExportTextSuccess')}');
+          setTimeout(function () {
+            if($('#btnExport').length > 0){
+              $('#btnExport').css('color', '');
+              $('#btnExport').css('border', '');
+              $('#btnExport').text('${getString('btnExportText')}');
+            }
+          }, 1000);return false;" style="width:49%">${getString('btnExportText')}</button>
+          <button type="Button" id="btnImport" title="${getString('btnImportTitle')}" onclick="window.plugin.pnav.importData(); return false;" style="width:49%">${getString('btnImportText')}</button></aside>
+        </p>
         `;
     if (window.plugin.pogo && window.plugin.pnav.settings.webhookUrl) {
       html += `
