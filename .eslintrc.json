@@ -274,7 +274,7 @@
             "error",
             "never"
         ],
-        "space-infix-ops": "off",
+        "space-infix-ops": "warn",
         "space-unary-ops": "error",
         "spaced-comment": "error",
         "strict": [

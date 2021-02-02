@@ -80,6 +80,11 @@ function wrapper (plugin_info) {
       btnEraseHistoryTextDefault: 'Delete Location Export History',
       btnEraseHistoryTextSuccess: 'Deleted!',
       btnEraseHistoryTitle: 'Delete all collected Export History.',
+      btnExportText: 'Export Data',
+      btnExportTextSuccess: 'Exported!',
+      btnExportTitle: 'Export Data by copying it to Clipboard. Please save the copied text in a text file!',
+      btnImportText: 'Import Data',
+      btnImportTitle: 'Import the exported data',
       btnSkipText: 'Skip one',
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.',
@@ -88,6 +93,11 @@ function wrapper (plugin_info) {
       exportStateTextExporting: 'Exporting...',
       exportStateTextReady: 'Export Ready!',
       exportTimeRemainingDescription: 'Time remaining: ',
+      importDialogButtonText: ['#importDialogTitle'],
+      importDialogButtonTitle: 'Importing will override whatever data you currently have!',
+      importDialogTitle: 'Import',
+      importInputText: 'Paste the data you exported in this text field!',
+      importInvalidFormat: 'The text you pasted has an invalid format! Make sure that it is the right text and that it is complete!',
       lblErrorCnText: 'Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!',
       lblErrorPfText: 'Prefix must be only one Character!',
       lblErrorRdText: 'Invalid Radius! Please check if it is a valid Number!',
@@ -205,6 +215,11 @@ function wrapper (plugin_info) {
       btnEraseHistoryTextDefault: 'Lösche Export-Historie',
       btnEraseHistoryTextSuccess: 'Gelöscht!',
       btnEraseHistoryTitle: 'Lösche die gesamte bisher gesammelte Export-Historie.',
+      btnExportText: 'Exportiere Daten',
+      btnExportTextSuccess: 'Exportiert!',
+      btnExportTitle: 'Exportiert die Daten durch Kopieren in die Zwischenablage. Bitte speichern Sie den kopierten Text in einer Textdatei!',
+      btnImportText: 'Importiere Daten',
+      btnImportTitle: 'Importiere exportierte Daten',
       btnSkipText: 'Änderung überspringen',
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Speichert den Fortschritt lokal und beendet den Export. Starten Sie zum Fortsetzen des Exports diesen in den Einstellungen neu.',
@@ -213,6 +228,11 @@ function wrapper (plugin_info) {
       exportStateTextExporting: 'Exportiere...',
       exportStateTextReady: 'Export Abgeschlossen!',
       exportTimeRemainingDescription: 'Verbleibende Zeit: ',
+      importDialogButtonText: 'Importieren',
+      importDialogButtonTitle: 'Importieren wird alle momentan gesammelten Daten überschreiben!',
+      importDialogTitle: 'Import',
+      importInputText: 'Fügen Sie die exportierten Daten in dieses Textfeld ein.',
+      importInvalidFormat: 'Der eingefügte Text hat ein ungültiges Format. Stellen Sie sicher, dass Sie den richtigen Text vollständig eingefügt haben!',
       lblErrorCnText: 'Ungültiges Koordinaten-Format! Bitte geben Sie sie wie Folgt ein: 00.0...00, 0.0...00!',
       lblErrorPfText: 'Präfix darf nur ein Zeichen sein!',
       lblErrorRdText: 'Ungüliger Radius! Bitte überprüfen Sie, ob Sie eine gültige Zahl eingegeben haben!',
@@ -381,6 +401,36 @@ function wrapper (plugin_info) {
     }
   }
 
+  function isImportInputValid (data) {
+    if (Object.keys(data).length > 2 || typeof data.pokestop !== 'object' || typeof data.gym !== 'object') {
+      return false;
+    } else {
+      var validGuid = new RegExp('^[0-9|a-f]{32}\.16$');
+      var allValid = true;
+      Object.keys(data.pokestop).forEach(function (guid) {
+        if (allValid) {
+          allValid = validGuid.test(guid);
+          var entry = data.pokestop[guid];
+          if (Object.keys(entry).length != 4 || !entry.guid || !entry.lat || !entry.lng || !entry.name || entry.guid != guid || typeof entry.lat !== 'number' || typeof entry.lng !== 'number' || typeof entry.name !== 'string') {
+            allValid = false;
+          }
+        }
+      });
+      if (allValid) {
+        Object.keys(data.gym).forEach(function (guid) {
+          if (allValid) {
+            allValid = validGuid.test(guid);
+            var entry = data.gym[guid];
+            if (Object.keys(entry).length != 4 || !entry.guid || !entry.lat || !entry.lng || !entry.name || entry.guid != guid || typeof entry.lat !== 'number' || typeof entry.lng !== 'number' || typeof entry.name !== 'string') {
+              allValid = false;
+            }
+            // handle isEx: 5 keys instead of 4!
+          }
+        });
+      }
+    }
+  }
+
   // Highlighter that will highlight Portals according to the data that was submitted to PokeNav. PokeStops in blue, Gyms in red, Ex Gyms maybe with a yellow circle, Not yet submitted portals in gray.
   window.plugin.pnav.highlight = function (data) {
     const guid = data.portal.options.guid;
@@ -391,9 +441,9 @@ function wrapper (plugin_info) {
       if (pNavData.gym[guid].isEx) {
         fillcolor = '#eec13c';
       }
-      color='#ff0204';
+      color = '#ff0204';
     } else {
-      color='#808080';
+      color = '#808080';
     }
     var params = window.getMarkerStyleOptions({team: window.TEAM_NONE,
       level: 0});
@@ -499,7 +549,7 @@ function wrapper (plugin_info) {
   };
 
   window.plugin.pnav.exportData = function () {
-    const input=$('#copyInput');
+    const input = $('#copyInput');
     input.show();
     input.val(JSON.stringify(pNavData));
     copyfieldvalue('copyInput');
@@ -511,14 +561,18 @@ function wrapper (plugin_info) {
       width: 'auto',
       heigth: 'auto',
       title: getString('importDialogTitle'),
-      html: `<textarea id="importInput" style="width:100%; height:auto" title="${getString('importInputTitle')}" placeholder="${getString('importInputText')}"/>`,
+      html: `<textarea id="importInput" style="width:100%; height:auto" placeholder="${getString('importInputText')}"/>`,
       buttons: {
         OK: {
           text: getString('importDialogButtonText'),
           title: getString('importDialogButtonTitle'),
           click () {
             try {
-              let data = JSON.parse($('#importInput', dialog).val());
+              var data = JSON.parse($('#importInput', dialog).val());
+            } catch (e) {
+              alert(getString('importInvalidFormat'));
+            }
+            if (isImportInputValid(data)) {
               pNavData = data;
               saveToLocalStorage();
               // re-validate the highlighter if it is active.
@@ -527,7 +581,7 @@ function wrapper (plugin_info) {
                 window.changePortalHighlights(getString('portalHighlighterName'));
               }
               dialog.dialog('close');
-            } catch (e) {
+            } else {
               alert(getString('importInvalidFormat'));
             }
           }
@@ -1372,7 +1426,7 @@ function wrapper (plugin_info) {
     const statusObserver = new MutationObserver(waitForPogoStatus);
     const send = Boolean(window.plugin.pnav.settings.webhookUrl);
     lCommBounds = new L.LayerGroup();
-    if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng&&window.plugin.pnav.settings.radius) {
+    if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
       var commCircle = L.circle(L.latLng([
         window.plugin.pnav.settings.lat,
         window.plugin.pnav.settings.lng
@@ -1396,12 +1450,12 @@ function wrapper (plugin_info) {
         const layerIds = Object.keys(layers);
         layerIds.forEach(function (id) {
           const layer = layers[id];
-          if (layer.name==='Links' || layer.name==='Fields') {
+          if (layer.name === 'Links' || layer.name === 'Fields') {
             window.map.removeLayer(layer.layer);
           } else if ((new RegExp('Level . Portals').test(layer.name) ||
-                      layer.name==='Resistance' ||
-                      layer.name==='Enlightened' ||
-                      layer.name==='Unclaimed/Placeholder Portals') &&
+                      layer.name === 'Resistance' ||
+                      layer.name === 'Enlightened' ||
+                      layer.name === 'Unclaimed/Placeholder Portals') &&
                       !window.isLayerGroupDisplayed(layer.name, false)) {
             window.map.addLayer(layer.layer);
           }
@@ -1412,12 +1466,12 @@ function wrapper (plugin_info) {
         const layerIds = Object.keys(layers);
         layerIds.forEach(function (id) {
           const layer = layers[id];
-          if ((layer.name==='Links' && isLinksDisplayed) || (layer.name==='Fields' && isFieldsDisplayed)) {
+          if ((layer.name === 'Links' && isLinksDisplayed) || (layer.name === 'Fields' && isFieldsDisplayed)) {
             window.map.addLayer(layer.layer);
           }
         });
-        isLinksDisplayed=false;
-        isFieldsDisplayed=false;
+        isLinksDisplayed = false;
+        isFieldsDisplayed = false;
       }
     });
 
