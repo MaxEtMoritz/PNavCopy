@@ -81,17 +81,18 @@ function wrapper (plugin_info) {
       btnEraseHistoryTextSuccess: 'Deleted!',
       btnEraseHistoryTitle: 'Delete all collected Export History.',
       btnExportText: 'Export Data',
-      btnExportTextSuccess: 'Exported!',
-      btnExportTitle: 'Export Data by copying it to Clipboard. Please save the copied text in a text file!',
+      btnExportTitle: 'This will open a dialog where you can copy the PokeNav data to Clipboard.',
       btnImportText: 'Import Data',
       btnImportTitle: 'Import the exported data',
       btnSkipText: 'Skip one',
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.',
       bulkExportProgressTitle: 'PokeNav Bulk Export Progress',
+      exportDialogTitle: 'Export',
       exportProgressBarDescription: 'Progress:',
       exportStateTextExporting: 'Exporting...',
       exportStateTextReady: 'Export Ready!',
+      exportTextfieldDescription: 'Please copy this text and save it in a text file!',
       exportTimeRemainingDescription: 'Time remaining: ',
       importDialogButtonText: ['#importDialogTitle'],
       importDialogButtonTitle: 'Importing will override whatever data you currently have!',
@@ -216,17 +217,18 @@ function wrapper (plugin_info) {
       btnEraseHistoryTextSuccess: 'Gelöscht!',
       btnEraseHistoryTitle: 'Lösche die gesamte bisher gesammelte Export-Historie.',
       btnExportText: 'Exportiere Daten',
-      btnExportTextSuccess: 'Exportiert!',
-      btnExportTitle: 'Exportiert die Daten durch Kopieren in die Zwischenablage. Bitte speichern Sie den kopierten Text in einer Textdatei!',
+      btnExportTitle: 'Dies öffnet einen Dialog, in dem sie die PokeNav-Daten kopieren können.',
       btnImportText: 'Importiere Daten',
       btnImportTitle: 'Importiere exportierte Daten',
       btnSkipText: 'Änderung überspringen',
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Speichert den Fortschritt lokal und beendet den Export. Starten Sie zum Fortsetzen des Exports diesen in den Einstellungen neu.',
       bulkExportProgressTitle: 'Fortschritt des PokeNav Massen-Exports',
+      exportDialogTitle: 'Export',
       exportProgressBarDescription: 'Fortschritt:',
       exportStateTextExporting: 'Exportiere...',
       exportStateTextReady: 'Export Abgeschlossen!',
+      exportTextfieldDescription: 'Bitte kopieren Sie diesen Text und speichern Sie ihn in einer Textdatei!',
       exportTimeRemainingDescription: 'Verbleibende Zeit: ',
       importDialogButtonText: 'Importieren',
       importDialogButtonTitle: 'Importieren wird alle momentan gesammelten Daten überschreiben!',
@@ -403,16 +405,21 @@ function wrapper (plugin_info) {
 
   function isImportInputValid (data) {
     if (Object.keys(data).length > 2 || typeof data.pokestop !== 'object' || typeof data.gym !== 'object') {
+      console.error('import data has more or less top-level nodes or different ones than "pokestop" and "gym".');
       return false;
     } else {
-      var validGuid = new RegExp('^[0-9|a-f]{32}\.16$');
+      var validGuid = new RegExp('^[0-9|a-f]{32}\\.16$');
       var allValid = true;
       Object.keys(data.pokestop).forEach(function (guid) {
         if (allValid) {
           allValid = validGuid.test(guid);
+          if (!allValid) {
+            console.error(`the guid ${guid} is not a valid guid!`);
+          }
           var entry = data.pokestop[guid];
-          if (Object.keys(entry).length != 4 || !entry.guid || !entry.lat || !entry.lng || !entry.name || entry.guid != guid || typeof entry.lat !== 'number' || typeof entry.lng !== 'number' || typeof entry.name !== 'string') {
+          if (Object.keys(entry).length != 4 || !entry.guid || entry.guid != guid || typeof entry.lat !== 'string' || typeof entry.lng !== 'string' || typeof entry.name !== 'string') {
             allValid = false;
+            console.error(`the following pokestop has invalid data: ${JSON.stringify(entry)}`);
           }
         }
       });
@@ -420,14 +427,24 @@ function wrapper (plugin_info) {
         Object.keys(data.gym).forEach(function (guid) {
           if (allValid) {
             allValid = validGuid.test(guid);
-            var entry = data.gym[guid];
-            if (Object.keys(entry).length != 4 || !entry.guid || !entry.lat || !entry.lng || !entry.name || entry.guid != guid || typeof entry.lat !== 'number' || typeof entry.lng !== 'number' || typeof entry.name !== 'string') {
-              allValid = false;
+            if (!allValid) {
+              console.error(`the guid ${guid} is not a valid guid!`);
             }
-            // handle isEx: 5 keys instead of 4!
+            var entry = data.gym[guid];
+            if (Object.keys(entry).length == 4 && (!entry.guid || entry.guid != guid || typeof entry.lat !== 'string' || typeof entry.lng !== 'string' || typeof entry.name !== 'string')) {
+              allValid = false;
+              console.error(`the following gym has invalid data: ${JSON.stringify(entry)}`);
+            } else if (Object.keys(entry).length == 5 && (!entry.guid || typeof entry.isEx !== 'boolean' || entry.guid != guid || typeof entry.lat !== 'string' || typeof entry.lng !== 'string' || typeof entry.name !== 'string')) {
+              allValid = false;
+              console.error(`the following gym has invalid data: ${JSON.stringify(entry)}`);
+            } else if (Object.keys(entry).length < 4 || Object.keys(entry).length > 5) {
+              allValid = false;
+              console.error(`the following gym has too much or too few properties: ${JSON.stringify(entry)}`);
+            }
           }
         });
       }
+      return allValid;
     }
   }
 
@@ -549,11 +566,17 @@ function wrapper (plugin_info) {
   };
 
   window.plugin.pnav.exportData = function () {
-    const input = $('#copyInput');
-    input.show();
-    input.val(JSON.stringify(pNavData));
-    copyfieldvalue('copyInput');
-    input.hide();
+    const dialog = window.dialog({id: 'exportDialog',
+      width: 'auto',
+      height: 'auto',
+      title: getString('exportDialogTitle'),
+      html: `<label>${getString('exportTextfieldDescription')}</label><br>
+            <textarea id="exportTextfield" style="width:100%;height:auto;max-width:576px;min-width:100%"></textarea>`});
+    $('#exportTextfield', dialog).append(JSON.stringify(pNavData, null, 2));
+    const field = $('#exportTextfield', dialog)[0];
+    field.focus();
+    field.setSelectionRange(0, field.length);
+    field.select();
   };
 
   window.plugin.pnav.importData = function () {
@@ -571,6 +594,7 @@ function wrapper (plugin_info) {
               var data = JSON.parse($('#importInput', dialog).val());
             } catch (e) {
               alert(getString('importInvalidFormat'));
+              console.error('Parsing of import JSON Data failed.');
             }
             if (isImportInputValid(data)) {
               pNavData = data;
