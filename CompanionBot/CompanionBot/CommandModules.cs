@@ -1,4 +1,5 @@
 ﻿using Discord.Commands;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 
@@ -7,12 +8,14 @@ namespace CompanionBot
     public class GeneralModule : ModuleBase<SocketCommandContext>
     {
         private readonly CommandService _commands;
-        public GeneralModule(CommandService commands)
+        private readonly IConfiguration _config;
+        public GeneralModule(CommandService commands, IConfiguration config)
         {
             _commands = commands;
+            _config = config;
         }
 
-        [Command("repost"), Summary("Re-posts a message.")]
+        [Command("repost"), Summary("Re-posts a message."))]
         public async Task RepostAsync([Remainder, Summary("The Message to repost.")] string message)
         {
             await ReplyAsync(message);
@@ -25,7 +28,7 @@ namespace CompanionBot
             string response = "";
             if (String.IsNullOrEmpty(commandName))
             {
-                response += "__**Available Commands:**__\nType `help commandName` for more info on specific Commands.";
+                response += $"__**Available Commands:**__\nType `{_config["prefix"]}help commandName` for more info on specific Commands.";
                 foreach (CommandInfo command in _commands.Commands)
                 {
                     response += "\n__" + command.Name + "__\n\t" + command.Summary;
@@ -51,7 +54,23 @@ namespace CompanionBot
                             response += "\n";
                         }
                         response += "\t" + command.Summary;
-                        if(command.Parameters.Count > 0)
+                        response += $"Usage: `{_config["prefix"]}{command.Name}";
+                        if (command.Parameters.Count > 0)
+                        {
+                            foreach (ParameterInfo arg in command.Parameters)
+                            {
+                                if (arg.IsOptional)
+                                {
+                                    response += $" [{arg.Name}]";
+                                }
+                                else
+                                {
+                                    response += " " + arg.Name;
+                                }
+                            }
+                        }
+                        response += "`";
+                        if (command.Parameters.Count > 0)
                         {
                             response += "\n__Parameters:__";
                             foreach (ParameterInfo param in command.Parameters)
@@ -80,6 +99,15 @@ namespace CompanionBot
                 }
             }
             await ReplyAsync(response);
+        }
+    }
+
+    public class RepostModule : ModuleBase<SocketCommandContext>
+    {
+        [Command("createmultiple"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot.")]
+        public async Task CreatePoIAsync([Remainder, Summary("The PoI data from the IITC plugin.")] object data)
+        {
+
         }
     }
 }

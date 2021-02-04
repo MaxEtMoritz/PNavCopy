@@ -1,6 +1,8 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -11,12 +13,14 @@ namespace CompanionBot
     {
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
-        private readonly char _prefix;
-        public CommandHandler(DiscordSocketClient client, CommandService commands, char prefix)
+        private readonly IServiceProvider _services;
+        private readonly IConfiguration _config;
+        public CommandHandler(IServiceProvider services)
         {
-            _client = client;
-            _commands = commands;
-            _prefix = prefix;
+            _services = services;
+            _client = services.GetRequiredService<DiscordSocketClient>();
+            _commands = services.GetRequiredService<CommandService>();
+            _config = services.GetRequiredService<IConfiguration>();
         }
 
         public async Task InstallCommandsAsync()
@@ -32,7 +36,7 @@ namespace CompanionBot
             // If you do not use Dependency Injection, pass null.
             // See Dependency Injection guide (https://docs.stillu.cc/guides/commands/dependency-injection.html) for more information.
             await _commands.AddModulesAsync(assembly: Assembly.GetEntryAssembly(),
-                                            services: null);
+                                            services: _services);
         }
 
         private async Task HandleCommandAsync(SocketMessage messageParam)
@@ -44,7 +48,7 @@ namespace CompanionBot
             int argPos = 0;
 
             // Determine if the message is a command based on the prefix and make sure no bots trigger commands
-            if (!(message.HasCharPrefix(_prefix, ref argPos) ||
+            if (!(message.HasCharPrefix(_config["prefix"][0], ref argPos) ||
                 message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
                 message.Author.IsBot)
                 return;
@@ -57,7 +61,7 @@ namespace CompanionBot
             await _commands.ExecuteAsync(
                 context: context,
                 argPos: argPos,
-                services: null);
+                services: _services);
         }
     }
 }
