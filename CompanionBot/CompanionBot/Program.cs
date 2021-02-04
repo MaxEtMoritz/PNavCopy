@@ -25,13 +25,11 @@ namespace CompanionBot
 
             await _client.LoginAsync(TokenType.Bot, config.token);
             await _client.StartAsync();
-            commandService = new CommandService();
+
+            commandService = new CommandService(new CommandServiceConfig() { CaseSensitiveCommands = false, DefaultRunMode=RunMode.Async }) ;
+            commandService.Log += Log;
             handler = new CommandHandler(_client, commandService, config.prefix);
             await handler.InstallCommandsAsync();
-            //foreach (var item in commandService.Commands)
-            //{
-            //    Console.WriteLine(item.Name);
-            //}
 
             // Block this task until the program is closed.
             await Task.Delay(-1);
