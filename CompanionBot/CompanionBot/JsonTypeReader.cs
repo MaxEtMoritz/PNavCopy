@@ -7,18 +7,18 @@ using Newtonsoft.Json;
 
 namespace CompanionBot
 {
-    class JsonTypeReader : TypeReader
+    class JsonTypeReader<T> : TypeReader
     {
         public override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {
-            object result;
+            T result;
             try
             {
-                result = JsonConvert.DeserializeObject(input);
+                result = JsonConvert.DeserializeObject<T>(input);
             }
             catch (Exception e)
             {
-                return Task.FromResult(TypeReaderResult.FromError(CommandError.ParseFailed, "Input was not a valid Json string."));
+                return Task.FromResult(TypeReaderResult.FromError(e));
             }
             return Task.FromResult(TypeReaderResult.FromSuccess(result));
         }

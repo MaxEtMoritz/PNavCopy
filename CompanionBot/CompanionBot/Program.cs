@@ -1,10 +1,11 @@
 ﻿using Discord;
+using Discord.Addons.Collectors;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CompanionBot
@@ -26,23 +27,23 @@ namespace CompanionBot
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile(path: "config.json");
             _config = _builder.Build();
+            _client = new DiscordSocketClient();
             _services = new ServiceCollection()
                 .AddSingleton(_config)
-                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton(_client)
+                .AddSingleton(new MessageQueue(_client, new MessageCollector(_client)))
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()
                 .BuildServiceProvider();
 
-            _client = _services.GetRequiredService<DiscordSocketClient>();
+            //_client = _services.GetRequiredService<DiscordSocketClient>();
             _client.Log += Log;
-            //BotConfig config = JsonConvert.DeserializeObject<BotConfig>(File.ReadAllText("config.json"));
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
             commandService = _services.GetRequiredService<CommandService>();
-            //commandService = new CommandService(new CommandServiceConfig() { CaseSensitiveCommands = false, DefaultRunMode = RunMode.Async });
             commandService.Log += Log;
-            commandService.AddTypeReader<object>(new JsonTypeReader());
+            commandService.AddTypeReader(typeof(List<string[]>), new JsonTypeReader<List<string[]>>());
             handler = _services.GetRequiredService<CommandHandler>();
             await handler.InstallCommandsAsync();
 
