@@ -31,7 +31,7 @@ namespace CompanionBot
             _services = new ServiceCollection()
                 .AddSingleton(_config)
                 .AddSingleton(_client)
-                .AddSingleton(new MessageQueue(_client, new MessageCollector(_client)))
+                .AddSingleton(new MessageQueue(_client, new Interactivity.InteractivityService(_client,TimeSpan.FromSeconds(10))))
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()
                 .BuildServiceProvider();

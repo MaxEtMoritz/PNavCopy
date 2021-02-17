@@ -51,7 +51,8 @@ function wrapper (plugin_info) {
     lat: undefined,
     lng: undefined,
     prefix: '$',
-    language: undefined
+    language: undefined,
+    useBot: false
   };
   /* eslint-enable no-undefined */
   var selectedGuid = null;
@@ -92,7 +93,7 @@ function wrapper (plugin_info) {
       exportProgressBarDescription: 'Progress:',
       exportStateTextExporting: 'Exporting...',
       exportStateTextReady: 'Export Ready!',
-      exportTextfieldDescription: 'Please copy this text and save it in a text file!',
+      exportTextFieldDescription: 'Please copy this text and save it in a text file!',
       exportTimeRemainingDescription: 'Time remaining: ',
       importDialogButtonText: ['#importDialogTitle'],
       importDialogButtonTitle: 'Importing will override whatever data you currently have!',
@@ -228,7 +229,7 @@ function wrapper (plugin_info) {
       exportProgressBarDescription: 'Fortschritt:',
       exportStateTextExporting: 'Exportiere...',
       exportStateTextReady: 'Export Abgeschlossen!',
-      exportTextfieldDescription: 'Bitte kopieren Sie diesen Text und speichern Sie ihn in einer Textdatei!',
+      exportTextFieldDescription: 'Bitte kopieren Sie diesen Text und speichern Sie ihn in einer Textdatei!',
       exportTimeRemainingDescription: 'Verbleibende Zeit: ',
       importDialogButtonText: 'Importieren',
       importDialogButtonTitle: 'Importieren wird alle momentan gesammelten Daten überschreiben!',
@@ -570,10 +571,10 @@ function wrapper (plugin_info) {
       width: 'auto',
       height: 'auto',
       title: getString('exportDialogTitle'),
-      html: `<label>${getString('exportTextfieldDescription')}</label><br>
-            <textarea id="exportTextfield" style="width:100%;height:auto;max-width:576px;min-width:100%"></textarea>`});
-    $('#exportTextfield', dialog).append(JSON.stringify(pNavData, null, 2));
-    const field = $('#exportTextfield', dialog)[0];
+      html: `<label>${getString('exportTextFieldDescription')}</label><br>
+            <textarea id="exportTextField" style="width:100%;height:auto;max-width:576px;min-width:100%"></textarea>`});
+    $('#exportTextField', dialog).append(JSON.stringify(pNavData, null, 2));
+    const field = $('#exportTextField', dialog)[0];
     field.focus();
     field.setSelectionRange(0, field.length);
     field.select();
@@ -625,13 +626,18 @@ function wrapper (plugin_info) {
         <p id="prefix">
           <label title="${getString('pnavprefixTitle')}">
             ${getString('pnavprefixDescription')}
-            <input type="text" id="pnavprefix" pattern="^.$" value="${window.plugin.pnav.settings.prefix}" placeholder="$" style="width:15px"/>
+            <input type="text" id="pnavprefix" pattern="^.$" value="${window.plugin.pnav.settings.prefix}" placeholder="$" size="1"/>
           </label>
         </p>
         <p id="webhook">
           <label title="${getString('pnavhookurlTitle')}">
             ${getString('pnavhookurlDescription')}
             <input type="url" style="width:100%" id="pnavhookurl" value="${typeof window.plugin.pnav.settings.webhookUrl !== 'undefined' ? window.plugin.pnav.settings.webhookUrl : ''}" pattern="${validURL}"/>
+          </label>
+          <br>
+          <label title="${getString('useBotTitle')}">
+            <input type="checkbox" id="useBot" checked="${window.plugin.pnav.settings.useBot}"></input>
+            ${getString('useBotDescription')}
           </label>
         </p>
         <p>
@@ -643,7 +649,7 @@ function wrapper (plugin_info) {
         <p>
           <label id="center" title="${getString('pnavCenterTitle')}">
           ${getString('pnavCenterDescription')}
-          <input id="pnavCenter" style="width:140px" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?1?&#92;d?&#92;d(&#92;.&#92;d+)?$" value="${typeof window.plugin.pnav.settings.lat !== 'undefined' && typeof window.plugin.pnav.settings.lng !== 'undefined' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
+          <input id="pnavCenter" size="17" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?1?&#92;d?&#92;d(&#92;.&#92;d+)?$" value="${typeof window.plugin.pnav.settings.lat !== 'undefined' && typeof window.plugin.pnav.settings.lng !== 'undefined' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
           </label>
           <br>
           <label id="radius" title="${getString('pnavRadiusTitle')}">
@@ -790,6 +796,7 @@ function wrapper (plugin_info) {
           } else {
             window.plugin.pnav.settings.name = $('#pnavCodename').val();
           }
+          window.plugin.pnav.settings.useBot = $('#useBot').prop('checked');
           if (!window.plugin.pnav.timer) {
             if (allOK) {
               localStorage.setItem(
@@ -1222,46 +1229,86 @@ function wrapper (plugin_info) {
         return;
       }
       var i = 0;
-      // Discord WebHook accepts 30 Messages in 60 Seconds.
-      const wait = 2000;
+      const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
+      var locationsPerMessage = (window.plugin.pnav.settings.useBot ? 40 : 1); // 40 is what i was getting while testing, depends mainly on how long the poi names are...
       window.onbeforeunload = function () {
         saveState(data, type, i);
         return null;
       };
+
+      var whatToDo = (window.plugin.pnav.settings.useBot ? botExport : normalExport);
+
+      window.plugin.pnav.timer = setInterval(() => {
+        i = whatToDo(data, type, dialog, i);
+      }, wait);
+      // TODO sort the code below into the specific functions and test if it works like imagined.
+      /** @type string */
+      var content = null;
       window.plugin.pnav.timer = setInterval(function () {
-        if ($('#exportProgressBar')) {
-          $('#exportProgressBar').val(i);
-        }
-        if ($('#exportNumber')) {
-          $('#exportNumber').text(i);
-        }
-        if ($('#exportTimeRemaining')) {
-          $('#exportTimeRemaining').text((wait * (data.length - i)) / 1000);
-        }
         if (i < data.length) {
-          if (i % 10 == 0) {
+          if (content === null && window.plugin.pnav.settings.useBot) {
+            content = '!cm ';
+            const messageLimit = 2000; // a message can be 2000 characters at max in Discord
+            var currentSize = content.length + 2 + 5; // command plus outer array brackets plus PokeNav prefix array element
+            var toExport = [[window.plugin.pnav.settings.prefix]];
+            let j = i;
+            while (j < data.length && currentSize + 10 < messageLimit) {
+              let entry = data[j];
+              let count = 13; // "[type,"name","lat","lng",ex]," -> results in 12 extra chars for no ex, if ex it is 14 (including ex itself). type is always one char, so add it right here.
+              if (entry.isEx) {
+                count += 2;
+              }
+              count += entry.name.length;
+              count += entry.lat.length;
+              count += entry.lng.length;
+              if (currentSize + count + 10 < messageLimit) {
+                currentSize += count;
+                let current = [
+                  type === 'pokestop' ? 0 : 1,
+                  entry.name,
+                  entry.lat,
+                  entry.lng
+                ];
+                if (entry.isEx) {
+                  current.push(1);
+                }
+                toExport.push(current);
+                j++;
+              } else {
+                break;
+              }
+              let a = 0.7;
+              locationsPerMessage = a * locationsPerMessage + (1 - a) * (j - i); // adjust moving average on how many locations can be created with a single message.
+            }
+            i = j - 1;
+            content += JSON.stringify(toExport);
+          } else if (content === null) {
+            if (i % 10 == 0) {
             // sometimes save the state in case someone exits IITC Mobile without using the Back Button
-            saveState(data, type, i);
+              saveState(data, type, i);
+            }
+            var entry = data[i];
+            let lat = entry.lat;
+            let lng = entry.lng;
+            // escaping Hyphens in Portal Names
+            let name = entry.name
+              .replaceAll('"', '\\"');
+            let prefix = window.plugin.pnav.settings.prefix;
+            let ex = Boolean(entry.isEx);
+            let options = ex ? ' "ex_eligible: 1"' : '';
+            content = `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`;
           }
-          var entry = data[i];
-          let lat = entry.lat;
-          let lng = entry.lng;
-          // escaping Backslashes and Hyphens in Portal Names
-          let name = entry.name
-            .replaceAll('"', '\\"');
-          let prefix = window.plugin.pnav.settings.prefix;
-          let ex = Boolean(entry.isEx);
-          let options = ex ? ' "ex_eligible: 1"' : '';
           var params = {
             username: window.plugin.pnav.settings.name,
             avatar_url: '',
-            content: `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`
+            content
           };
           request.open('POST', window.plugin.pnav.settings.webhookUrl);
           request.setRequestHeader('Content-type', 'application/json');
           request.onload = function () {
             if (request.status >= 200 && request.status < 300) {
               i++;
+              content = null; // all is okay, the next content can be calculated!
             } else {
               console.log(`status code ${request.status}`);
             }
@@ -1278,8 +1325,17 @@ function wrapper (plugin_info) {
           window.plugin.pnav.timer = null;
           window.onbeforeunload = null;
         }
+        if ($('#exportProgressBar')) {
+          $('#exportProgressBar').val(i);
+        }
+        if ($('#exportNumber')) {
+          $('#exportNumber').text(i);
+        }
+        if ($('#exportTimeRemaining')) {
+          $('#exportTimeRemaining').text(Math.ceil((wait * ((data.length - i) / locationsPerMessage)) / 1000));
+        }
       }, wait);
-      // TODO fetch all strings below this to the top!
+
       var dialog = window.dialog({
         id: 'bulkExportProgress',
         html: `
@@ -1333,10 +1389,36 @@ function wrapper (plugin_info) {
           window.plugin.pnav.timer = null;
         }
       );
+
+      i = whatToDo(data, type, dialog, 0); // start immediately instead of waiting 2 seconds.
     } else {
       console.log('Bulk Export already running!');
     }
   };
+
+  /**
+   * One Export step when the Companion Discord bot should be used.
+   * @param {object} data all locations that need exporting
+   * @param {string} type the location type of the given data
+   * @param {HTMLElement} dialog the dialog of the bulk export
+   * @param {number} i the current index
+   * @return {number} the new index after the export step
+   */
+  function botExport (data, type, dialog, i) {
+    return i; // return the new i!
+  }
+
+  /**
+   * One Export step when only the WebHook should be used.
+   * @param {object} data all locations that need exporting
+   * @param {string} type the location type of the given data
+   * @param {HTMLElement} dialog the dialog of the bulk export
+   * @param {number} i the current index
+   * @return {number} the new index after the export step (normally old index + 1).
+   */
+  function normalExport (data, type, dialog, i) {
+    return i; // return the new i (old i + 1)!
+  }
 
   /*
    *the idea of the following function was taken from https://stackoverflow.com/a/14561433

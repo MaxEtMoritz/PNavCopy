@@ -1,24 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Collectors;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
+using Interactivity;
 
 namespace CompanionBot
 {
     public class MessageQueue
     {
         private readonly IDiscordClient _client;
-        private static MessageCollector _collector;
+        private static InteractivityService _inter;
         private static Queue<CommandData> queue;
-        public MessageQueue(IDiscordClient client, MessageCollector collector)
+        private static bool working;
+        public MessageQueue(IDiscordClient client, InteractivityService service)
         {
             _client = client;
-            _collector = collector;
+            _inter = service;
             queue = new Queue<CommandData>();
+            working = false;
         }
 
         public Task Enqueue(ISocketMessageChannel channel, List<string> commands)
@@ -27,43 +28,34 @@ namespace CompanionBot
             {
                 queue.Enqueue(new CommandData { command = command, channel = channel });
             }
-            if (Post.Status != TaskStatus.Running)
-                Post.
+            
+            
+            if (!working)
+            {
+                post();
+            }
             return Task.CompletedTask;
         }
 
-        private async Task work() { }
-
-        Task v = new Task(async()=>work);
-        //TODO launch a new Task each time or fix somehow else
-
-        private Task Post = new Task(async () =>
+        private async Task post()
         {
-            //IDisposable typing = Context.Channel.EnterTypingState();
-            MatchOptions options = new MatchOptions
-            {
-                Timeout = TimeSpan.FromSeconds(10),
-                ResetTimeoutOnAttempt = false
-            };
+            working = true;
 
             while (queue.Count > 0)
             {
                 CommandData current = queue.Dequeue();
-
-                await current.channel.SendMessageAsync(current.command);
+                IDisposable typing = current.channel.EnterTypingState();
+                current.channel.SendMessageAsync(current.command);
                 // wait for PokeNav to respond...
-
-                MessageMatch match = await _collector.MatchAsync((SocketMessage msg, int index) => { return msg.Channel.Id == current.channel.Id && msg.Author.Id == 428187007965986826 && msg.Embeds.Count > 0; }, options);
-                if (match == null)
+                var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == current.channel.Id && x.Embeds.Count > 0);
+                if (Result.IsSuccess == false)
                 {
                     await current.channel.SendMessageAsync("PokeNav did not respond in time, please try again by Hand!");
                 }
-                else
-                {
-                    var result = match.Message;
-                }
+                typing.Dispose();
             }
-        });
+            working = false;
+        }
     }
 
     public struct CommandData

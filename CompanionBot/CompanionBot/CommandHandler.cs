@@ -50,7 +50,7 @@ namespace CompanionBot
             // Determine if the message is a command based on the prefix and make sure no bots trigger commands
             if (!(message.HasCharPrefix(_config["prefix"][0], ref argPos) ||
                 message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
-                message.Author.IsBot)
+                (message.Author.IsBot && !message.Author.IsWebhook))
                 return;
 
             // Create a WebSocket-based command context based on the message

@@ -46,19 +46,18 @@ namespace CompanionBot
                     foreach (var item in result.Commands)
                     {
                         CommandInfo command = item.Command;
-                        response += "__**" + command.Name + "**__\n";
+                        response += "__**" + command.Name + "**__";
                         if (command.Aliases.Count > 1)
                         {
-                            response += "__Aliases:__ ";
+                            response += "\n__Aliases:__ ";
                             foreach (string alias in command.Aliases)
                             {
                                 if (alias != command.Name)
                                     response += alias + " ";
                             }
-                            response += "\n";
                         }
-                        response += "\t" + command.Summary;
-                        response += $"Usage: `{_config["prefix"]}{command.Name}";
+                        response += "\n\t" + command.Summary;
+                        response += $"\nUsage: `{_config["prefix"]}{command.Name}";
                         if (command.Parameters.Count > 0)
                         {
                             foreach (ParameterInfo arg in command.Parameters)
@@ -119,7 +118,7 @@ namespace CompanionBot
             pokestop, gym
         }
 
-        [Command("createmultiple"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot.")]
+        [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot.")]
         public async Task CreatePoIAsync([Remainder, Summary("The PoI data from the IITC plugin.")] List<string[]> data)
         {
             //order of params: type name lat lng (isEx)
@@ -150,7 +149,7 @@ namespace CompanionBot
                             await ReplyAsync("Bad Format!");
                             continue;
                         }
-                        commands.Add($"{prefix}create poi {type} «{current[1]}» {current[2]} {current[3]}");
+                        commands.Add($"{prefix}create poi {type} «{current[1]}» {current[2]} {current[3]}{(current.Length > 4 && current[4] == "1" ? " \"ex_eligible: 1\"" : "")}");
                     }
                 }
                 await _queue.Enqueue(Context.Channel, commands);

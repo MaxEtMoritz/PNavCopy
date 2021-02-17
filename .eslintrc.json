@@ -74,10 +74,7 @@
         "jsx-quotes": "error",
         "key-spacing": "error",
         "keyword-spacing": "error",
-        "line-comment-position": [
-            "warn",
-            "above"
-        ],
+        "line-comment-position": "off",
         "linebreak-style": [
             "error",
             "windows"
