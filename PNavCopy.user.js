@@ -63,6 +63,7 @@ function wrapper (plugin_info) {
   const request = new XMLHttpRequest();
 
   var lCommBounds;
+  const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
 
   const strings = {
     en: {
@@ -1229,8 +1230,6 @@ function wrapper (plugin_info) {
         return;
       }
       var i = 0;
-      const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
-      var locationsPerMessage = (window.plugin.pnav.settings.useBot ? 40 : 1); // 40 is what i was getting while testing, depends mainly on how long the poi names are...
       window.onbeforeunload = function () {
         saveState(data, type, i);
         return null;
@@ -1239,102 +1238,34 @@ function wrapper (plugin_info) {
       var whatToDo = (window.plugin.pnav.settings.useBot ? botExport : normalExport);
 
       window.plugin.pnav.timer = setInterval(() => {
-        i = whatToDo(data, type, dialog, i);
-      }, wait);
-      // TODO sort the code below into the specific functions and test if it works like imagined.
-      /** @type string */
-      var content = null;
-      window.plugin.pnav.timer = setInterval(function () {
         if (i < data.length) {
-          if (content === null && window.plugin.pnav.settings.useBot) {
-            content = '!cm ';
-            const messageLimit = 2000; // a message can be 2000 characters at max in Discord
-            var currentSize = content.length + 2 + 5; // command plus outer array brackets plus PokeNav prefix array element
-            var toExport = [[window.plugin.pnav.settings.prefix]];
-            let j = i;
-            while (j < data.length && currentSize + 10 < messageLimit) {
-              let entry = data[j];
-              let count = 13; // "[type,"name","lat","lng",ex]," -> results in 12 extra chars for no ex, if ex it is 14 (including ex itself). type is always one char, so add it right here.
-              if (entry.isEx) {
-                count += 2;
-              }
-              count += entry.name.length;
-              count += entry.lat.length;
-              count += entry.lng.length;
-              if (currentSize + count + 10 < messageLimit) {
-                currentSize += count;
-                let current = [
-                  type === 'pokestop' ? 0 : 1,
-                  entry.name,
-                  entry.lat,
-                  entry.lng
-                ];
-                if (entry.isEx) {
-                  current.push(1);
-                }
-                toExport.push(current);
-                j++;
-              } else {
-                break;
-              }
-              let a = 0.7;
-              locationsPerMessage = a * locationsPerMessage + (1 - a) * (j - i); // adjust moving average on how many locations can be created with a single message.
-            }
-            i = j - 1;
-            content += JSON.stringify(toExport);
-          } else if (content === null) {
-            if (i % 10 == 0) {
-            // sometimes save the state in case someone exits IITC Mobile without using the Back Button
-              saveState(data, type, i);
-            }
-            var entry = data[i];
-            let lat = entry.lat;
-            let lng = entry.lng;
-            // escaping Hyphens in Portal Names
-            let name = entry.name
-              .replaceAll('"', '\\"');
-            let prefix = window.plugin.pnav.settings.prefix;
-            let ex = Boolean(entry.isEx);
-            let options = ex ? ' "ex_eligible: 1"' : '';
-            content = `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`;
-          }
-          var params = {
-            username: window.plugin.pnav.settings.name,
-            avatar_url: '',
-            content
-          };
-          request.open('POST', window.plugin.pnav.settings.webhookUrl);
-          request.setRequestHeader('Content-type', 'application/json');
-          request.onload = function () {
-            if (request.status >= 200 && request.status < 300) {
-              i++;
-              content = null; // all is okay, the next content can be calculated!
-            } else {
-              console.log(`status code ${request.status}`);
-            }
-          };
-          request.send(JSON.stringify(params), false);
-          // console.log('$create poi ' + type + ' "' + name + '" ' + lat + ' ' + lng + options);
-
+          i = whatToDo(data, type, dialog, i);
         } else {
-          $('#exportState').text(getString('exportStateTextReady'));
-          okayButton.text('OK');
-          okayButton.prop('title', '');
           saveState(data, type, i);
           clearInterval(window.plugin.pnav.timer);
           window.plugin.pnav.timer = null;
           window.onbeforeunload = null;
         }
-        if ($('#exportProgressBar')) {
-          $('#exportProgressBar').val(i);
-        }
-        if ($('#exportNumber')) {
-          $('#exportNumber').text(i);
-        }
-        if ($('#exportTimeRemaining')) {
-          $('#exportTimeRemaining').text(Math.ceil((wait * ((data.length - i) / locationsPerMessage)) / 1000));
-        }
       }, wait);
+      // INFO that is the stuff from sending messages... will try to use fetch API and await etc.
+      /*
+       * var params = {
+       *   username: window.plugin.pnav.settings.name,
+       *   avatar_url: '',
+       *   content
+       * };
+       * request.open('POST', window.plugin.pnav.settings.webhookUrl);
+       * request.setRequestHeader('Content-type', 'application/json');
+       * request.onload = function () {
+       *   if (request.status >= 200 && request.status < 300) {
+       *     i++;
+       *     content = null; // all is okay, the next content can be calculated!
+       *   } else {
+       *     console.log(`status code ${request.status}`);
+       *   }
+       * };
+       * request.send(JSON.stringify(params), false);
+       */
 
       var dialog = window.dialog({
         id: 'bulkExportProgress',
@@ -1350,36 +1281,29 @@ function wrapper (plugin_info) {
               <label>${getString('of')} ${data.length}</label>
               <br>
               <label>${getString('exportTimeRemainingDescription')}</label>
-              <label id="exportTimeRemaining">${Math.round((wait * data.length) / 1000)}</label>
+              <label id="exportTimeRemaining">???</label>
               <label>s</label>
         `,
         width: 'auto',
         title: getString('bulkExportProgressTitle'),
         buttons: {
-          OK () {
-            saveState(data, type, i);
-            clearInterval(window.plugin.pnav.timer);
-            window.plugin.pnav.timer = null;
-            // re-validate highlighter if it is enabled.
-            // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName')) {
-              window.changePortalHighlights(getString('portalHighlighterName'));
+          OK: {
+            text: getString('bulkExportProgressButtonText'),
+            title: getString('bulkExportProgressButtonTitle'),
+            click () {
+              saveState(data, type, i);
+              clearInterval(window.plugin.pnav.timer);
+              window.plugin.pnav.timer = null;
+              // eslint-disable-next-line no-underscore-dangle
+              if (window._current_highlighter === getString('portalHighlighterName')) { // re-validate highlighter if it is enabled.
+                window.changePortalHighlights(getString('portalHighlighterName'));
+              }
+              dialog.dialog('close');
             }
-            dialog.dialog('close');
           }
         }
       });
-
-      // console.log(dialog);
-
       let thisDialog = dialog.parent();
-      // console.log(thisDialog);
-      var okayButton = $('.ui-button', thisDialog).not('.ui-dialog-titlebar-button');
-      okayButton.text(getString('bulkExportProgressButtonText'));
-      okayButton.prop(
-        'title',
-        getString('bulkExportProgressButtonTitle')
-      );
 
       $('.ui-button.ui-dialog-titlebar-button-close', thisDialog).on(
         'click',
@@ -1405,7 +1329,41 @@ function wrapper (plugin_info) {
    * @return {number} the new index after the export step
    */
   function botExport (data, type, dialog, i) {
-    return i; // return the new i!
+    var content = '!cm ';
+    const messageLimit = 2000; // a message can be 2000 characters at max in Discord
+    var currentSize = content.length + 2 + 5; // command plus outer array brackets plus PokeNav prefix array element
+    var toExport = [[window.plugin.pnav.settings.prefix]];
+    let j = i;
+    while (j < data.length && currentSize + 10 < messageLimit) {
+      let entry = data[j];
+      let count = 13; // "[type,"name","lat","lng",ex]," -> results in 12 extra chars for no ex, if ex it is 14 (including ex itself). type is always one char, so add it right here.
+      if (entry.isEx) {
+        count += 2;
+      }
+      count += entry.name.length;
+      count += entry.lat.length;
+      count += entry.lng.length;
+      if (currentSize + count + 10 < messageLimit) {
+        currentSize += count;
+        let current = [
+          type === 'pokestop' ? 0 : 1,
+          entry.name,
+          entry.lat,
+          entry.lng
+        ];
+        if (entry.isEx) {
+          current.push(1);
+        }
+        toExport.push(current);
+        j++;
+      } else {
+        break;
+      }
+    }
+    content += JSON.stringify(toExport);
+    // TODO actually send the message that is now in content!
+    updateExportDialog(dialog, j - 1, Object.keys(data).length, Math.ceil((Object.keys(data).length - (j - 1) / 40) * (wait / 1000))); // 40 locations per message is my experience from testing.
+    return j - 1; // return the new i!
   }
 
   /**
@@ -1417,7 +1375,49 @@ function wrapper (plugin_info) {
    * @return {number} the new index after the export step (normally old index + 1).
    */
   function normalExport (data, type, dialog, i) {
-    return i; // return the new i (old i + 1)!
+    if (i % 10 == 0) {
+      saveState(data, type, i); // sometimes save the state in case someone exits IITC Mobile without using the Back Button
+    }
+    var entry = data[i];
+    let lat = entry.lat;
+    let lng = entry.lng;
+    // escaping Hyphens in Portal Names
+    let name = entry.name
+      .replaceAll('"', '\\"');
+    let prefix = window.plugin.pnav.settings.prefix;
+    let ex = Boolean(entry.isEx);
+    let options = ex ? ' "ex_eligible: 1"' : '';
+    var content = `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`;
+    // TODO actually send the message in content!
+    updateExportDialog(dialog, i + 1, Object.keys(data).length, Object.keys(data).length - (i + 1));
+
+    return i + 1; // return the new i (old i + 1)!
+  }
+
+  /**
+   * updates the bulk export dialog (called by the specific export functions).
+   * @param {HTMLElement} dialog the export dialog
+   * @param {number} cur current export state
+   * @param {number} max count of all elements that need exporting
+   * @param {number} time remaining time
+   */
+  function updateExportDialog (dialog, cur, max, time) {
+    if (cur < max) {
+      if ($('#exportProgressBar', dialog)) {
+        $('#exportProgressBar', dialog).val(cur);
+      }
+      if ($('#exportNumber', dialog)) {
+        $('#exportNumber', dialog).text(cur);
+      }
+      if ($('#exportTimeRemaining', dialog)) {
+        $('#exportTimeRemaining', dialog).text(time);
+      }
+    } else {
+      $('#exportState', dialog).text(getString('exportStateTextReady'));
+      const okayButton = $('.ui-button', dialog).not('.ui-dialog-titlebar-button');
+      okayButton.text('OK');
+      okayButton.prop('title', '');
+    }
   }
 
   /*
