@@ -27,8 +27,7 @@ namespace CompanionBot
             foreach (string command in commands)
             {
                 queue.Enqueue(new CommandData { command = command, channel = channel });
-            }
-            
+            } 
             
             if (!working)
             {
@@ -40,17 +39,23 @@ namespace CompanionBot
         private async Task post()
         {
             working = true;
+            RequestOptions options = RequestOptions.Default;
+            options.RetryMode = RetryMode.RetryRatelimit;
+
+            var typingOptions = RequestOptions.Default;
+            typingOptions.RetryMode = RetryMode.AlwaysFail;
 
             while (queue.Count > 0)
             {
                 CommandData current = queue.Dequeue();
-                IDisposable typing = current.channel.EnterTypingState();
-                current.channel.SendMessageAsync(current.command);
+                IDisposable typing = current.channel.EnterTypingState(typingOptions);
+                var t = current.channel.SendMessageAsync(current.command,false,null,options);
                 // wait for PokeNav to respond...
                 var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == current.channel.Id && x.Embeds.Count > 0);
+                await t;
                 if (Result.IsSuccess == false)
                 {
-                    await current.channel.SendMessageAsync("PokeNav did not respond in time, please try again by Hand!");
+                    await current.channel.SendMessageAsync("PokeNav did not respond in time, please try again by Hand!", false, null, options);
                 }
                 typing.Dispose();
             }
