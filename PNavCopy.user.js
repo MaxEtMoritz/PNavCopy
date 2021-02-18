@@ -453,12 +453,12 @@ function wrapper (plugin_info) {
   // Highlighter that will highlight Portals according to the data that was submitted to PokeNav. PokeStops in blue, Gyms in red, Ex Gyms maybe with a yellow circle, Not yet submitted portals in gray.
   window.plugin.pnav.highlight = function (data) {
     const guid = data.portal.options.guid;
-    var color, fillcolor;
+    var color, fillColor;
     if (pNavData.pokestop[guid]) {
       color = '#00d8ff';
     } else if (pNavData.gym[guid]) {
       if (pNavData.gym[guid].isEx) {
-        fillcolor = '#eec13c';
+        fillColor = '#eec13c';
       }
       color = '#ff0204';
     } else {
@@ -467,7 +467,7 @@ function wrapper (plugin_info) {
     var params = window.getMarkerStyleOptions({team: window.TEAM_NONE,
       level: 0});
     params.color = color;
-    params.fillColor = fillcolor;
+    params.fillColor = fillColor;
     data.portal.setStyle(params);
   };
 
@@ -479,9 +479,9 @@ function wrapper (plugin_info) {
       /** @type {string} */
       var name = portal.options.data.title
         .replaceAll('"', '\\"');
-      var latlng = portal.getLatLng();
-      var lat = latlng.lat;
-      var lng = latlng.lng;
+      var latLng = portal.getLatLng();
+      var lat = latLng.lat;
+      var lng = latLng.lng;
       var opt = ' ';
       var type = 'none';
       var isEx;
@@ -637,7 +637,7 @@ function wrapper (plugin_info) {
           </label>
           <br>
           <label title="${getString('useBotTitle')}">
-            <input type="checkbox" id="useBot" checked="${window.plugin.pnav.settings.useBot}"></input>
+            <input type="checkbox" id="useBot" ${window.plugin.pnav.settings.useBot ? 'checked' : ''}></input>
             ${getString('useBotDescription')}
           </label>
         </p>
@@ -1238,8 +1238,10 @@ function wrapper (plugin_info) {
       var whatToDo = (window.plugin.pnav.settings.useBot ? botExport : normalExport);
 
       window.plugin.pnav.timer = setInterval(() => {
-        if (i < data.length) {
-          i = whatToDo(data, type, dialog, i);
+        if (i < data.length && data.length > 0) {
+          whatToDo(data, type, thisDialog, i).then((result) => {
+            i = result;
+          });
         } else {
           saveState(data, type, i);
           clearInterval(window.plugin.pnav.timer);
@@ -1247,25 +1249,6 @@ function wrapper (plugin_info) {
           window.onbeforeunload = null;
         }
       }, wait);
-      // INFO that is the stuff from sending messages... will try to use fetch API and await etc.
-      /*
-       * var params = {
-       *   username: window.plugin.pnav.settings.name,
-       *   avatar_url: '',
-       *   content
-       * };
-       * request.open('POST', window.plugin.pnav.settings.webhookUrl);
-       * request.setRequestHeader('Content-type', 'application/json');
-       * request.onload = function () {
-       *   if (request.status >= 200 && request.status < 300) {
-       *     i++;
-       *     content = null; // all is okay, the next content can be calculated!
-       *   } else {
-       *     console.log(`status code ${request.status}`);
-       *   }
-       * };
-       * request.send(JSON.stringify(params), false);
-       */
 
       var dialog = window.dialog({
         id: 'bulkExportProgress',
@@ -1313,8 +1296,13 @@ function wrapper (plugin_info) {
           window.plugin.pnav.timer = null;
         }
       );
-
-      i = whatToDo(data, type, dialog, 0); // start immediately instead of waiting 2 seconds.
+      if (data.length > 0) {
+        whatToDo(data, type, dialog, 0).then((result) => {
+          i = result;
+        }); // start immediately instead of waiting 2 seconds.
+      } else {
+        updateExportDialog(thisDialog, 0, 0, 0);
+      }
     } else {
       console.log('Bulk Export already running!');
     }
@@ -1328,7 +1316,7 @@ function wrapper (plugin_info) {
    * @param {number} i the current index
    * @return {number} the new index after the export step
    */
-  function botExport (data, type, dialog, i) {
+  async function botExport (data, type, dialog, i) {
     var content = '!cm ';
     const messageLimit = 2000; // a message can be 2000 characters at max in Discord
     var currentSize = content.length + 2 + 5; // command plus outer array brackets plus PokeNav prefix array element
@@ -1361,9 +1349,32 @@ function wrapper (plugin_info) {
       }
     }
     content += JSON.stringify(toExport);
-    // TODO actually send the message that is now in content!
-    updateExportDialog(dialog, j - 1, Object.keys(data).length, Math.ceil((Object.keys(data).length - (j - 1) / 40) * (wait / 1000))); // 40 locations per message is my experience from testing.
-    return j - 1; // return the new i!
+    const params = {
+      username: window.plugin.pnav.settings.name,
+      avatar_url: '',
+      content
+    };
+    var success = await fetch(window.plugin.pnav.settings.webhookUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(params)
+    })
+      .then((response) => {
+        if (!response.ok) {
+          console.error(`HTTP Error: ${response.status} - ${response.statusText}${response.bodyUsed ? `; body: ${response.body}` : ''}`);
+        }
+        return response.ok;
+      })
+      .catch((error) => {
+        console.error(error);
+        return false;
+      });
+    if (success) {
+      updateExportDialog(dialog, j, Object.keys(data).length, Math.ceil(((Object.keys(data).length - j) / 40) * (wait / 1000))); // 40 locations per message is my experience from testing.
+      return j; // return the new i!
+    } else {
+      return i;
+    }
   }
 
   /**
@@ -1374,7 +1385,7 @@ function wrapper (plugin_info) {
    * @param {number} i the current index
    * @return {number} the new index after the export step (normally old index + 1).
    */
-  function normalExport (data, type, dialog, i) {
+  async function normalExport (data, type, dialog, i) {
     if (i % 10 == 0) {
       saveState(data, type, i); // sometimes save the state in case someone exits IITC Mobile without using the Back Button
     }
@@ -1388,10 +1399,32 @@ function wrapper (plugin_info) {
     let ex = Boolean(entry.isEx);
     let options = ex ? ' "ex_eligible: 1"' : '';
     var content = `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`;
-    // TODO actually send the message in content!
-    updateExportDialog(dialog, i + 1, Object.keys(data).length, Object.keys(data).length - (i + 1));
-
-    return i + 1; // return the new i (old i + 1)!
+    const params = {
+      username: window.plugin.pnav.settings.name,
+      avatar_url: '',
+      content
+    };
+    var success = await fetch(window.plugin.pnav.settings.webhookUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(params)
+    })
+      .then((response) => {
+        if (!response.ok) {
+          console.error(`HTTP Error: ${response.status} - ${response.statusText}${response.bodyUsed ? `; body: ${response.body}` : ''}`);
+        }
+        return response.ok;
+      })
+      .catch((error) => {
+        console.error(error);
+        return false;
+      });
+    if (success) {
+      updateExportDialog(dialog, i + 1, Object.keys(data).length, (Object.keys(data).length - (i + 1)) * (wait / 1000));
+      return i + 1; // return the new i (old i + 1)!
+    } else {
+      return i;
+    }
   }
 
   /**
@@ -1402,19 +1435,19 @@ function wrapper (plugin_info) {
    * @param {number} time remaining time
    */
   function updateExportDialog (dialog, cur, max, time) {
-    if (cur < max) {
-      if ($('#exportProgressBar', dialog)) {
-        $('#exportProgressBar', dialog).val(cur);
-      }
-      if ($('#exportNumber', dialog)) {
-        $('#exportNumber', dialog).text(cur);
-      }
-      if ($('#exportTimeRemaining', dialog)) {
-        $('#exportTimeRemaining', dialog).text(time);
-      }
-    } else {
+    console.log(dialog);
+    if ($('#exportProgressBar', dialog)) {
+      $('#exportProgressBar', dialog).val(cur);
+    }
+    if ($('#exportNumber', dialog)) {
+      $('#exportNumber', dialog).text(cur);
+    }
+    if ($('#exportTimeRemaining', dialog)) {
+      $('#exportTimeRemaining', dialog).text(time);
+    }
+    if (cur >= max) {
       $('#exportState', dialog).text(getString('exportStateTextReady'));
-      const okayButton = $('.ui-button', dialog).not('.ui-dialog-titlebar-button');
+      const okayButton = $('.ui-button', dialog.parentElement).not('.ui-dialog-titlebar-button');
       okayButton.text('OK');
       okayButton.prop('title', '');
     }
@@ -1482,6 +1515,30 @@ function wrapper (plugin_info) {
     request.open('POST', window.plugin.pnav.settings.webhookUrl);
     request.setRequestHeader('Content-type', 'application/json');
     request.send(JSON.stringify(params), false);
+  }
+
+  function sendMessageFetch (message) {
+    const params = {
+      username: window.plugin.pnav.settings.name,
+      avatar_url: '',
+      content: message
+    };
+    fetch(window.plugin.pnav.settings.webhookUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: params
+    })
+      .then((response) => {
+        if (response.ok) {
+          return true;
+        } else {
+          console.error(`HTTP Error: ${response.status} - ${response.statusText}${response.bodyUsed ? `; body: ${response.body}` : ''}`);
+          return false;
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   }
 
   function waitForPogoButtons (mutationList, invokingObserver) {
