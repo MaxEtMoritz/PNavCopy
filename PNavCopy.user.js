@@ -1328,16 +1328,20 @@ function wrapper (plugin_info) {
       if (entry.isEx) {
         count += 2;
       }
-      count += entry.name.length;
-      count += entry.lat.length;
-      count += entry.lng.length;
+      if (typeof (entry.name) === 'undefined' || typeof (entry.lat) === 'undefined' || typeof (entry.lng) === 'undefined') {
+        j++; // yes, in my testings i came across a PokeStop that somehow had no name in Pogo Tools... but that makes no sense to export because PokeNav would refuse this anyway.
+        break;
+      }
+      count += entry.lat.toString().length; // most of the time, lat and lng were strings in Pogo Tools, but on some PoIs it were numbers
+      count += entry.lng.toString().length; // and .length of a number is undefined, turning count to NaN when adding it.
+      count += entry.name.toString().length; // even with the name it is like that! sometimes it is just a number (had a PokeStop named 1895)!
       if (currentSize + count + 10 < messageLimit) {
         currentSize += count;
         let current = [
           type === 'pokestop' ? 0 : 1,
-          entry.name,
-          entry.lat,
-          entry.lng
+          entry.name.toString(),
+          entry.lat.toString(),
+          entry.lng.toString()
         ];
         if (entry.isEx) {
           current.push(1);
