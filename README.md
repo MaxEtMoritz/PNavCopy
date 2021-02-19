@@ -39,16 +39,21 @@ The Plugin is based on a plugin included in a [Fork of the original IITC Mobile 
 ## Note
 The Plugin is not the very best code style and the code may not be very "error-friendly" because i am in no way an expert in JavaScript at the moment, but the important thing for me was to get it work, and it does exacly that, nothing more :wink:
 
-## Web Hook How-to:
-A Tutorial on how to set up a Web Hook in Discord can be found [here](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
+## WebHook How-to:
+A Tutorial on how to set up a WebHook in Discord can be found [here](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
 
 The WebHook has to be set up for the PokeNav Admin Channel (named #pokenav by default).
 
-If you created the Web Hook, copy the Web Hook URL and paste it into the Text Box in the Settings Dialog of the Userscript. The URL will be stored in Local Browser Storage for you, so you normally won't have to re-enter it.
+If you created the WebHook, copy the WebHook URL and paste it into the Text Box in the Settings Dialog of the Userscript. The URL will be stored in Local Browser Storage for you, so you normally won't have to re-enter it.
 
-__Note:__ Have in mind that anyone who has the Web Hook URL and knows how to post to Web Hooks can send any Message he likes to the Channel, so be cautious who you give the Web Hook URL to.
+__Note:__ Have in mind that anyone who has the WebHook URL and knows how to post to WebHooks can send any Message he likes to the Channel, so be cautious who you give the WebHook URL to.
 
-__Second Note:__ Some Bots ignore Messages sent via Web Hooks or other Bots, but the PokeNav Bot doesn't at the moment (PokeNav v 1.89.2). No Guarantee that this will stay like that forever...
+## About the Companion Bot
+The Companion Bot is a helper Bot that recieves a large message from the WebHook containing lots of PoI to create and posts the PokeNav commands one at a time. This is because WebHooks can only post 30 Messages per minute, resulting in long waiting times if you want to create all PoI via WebHook. And you have to keep IITC on all the time.
+
+When all is exported, the Bot does its Work automatically without the need to keep IITC open so long.
+
+__Note:__ The Companion Bot is still under construction and i don't know yet where to host it. If you want to try it, open an Issue. Eventually i will make it go Online then and share the Invite Link.
 
 ## How to contribute?
 You can contribute by...
