@@ -200,7 +200,9 @@ function wrapper (plugin_info) {
       ],
       pokeNavSettingsText: 'PokeNav Settings',
       pokeNavSettingsTitle: 'Configure PokeNav',
-      portalHighlighterName: 'PokeNav State'
+      portalHighlighterName: 'PokeNav State',
+      useBotText: 'Use Companion Bot',
+      useBotTitle: 'Tick this if you have invited the Companion Bot to your Server. This enables a faster bulk export. More Info on GitHub!'
     },
     de: {
       alertAlreadyExported: 'Dieser POI wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuche, den Export-Status in den Einstellungen zurückzusetzen.',
@@ -337,7 +339,9 @@ function wrapper (plugin_info) {
       ],
       pokeNavSettingsText: 'PokeNav-Einstellungen',
       pokeNavSettingsTitle: 'Konfigurieren Sie PokeNav',
-      portalHighlighterName: 'PokeNav-Status'
+      portalHighlighterName: 'PokeNav-Status',
+      useBotText: 'Bot verwenden',
+      useBotTitle: 'Setzen Sie den Haken, wenn Sie den Assistenz-Bot auf Ihren Server hinzugefügt haben. Dadurch kann der Massen-Export beschleunigt werden. Mehr Infos dazu auf GitHub!'
     }
   };
 
@@ -564,6 +568,10 @@ function wrapper (plugin_info) {
           saveToLocalStorage();
         }
       }
+      // eslint-disable-next-line no-underscore-dangle
+      if (window._current_highlighter === getString('portalHighlighterName')) {
+        window.changePortalHighlights(getString('portalHighlighterName')); // re-validate highlighter if active
+      }
     }
   };
 
@@ -638,7 +646,7 @@ function wrapper (plugin_info) {
           <br>
           <label title="${getString('useBotTitle')}">
             <input type="checkbox" id="useBot" ${window.plugin.pnav.settings.useBot ? 'checked' : ''}></input>
-            ${getString('useBotDescription')}
+            ${getString('useBotText')}
           </label>
         </p>
         <p>
@@ -1599,7 +1607,7 @@ function wrapper (plugin_info) {
         window.plugin.pnav.settings.lng
       ]), {radius: window.plugin.pnav.settings.radius * 1000,
         interactive: false,
-        fill: false,
+        fillOpacity: 0.1,
         color: '#000000'});
       lCommBounds.addLayer(commCircle);
     }
@@ -1651,7 +1659,7 @@ function wrapper (plugin_info) {
           $('#portaldetails').append(`
           <div id="PNav" style="color:#fff">
             <Label>
-              <input type="radio" checked="true" name="type" value="none" id="PNavNone"/>
+              <input type="radio" checked name="type" value="none" id="PNavNone"/>
               ${getString('PNavNoneDescription')}
             </label>
             <Label>
@@ -1671,6 +1679,15 @@ function wrapper (plugin_info) {
             </a>
           </div>
         `);
+          if (pNavData.pokestop[selectedGuid]) {
+            $('#PNavStop').prop('checked', true);
+          } else if (pNavData.gym[selectedGuid]) {
+            if (pNavData.gym[selectedGuid].isEx) {
+              $('#PNavEx').prop('checked', true);
+            } else {
+              $('#PNavGym').prop('checked', true);
+            }
+          }
         }, 0);
       } else {
         // wait for the Pogo Buttons to get added
