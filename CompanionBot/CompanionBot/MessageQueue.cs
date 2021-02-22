@@ -51,7 +51,7 @@ namespace CompanionBot
                 IDisposable typing = current.channel.EnterTypingState(typingOptions);
                 var t = current.channel.SendMessageAsync(current.command,false,null,options);
                 // wait for PokeNav to respond...
-                var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == current.channel.Id && x.Embeds.Count > 0);
+                var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == current.channel.Id && x.Embeds.Count == 1 && (x.Content== "The following poi has been created for use in your community:" || x.Embeds.GetEnumerator().Current.Title=="Error"));
                 await t;
                 if (Result.IsSuccess == false)
                 {

@@ -15,12 +15,14 @@ namespace CompanionBot
         private readonly CommandService _commands;
         private readonly IServiceProvider _services;
         private readonly IConfiguration _config;
+        private readonly GuildSettings _settings;
         public CommandHandler(IServiceProvider services)
         {
             _services = services;
             _client = services.GetRequiredService<DiscordSocketClient>();
             _commands = services.GetRequiredService<CommandService>();
             _config = services.GetRequiredService<IConfiguration>();
+            _settings = services.GetRequiredService<GuildSettings>();
         }
 
         public async Task InstallCommandsAsync()
@@ -48,7 +50,7 @@ namespace CompanionBot
             int argPos = 0;
 
             // Determine if the message is a command based on the prefix and make sure no bots trigger commands
-            if (!(message.HasCharPrefix(_config["prefix"][0], ref argPos) ||
+            if (!(message.HasCharPrefix(_settings[(message.Channel as IGuildChannel).Guild].Prefix, ref argPos) ||
                 message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
                 (message.Author.IsBot && !message.Author.IsWebhook))
                 return;

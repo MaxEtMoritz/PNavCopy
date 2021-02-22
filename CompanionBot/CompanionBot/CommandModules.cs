@@ -1,11 +1,12 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Interactivity;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Discord.Addons.Collectors;
 
 namespace CompanionBot
 {
@@ -155,5 +156,65 @@ namespace CompanionBot
                 await _queue.Enqueue(Context.Channel, commands);
             }
         }
+
+        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards.")]
+        public async Task EditAsync([Remainder, Summary("List of Edits to make, provided by the IITC Plugin.")] List<EditData> data)
+        {
+            
+        }
+    }
+
+    [Group("set"), Alias("s"), Summary("Configure the Bot")]
+    public class ConfigurationModule : ModuleBase<SocketCommandContext>
+    {
+        private readonly GuildSettings _settings;
+        private readonly InteractivityService _interactive;
+        public ConfigurationModule(GuildSettings settings, InteractivityService inter)
+        {
+            _settings = settings;
+            _interactive = inter;
+        }
+
+        [Command("pokenav-prefix"), Alias("pp"), Summary("Set the PokeNav Prefix for this Server.")]
+        public async Task SetPokeNavPrefix(char prefix)
+        {
+            Settings current = _settings[Context.Guild];
+            current.PNavPrefix = prefix;
+            _settings[Context.Guild] = current;
+            await ReplyAsync($"PokeNav Prefix successfully set to '{prefix}'.");
+            // TODO test if it works!
+        }
+
+        [Command("mod-channel",RunMode=RunMode.Async), Alias("mc"), Summary("Sets the PokeNav Moderation Channel for this Server by sending ```show mod-channel```-Command to PokeNav.")]
+        public async Task SetModChannel()
+        {
+            var T = ReplyAsync($"{_settings[Context.Guild].PNavPrefix}show mod-channel");
+            var result = await _interactive.NextMessageAsync((message) =>
+            {
+                Console.WriteLine(message.Content);
+                return message.Author.Id == 428187007965986826 && message.Channel.Id == Context.Channel.Id && message.MentionedChannels.Count == 1;
+            });
+            await T;
+            if (result.IsSuccess)
+            {
+                var channel = result.Value.MentionedChannels.First(); // TODO do it like that in MessageQueue also, otherwise it will crash!
+                var currentSettings = _settings[Context.Guild];
+                currentSettings.PNavChannel = channel.Id;
+                _settings[Context.Guild] = currentSettings;
+                await ReplyAsync($"Moderation Channel successfully set to {channel}");
+            }
+            else
+            {
+                await ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure you have set the right PokeNav Prefix (run ```{_settings[Context.Guild].Prefix}set pokenav-prefix``` to change) and PokeNav is able to respond in this Channel!");
+            }
+        }
+    }
+
+    public struct EditData
+    {
+        // t: type, n: name, a: l**a**titude, o: l**o**ngitude, e: ex-eligibility (or edits on top-level)
+        public Int16 t; // TODO check if it works to declare it directly as LocationData!
+        public string n;
+        public IDictionary<char, string> e;
     }
 }
