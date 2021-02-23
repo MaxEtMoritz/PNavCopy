@@ -15,7 +15,7 @@ namespace CompanionBot
         {
             get
             {
-                if(settings == null)
+                if (settings == null)
                 {
                     if (File.Exists(path))
                     {
@@ -26,7 +26,7 @@ namespace CompanionBot
                         }
                         catch (Exception e)
                         {
-                            Console.Error.WriteLine($"Unable to read Settings File: {e.GetType().Name} - {e.Message}");
+                            new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Unable to read Settings File: {e.GetType().Name} - {e.Message}", e);
                             return Settings.Default;
                         }
 
@@ -36,7 +36,7 @@ namespace CompanionBot
                         }
                         catch (Exception e)
                         {
-                            Console.Error.WriteLine($"Invalid Settings File (JSON parsing failed)! Exception: {e.GetType().Name} - {e.Message}");
+                            new LogMessage(LogSeverity.Error, this.GetType().Name, $"Invalid Settings File (JSON parsing failed)! Exception: {e.GetType().Name} - {e.Message}", e);
                             settings = new Dictionary<ulong, Settings>();
                             return Settings.Default;
                         }
@@ -79,7 +79,7 @@ namespace CompanionBot
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine($"Unable to write Settings file, the Settings will get lost when the Bot is stopped: {e.GetType().Name} - {e.Message}");
+                    new LogMessage(LogSeverity.Error, this.GetType().Name, $"Unable to write Settings file, the Settings will get lost when the Bot is stopped: {e.GetType().Name} - {e.Message}", e);
                 }
             }
         }

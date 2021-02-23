@@ -164,7 +164,7 @@ namespace CompanionBot
         }
     }
 
-    [Group("set"), Alias("s"), Summary("Configure the Bot")]
+    [Group("set"), Alias("s"), Summary("Configure the Bot"),RequireUserPermission(GuildPermission.ManageGuild)]
     public class ConfigurationModule : ModuleBase<SocketCommandContext>
     {
         private readonly GuildSettings _settings;
@@ -176,13 +176,12 @@ namespace CompanionBot
         }
 
         [Command("pokenav-prefix"), Alias("pp"), Summary("Set the PokeNav Prefix for this Server.")]
-        public async Task SetPokeNavPrefix(char prefix)
+        public async Task SetPokeNavPrefix([Summary("The Prefix the PokeNav Bot uses on this Server")]char prefix)
         {
             Settings current = _settings[Context.Guild];
             current.PNavPrefix = prefix;
             _settings[Context.Guild] = current;
             await ReplyAsync($"PokeNav Prefix successfully set to '{prefix}'.");
-            // TODO test if it works!
         }
 
         [Command("mod-channel",RunMode=RunMode.Async), Alias("mc"), Summary("Sets the PokeNav Moderation Channel for this Server by sending ```show mod-channel```-Command to PokeNav.")]
@@ -191,22 +190,30 @@ namespace CompanionBot
             var T = ReplyAsync($"{_settings[Context.Guild].PNavPrefix}show mod-channel");
             var result = await _interactive.NextMessageAsync((message) =>
             {
-                Console.WriteLine(message.Content);
                 return message.Author.Id == 428187007965986826 && message.Channel.Id == Context.Channel.Id && message.MentionedChannels.Count == 1;
             });
             await T;
             if (result.IsSuccess)
             {
-                var channel = result.Value.MentionedChannels.First(); // TODO do it like that in MessageQueue also, otherwise it will crash!
+                var channel = result.Value.MentionedChannels.First();
                 var currentSettings = _settings[Context.Guild];
                 currentSettings.PNavChannel = channel.Id;
                 _settings[Context.Guild] = currentSettings;
-                await ReplyAsync($"Moderation Channel successfully set to {channel}");
+                await ReplyAsync($"Moderation Channel successfully set to <#{channel.Id}>");
             }
             else
             {
                 await ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure you have set the right PokeNav Prefix (run ```{_settings[Context.Guild].Prefix}set pokenav-prefix``` to change) and PokeNav is able to respond in this Channel!");
             }
+        }
+
+        [Command("prefix"), Alias("p"), Summary("Sets the Prefix for this Bot on the Server.")]
+        public async Task SetPrefix([Summary("The new Prefix for the Bot")]char prefix)
+        {
+            Settings current = _settings[Context.Guild];
+            current.Prefix = prefix;
+            _settings[Context.Guild] = current;
+            await ReplyAsync($"Prefix successfully set to '{prefix}'.");
         }
     }
 
