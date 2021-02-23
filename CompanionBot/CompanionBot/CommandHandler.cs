@@ -51,7 +51,7 @@ namespace CompanionBot
             int argPos = 0;
 
             // Determine if the message is a command based on the prefix and make sure no bots trigger commands
-            if (!(message.HasCharPrefix(_settings[(message.Channel as IGuildChannel).Guild].Prefix, ref argPos) ||
+            if (!(message.HasCharPrefix(_settings[(message.Channel as IGuildChannel).Guild.Id].Prefix, ref argPos) ||
                 message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
                 (message.Author.IsBot && !message.Author.IsWebhook))
                 return;

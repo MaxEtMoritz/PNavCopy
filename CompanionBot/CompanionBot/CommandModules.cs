@@ -13,11 +13,11 @@ namespace CompanionBot
     public class GeneralModule : ModuleBase<SocketCommandContext>
     {
         private readonly CommandService _commands;
-        private readonly IConfiguration _config;
-        public GeneralModule(CommandService commands, IConfiguration config)
+        private readonly GuildSettings _settings;
+        public GeneralModule(CommandService commands, IConfiguration config, GuildSettings settings)
         {
             _commands = commands;
-            _config = config;
+            _settings = settings;
         }
 
         [Command("repost"), Summary("Re-posts a message.")]
@@ -33,10 +33,21 @@ namespace CompanionBot
             string response = "";
             if (String.IsNullOrEmpty(commandName))
             {
-                response += $"__**Available Commands:**__\nType `{_config["prefix"]}help commandName` for more info on specific Commands.";
-                foreach (CommandInfo command in _commands.Commands)
+                response += $"__**Available Commands:**__\nType `{_settings[Context.Guild.Id].Prefix}help commandName` for more info on specific Commands.";
+
+                foreach (ModuleInfo module in _commands.Modules)
                 {
-                    response += "\n__" + command.Name + "__\n\t" + command.Summary;
+                    if (String.IsNullOrEmpty(module.Group))
+                    {
+                        foreach (var command in module.Commands)
+                        {
+                            response += "\n__" + command.Name + "__\n\t" + command.Summary;
+                        }
+                    }
+                    else
+                    {
+                        response += "\n__" + module.Group + "__\n\t" + module.Summary;
+                    }
                 }
             }
             else
@@ -58,7 +69,7 @@ namespace CompanionBot
                             }
                         }
                         response += "\n\t" + command.Summary;
-                        response += $"\nUsage: `{_config["prefix"]}{command.Name}";
+                        response += $"\nUsage: `{_settings[Context.Guild.Id].Prefix}{command.Name}";
                         if (command.Parameters.Count > 0)
                         {
                             foreach (ParameterInfo arg in command.Parameters)
@@ -93,13 +104,39 @@ namespace CompanionBot
                         }
                     }
                 }
-                else if (result.Error != null)
-                {
-                    response = "Error: " + result.ErrorReason;
-                }
                 else
                 {
-                    response = "no command called \"" + commandName + "\" found.";
+                    var moduleResult = _commands.Modules.Where((info) => { return info.Group == commandName || info.Aliases.Contains(commandName); });
+                    if (moduleResult.Any())
+                    {
+                        foreach (var module in moduleResult)
+                        {
+                            response = $"__**{module.Group}**__";
+                            if (module.Aliases.Count > 1)
+                            {
+                                response += "\n__Aliases:__ ";
+                                foreach (string alias in module.Aliases)
+                                {
+                                    if (alias != module.Group)
+                                        response += alias + " ";
+                                }
+                            }
+                            if (!String.IsNullOrEmpty(module.Summary))
+                            {
+                                response += $"\n\t{module.Summary}";
+                            }
+                            response += $"\nUsage: `{_settings[Context.Guild.Id].Prefix}{module.Group} subCommand`";
+                            response += "\n__Available Sub-Commands:__";
+                            foreach (var command in module.Commands)
+                            {
+                                response += $"\n__{command.Name}__\n\t{command.Summary}";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        response = "no command or command group called \"" + commandName + "\" found.";
+                    }
                 }
             }
             await ReplyAsync(response);
@@ -178,41 +215,41 @@ namespace CompanionBot
         [Command("pokenav-prefix"), Alias("pp"), Summary("Set the PokeNav Prefix for this Server.")]
         public async Task SetPokeNavPrefix([Summary("The Prefix the PokeNav Bot uses on this Server")] char prefix)
         {
-            Settings current = _settings[Context.Guild];
+            Settings current = _settings[Context.Guild.Id];
             current.PNavPrefix = prefix;
-            _settings[Context.Guild] = current;
+            _settings[Context.Guild.Id] = current;
             await ReplyAsync($"PokeNav Prefix successfully set to '{prefix}'.");
         }
 
-        [Command("mod-channel", RunMode = RunMode.Async), Alias("mc"), Summary("Sets the PokeNav Moderation Channel for this Server by sending ```show mod-channel```-Command to PokeNav.")]
+        [Command("mod-channel", RunMode = RunMode.Async), Alias("mc"), Summary("Sets the PokeNav Moderation Channel for this Server by sending `show mod-channel`-Command to PokeNav.")]
         public async Task SetModChannel()
         {
-            var T = ReplyAsync($"{_settings[Context.Guild].PNavPrefix}show mod-channel");
+            var T = ReplyAsync($"{_settings[Context.Guild.Id].PNavPrefix}show mod-channel");
             var result = await _interactive.NextMessageAsync((message) =>
             {
                 return message.Author.Id == 428187007965986826 && message.Channel.Id == Context.Channel.Id && message.MentionedChannels.Count == 1;
-            });
+            }, null, TimeSpan.FromSeconds(10));
             await T;
             if (result.IsSuccess)
             {
                 var channel = result.Value.MentionedChannels.First();
-                var currentSettings = _settings[Context.Guild];
+                var currentSettings = _settings[Context.Guild.Id];
                 currentSettings.PNavChannel = channel.Id;
-                _settings[Context.Guild] = currentSettings;
+                _settings[Context.Guild.Id] = currentSettings;
                 await ReplyAsync($"Moderation Channel successfully set to <#{channel.Id}>");
             }
             else
             {
-                await ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure you have set the right PokeNav Prefix (run ```{_settings[Context.Guild].Prefix}set pokenav-prefix``` to change) and PokeNav is able to respond in this Channel!");
+                await ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure you have set the right PokeNav Prefix (run `{_settings[Context.Guild.Id].Prefix}set pokenav-prefix` to change) and PokeNav is able to respond in this Channel!");
             }
         }
 
         [Command("prefix"), Alias("p"), Summary("Sets the Prefix for this Bot on the Server.")]
         public async Task SetPrefix([Summary("The new Prefix for the Bot")] char prefix)
         {
-            Settings current = _settings[Context.Guild];
+            Settings current = _settings[Context.Guild.Id];
             current.Prefix = prefix;
-            _settings[Context.Guild] = current;
+            _settings[Context.Guild.Id] = current;
             await ReplyAsync($"Prefix successfully set to '{prefix}'.");
         }
     }

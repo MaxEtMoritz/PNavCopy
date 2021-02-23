@@ -18,7 +18,7 @@ namespace CompanionBot
             logger = log;
         }
 
-        public Settings this[IGuild server]
+        public Settings this[ulong server]
         {
             get
             {
@@ -48,9 +48,9 @@ namespace CompanionBot
                             return Settings.Default;
                         }
 
-                        if (settings.ContainsKey(server.Id))
+                        if (settings.ContainsKey(server))
                         {
-                            return settings[server.Id];
+                            return settings[server];
                         }
                         else
                         {
@@ -65,9 +65,9 @@ namespace CompanionBot
                 }
                 else
                 {
-                    if (settings.ContainsKey(server.Id))
+                    if (settings.ContainsKey(server))
                     {
-                        return settings[server.Id];
+                        return settings[server];
                     }
                     else
                     {
@@ -77,7 +77,7 @@ namespace CompanionBot
             }
             set
             {
-                settings[server.Id] = value;
+                settings[server] = value;
 
                 string data = JsonConvert.SerializeObject(settings, Formatting.Indented);
                 try
