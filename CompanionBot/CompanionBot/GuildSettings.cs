@@ -9,8 +9,15 @@ namespace CompanionBot
 {
     public class GuildSettings
     {
+        private readonly Logger logger;
         private static readonly string path = @"guildSettings.json";
         private Dictionary<ulong, Settings> settings;
+
+        public GuildSettings(Logger log)
+        {
+            logger = log;
+        }
+
         public Settings this[IGuild server]
         {
             get
@@ -26,7 +33,7 @@ namespace CompanionBot
                         }
                         catch (Exception e)
                         {
-                            new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Unable to read Settings File: {e.GetType().Name} - {e.Message}", e);
+                            logger.Log(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Unable to read Settings File: {e.GetType().Name} - {e.Message}", e));
                             return Settings.Default;
                         }
 
@@ -36,7 +43,7 @@ namespace CompanionBot
                         }
                         catch (Exception e)
                         {
-                            new LogMessage(LogSeverity.Error, this.GetType().Name, $"Invalid Settings File (JSON parsing failed)! Exception: {e.GetType().Name} - {e.Message}", e);
+                            logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Invalid Settings File (JSON parsing failed)! Exception: {e.GetType().Name} - {e.Message}", e));
                             settings = new Dictionary<ulong, Settings>();
                             return Settings.Default;
                         }
@@ -79,7 +86,7 @@ namespace CompanionBot
                 }
                 catch (Exception e)
                 {
-                    new LogMessage(LogSeverity.Error, this.GetType().Name, $"Unable to write Settings file, the Settings will get lost when the Bot is stopped: {e.GetType().Name} - {e.Message}", e);
+                    logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Unable to write Settings file, the Settings will get lost when the Bot is stopped: {e.GetType().Name} - {e.Message}", e));
                 }
             }
         }

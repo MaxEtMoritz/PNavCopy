@@ -6,6 +6,7 @@ using Discord;
 using Discord.Addons.Collectors;
 using Discord.WebSocket;
 using Interactivity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CompanionBot
 {
@@ -15,10 +16,10 @@ namespace CompanionBot
         private static InteractivityService _inter;
         private static Queue<CommandData> queue;
         private static bool working;
-        public MessageQueue(IDiscordClient client, InteractivityService service)
+        public MessageQueue(DiscordSocketClient client, InteractivityService interactive)
         {
             _client = client;
-            _inter = service;
+            _inter = interactive;
             queue = new Queue<CommandData>();
             working = false;
         }

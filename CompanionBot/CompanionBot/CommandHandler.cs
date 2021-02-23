@@ -14,20 +14,21 @@ namespace CompanionBot
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
         private readonly IServiceProvider _services;
-        private readonly IConfiguration _config;
         private readonly GuildSettings _settings;
+        private readonly Logger _logger;
         public CommandHandler(IServiceProvider services)
         {
             _services = services;
             _client = services.GetRequiredService<DiscordSocketClient>();
             _commands = services.GetRequiredService<CommandService>();
-            _config = services.GetRequiredService<IConfiguration>();
             _settings = services.GetRequiredService<GuildSettings>();
+            _logger = services.GetRequiredService<Logger>();
         }
 
         public async Task InstallCommandsAsync()
         {
             _client.MessageReceived += HandleCommandAsync;
+            _commands.CommandExecuted += OnCommandExecutedAsync;
 
             // Here we discover all of the command modules in the entry 
             // assembly and load them. Starting from Discord.NET 2.0, a
@@ -64,6 +65,34 @@ namespace CompanionBot
                 context: context,
                 argPos: argPos,
                 services: _services);
+        }
+
+        private async Task OnCommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
+        {
+            // if an Error occurred, send the Reason for the Error in the Channel where the Command was executed.
+            if (!string.IsNullOrEmpty(result?.ErrorReason))
+            {
+                await context.Channel.SendMessageAsync("Error: " + result.ErrorReason);
+                await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Id}: {result.ErrorReason}"));
+            }
+            else if (!result.IsSuccess)
+            {
+                if (result.Error.HasValue)
+                {
+                    await context.Channel.SendMessageAsync("Error: " + result.Error.Value.ToString());
+                    await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Id}: {result.Error.Value}"));
+                }
+                else
+                {
+                    await context.Channel.SendMessageAsync("Error: Unknown Error while Executing this Command!");
+                    await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Unknown Command error in guild {context.Guild.Id}!"));
+                }
+            }
+            else
+            {
+                // Log Command Execution
+                await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command executed successfully in guild {context.Guild.Id}"));
+            }
         }
     }
 }

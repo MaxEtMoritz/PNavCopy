@@ -119,7 +119,7 @@ namespace CompanionBot
             pokestop, gym
         }
 
-        [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot.")]
+        [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook]
         public async Task CreatePoIAsync([Remainder, Summary("The PoI data from the IITC plugin.")] List<string[]> data)
         {
             //order of params: type name lat lng (isEx)
@@ -157,14 +157,14 @@ namespace CompanionBot
             }
         }
 
-        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards.")]
+        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook]
         public async Task EditAsync([Remainder, Summary("List of Edits to make, provided by the IITC Plugin.")] List<EditData> data)
         {
-            
+
         }
     }
 
-    [Group("set"), Alias("s"), Summary("Configure the Bot"),RequireUserPermission(GuildPermission.ManageGuild)]
+    [Group("set"), Alias("s"), Summary("Configure the Bot"), RequireUserPermission(GuildPermission.ManageGuild)]
     public class ConfigurationModule : ModuleBase<SocketCommandContext>
     {
         private readonly GuildSettings _settings;
@@ -176,7 +176,7 @@ namespace CompanionBot
         }
 
         [Command("pokenav-prefix"), Alias("pp"), Summary("Set the PokeNav Prefix for this Server.")]
-        public async Task SetPokeNavPrefix([Summary("The Prefix the PokeNav Bot uses on this Server")]char prefix)
+        public async Task SetPokeNavPrefix([Summary("The Prefix the PokeNav Bot uses on this Server")] char prefix)
         {
             Settings current = _settings[Context.Guild];
             current.PNavPrefix = prefix;
@@ -184,7 +184,7 @@ namespace CompanionBot
             await ReplyAsync($"PokeNav Prefix successfully set to '{prefix}'.");
         }
 
-        [Command("mod-channel",RunMode=RunMode.Async), Alias("mc"), Summary("Sets the PokeNav Moderation Channel for this Server by sending ```show mod-channel```-Command to PokeNav.")]
+        [Command("mod-channel", RunMode = RunMode.Async), Alias("mc"), Summary("Sets the PokeNav Moderation Channel for this Server by sending ```show mod-channel```-Command to PokeNav.")]
         public async Task SetModChannel()
         {
             var T = ReplyAsync($"{_settings[Context.Guild].PNavPrefix}show mod-channel");
@@ -208,7 +208,7 @@ namespace CompanionBot
         }
 
         [Command("prefix"), Alias("p"), Summary("Sets the Prefix for this Bot on the Server.")]
-        public async Task SetPrefix([Summary("The new Prefix for the Bot")]char prefix)
+        public async Task SetPrefix([Summary("The new Prefix for the Bot")] char prefix)
         {
             Settings current = _settings[Context.Guild];
             current.Prefix = prefix;

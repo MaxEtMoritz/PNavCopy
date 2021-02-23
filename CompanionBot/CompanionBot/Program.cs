@@ -24,28 +24,29 @@ namespace CompanionBot
 
         public async Task MainAsync()
         {
-            var _builder = new ConfigurationBuilder()
+            _config = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile(path: "config.json");
-            _config = _builder.Build();
-            _client = new DiscordSocketClient();
-            var inter = new InteractivityService(_client, TimeSpan.FromSeconds(10));
+                .AddJsonFile(path: "config.json")
+                .Build();
+
             _services = new ServiceCollection()
                 .AddSingleton(_config)
-                .AddSingleton(_client)
-                .AddSingleton(inter)
-                .AddSingleton(new MessageQueue(_client, inter))
+                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton<InteractivityService>()
+                .AddSingleton<MessageQueue>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<GuildSettings>()
+                .AddSingleton<Logger>()
                 .BuildServiceProvider();
-            //_client = _services.GetRequiredService<DiscordSocketClient>();
-            _client.Log += Log;
+
+            _client = _services.GetRequiredService<DiscordSocketClient>();
+            _client.Log += _services.GetRequiredService<Logger>().Log;
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
             commandService = _services.GetRequiredService<CommandService>();
-            commandService.Log += Log;
+            commandService.Log += _services.GetRequiredService<Logger>().Log;
             commandService.AddTypeReader(typeof(List<string[]>), new JsonTypeReader<List<string[]>>());
             commandService.AddTypeReader(typeof(List<EditData>), new JsonTypeReader<List<EditData>>());
             handler = _services.GetRequiredService<CommandHandler>();
@@ -53,12 +54,6 @@ namespace CompanionBot
 
             // Block this task until the program is closed.
             await Task.Delay(-1);
-        }
-
-        private Task Log(LogMessage msg)
-        {
-            Console.WriteLine(msg.ToString());
-            return Task.CompletedTask;
         }
     }
 }
