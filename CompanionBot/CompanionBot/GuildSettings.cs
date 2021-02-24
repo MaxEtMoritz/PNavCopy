@@ -26,7 +26,7 @@ namespace CompanionBot
                 {
                     if (File.Exists(path))
                     {
-                        string data = "";
+                        string data;
                         try
                         {
                             data = File.ReadAllText(path);

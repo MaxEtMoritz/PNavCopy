@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Addons.Collectors;
 using Discord.Commands;
 using Discord.WebSocket;
 using Interactivity;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace CompanionBot
 {
@@ -16,26 +15,28 @@ namespace CompanionBot
         private readonly IDiscordClient _client;
         private readonly Logger _logger;
         private static InteractivityService _inter;
-        //private static Queue<CommandData> queue;
-        private Dictionary<ulong, Queue<string>> queues;
-        private Dictionary<ulong, Task> workers;
+        private readonly Dictionary<ulong, CancellationTokenSource> tokens = new Dictionary<ulong, CancellationTokenSource>();
+        private readonly Dictionary<ulong, Queue<string>> queues = new Dictionary<ulong, Queue<string>>();
+        private readonly Dictionary<ulong, Task> workers = new Dictionary<ulong, Task>();
         private readonly GuildSettings _settings;
-        private static bool working;
+
         public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings)
         {
             _client = client;
             _inter = interactive;
             _logger = logger;
             _settings = settings;
-            queue = new Queue<CommandData>();
-            working = false;
         }
 
         public Task Enqueue(ICommandContext context, List<string> commands)
         {
             if (queues.ContainsKey(context.Guild.Id))
             {
-                queues[context.Guild.Id].Concat(commands);
+                var queue = queues[context.Guild.Id];
+                foreach (string command in commands)
+                {
+                    queue.Enqueue(command);
+                }
             }
             else
             {
@@ -44,39 +45,58 @@ namespace CompanionBot
 
             if (!workers.ContainsKey(context.Guild.Id))
             {
-                workers.Add(context.Guild.Id, work(queues[context.Guild.Id]));
+                CancellationTokenSource source = new CancellationTokenSource();
+                tokens[context.Guild.Id] = source;
+                workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token)); // TODO does this already start the Task???
             }
             return Task.CompletedTask;
         }
 
-        private async Task post()
+        public Task Pause(ICommandContext context)
         {
-            working = true;
-            RequestOptions options = RequestOptions.Default;
-            options.RetryMode = RetryMode.RetryRatelimit;
-
-            var typingOptions = RequestOptions.Default;
-            typingOptions.RetryMode = RetryMode.AlwaysFail;
-
-            while (queue.Count > 0)
+            if (workers.ContainsKey(context.Guild.Id))
             {
-                CommandData current = queue.Dequeue();
-                IDisposable typing = current.channel.EnterTypingState(typingOptions);
-                var t = current.channel.SendMessageAsync(current.command, false, null, options);
-                // wait for PokeNav to respond...
-                var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == current.channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error"), null, TimeSpan.FromSeconds(10));
-                await t;
-                if (Result.IsSuccess == false)
+                if(tokens.TryGetValue(context.Guild.Id, out CancellationTokenSource token))
                 {
-                    await current.channel.SendMessageAsync("PokeNav did not respond in time, please try again by Hand!", false, null, options);
-                    await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, "PokeNav did not respond within 10 seconds."));
+                    token.Cancel(); // Disposing is done in the Task itself when it is canceled or completed.
+                    context.Channel.SendMessageAsync("Successfully paused!");
                 }
-                typing.Dispose();
+                else
+                {
+                    _logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Task running for Guild {context.Guild.Id}, but no Cancellation Token was present!"));
+                    context.Channel.SendMessageAsync("Error while pausing!");
+                }
             }
-            working = false;
+            else
+            {
+                context.Channel.SendMessageAsync("Nothing to Pause here, no Bulk Export running at the moment!");
+            }
+            return Task.CompletedTask;
         }
 
-        private async Task work(ulong guildId)
+        public Task Resume(ICommandContext context)
+        {
+            if (!workers.ContainsKey(context.Guild.Id))
+            {
+                if (queues.ContainsKey(context.Guild.Id) && queues[context.Guild.Id].Any())
+                {
+                    CancellationTokenSource source = new CancellationTokenSource();
+                    tokens[context.Guild.Id] = source;
+                    workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token)); // TODO does this already start the Task???
+                }
+                else
+                {
+                    context.Channel.SendMessageAsync("No Data to Export present!");
+                }
+            }
+            else
+            {
+                context.Channel.SendMessageAsync("Bulk Export is already running, no need to Resume!");
+            }
+            return Task.CompletedTask;
+        }
+
+        private async Task Work(ulong guildId, IMessageChannel invokedChannel, CancellationToken token)
         {
             if (queues.TryGetValue(guildId, out Queue<string> queue))
             {
@@ -86,32 +106,47 @@ namespace CompanionBot
                 var typingOptions = RequestOptions.Default;
                 typingOptions.RetryMode = RetryMode.AlwaysFail;
 
-                var channel = await _client.GetChannelAsync(_settings[guildId].PNavChannel); // TODO handle channel not set yet!
+                if (_settings[guildId].PNavChannel != null) {
+                    IMessageChannel channel = await _client.GetChannelAsync((ulong)_settings[guildId].PNavChannel) as IMessageChannel;
 
-
-                // TODO adapt to changes and delete unused things!
-                while (queue.Count > 0)
-                {
-                    string current = queue.Dequeue();
-                    IDisposable typing = chann
-                    var t = channel.SendMessageAsync(current.command, false, null, options);
-                    // wait for PokeNav to respond...
-                    var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == current.channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error"), null, TimeSpan.FromSeconds(10));
-                    await t;
-                    if (Result.IsSuccess == false)
+                    if(channel == null)
                     {
-                        await current.channel.SendMessageAsync("PokeNav did not respond in time, please try again by Hand!", false, null, options);
-                        await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, "PokeNav did not respond within 10 seconds."));
+                        await _logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Mod-Channel was no Message Channel for Guild {guildId}!"));
+                        return;
                     }
-                    typing.Dispose();
+
+                    while (queue.Count > 0)
+                    {
+                        if (token.IsCancellationRequested)
+                        {
+                            workers.Remove(guildId);
+                            tokens.Remove(guildId, out CancellationTokenSource s);
+                            s.Dispose();
+                            return;
+                        }
+                        string current = queue.Dequeue();
+                        IDisposable typing = channel.EnterTypingState(typingOptions);
+                        var t = channel.SendMessageAsync(current, false, null, options);
+                        // wait for PokeNav to respond...
+                        var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error"), null, TimeSpan.FromSeconds(10));
+                        await t;
+                        if (Result.IsSuccess == false)
+                        {
+                            await channel.SendMessageAsync("PokeNav did not respond in time, please try again by Hand!", false, null, options);
+                            await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"PokeNav did not respond within 10 seconds in Guild {guildId}."));
+                        }
+                        typing.Dispose();
+                    }
                 }
+                else
+                {
+                    await invokedChannel.SendMessageAsync($"PokeNav Moderation Channel not set yet! Run `{_settings[guildId].Prefix}set mod-channel` to set it, then run `{_settings[guildId].Prefix}resume` to create the PoI!");
+                    await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"Execution failed in Guild {guildId}: Mod-Channel was not set!"));
+                }
+                workers.Remove(guildId);
+                tokens.Remove(guildId, out CancellationTokenSource source);
+                source.Dispose();
             }
         }
-    }
-
-    public struct CommandData
-    {
-        public string command;
-        public ISocketMessageChannel channel;
     }
 }

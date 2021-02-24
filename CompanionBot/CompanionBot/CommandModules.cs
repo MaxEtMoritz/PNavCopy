@@ -14,7 +14,7 @@ namespace CompanionBot
     {
         private readonly CommandService _commands;
         private readonly GuildSettings _settings;
-        public GeneralModule(CommandService commands, IConfiguration config, GuildSettings settings)
+        public GeneralModule(CommandService commands, GuildSettings settings)
         {
             _commands = commands;
             _settings = settings;
@@ -151,12 +151,14 @@ namespace CompanionBot
             _queue = queue;
         }
 
+        // TODO Make resume and pause Commands for createmultiple!
+
         private enum LocationType
         {
             pokestop, gym
         }
 
-        [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook]
+        [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm")]
         public async Task CreatePoIAsync([Remainder, Summary("The PoI data from the IITC plugin.")] List<string[]> data)
         {
             //order of params: type name lat lng (isEx)
@@ -190,8 +192,22 @@ namespace CompanionBot
                         commands.Add($"{prefix}create poi {type} «{current[1]}» {current[2]} {current[3]}{(current.Length > 4 && current[4] == "1" ? " \"ex_eligible: 1\"" : "")}");
                     }
                 }
-                await _queue.Enqueue(Context.Channel, commands);
+                await _queue.Enqueue(Context, commands);
             }
+        }
+
+        [Command("pause"), Alias("p", "stop"), Summary("Pauses the Bulk Export. To start again, run the `resume` Command.")]
+        public Task PauseCM()
+        {
+            _queue.Pause(Context);
+            return Task.CompletedTask;
+        }
+
+        [Command("resume"), Alias("r", "restart"), Summary("Resume the Bulk Export.")]
+        public Task ResumeCM()
+        {
+            _queue.Resume(Context);
+            return Task.CompletedTask;
         }
 
         [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook]
