@@ -161,16 +161,17 @@ namespace CompanionBot
                         }
                         string current = queue.Dequeue();
                         IDisposable typing = channel.EnterTypingState(typingOptions);
-                        var t = channel.SendMessageAsync(current, false, null, options);
+                        var t = channel.SendMessageAsync(_settings[guildId].PNavPrefix + current, false, null, options);
                         // wait for PokeNav to respond...
                         var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error"), null, TimeSpan.FromSeconds(10));
                         await t;
+                        typing.Dispose();
                         if (Result.IsSuccess == false)
                         {
-                            await channel.SendMessageAsync("PokeNav did not respond in time, please try again by Hand!", false, null, options);
+                            await channel.SendMessageAsync($"PokeNav did not respond in time! maybe you have not set the right PokeNav Prefix? run `{_settings[guildId].Prefix}set pokenav-prefix` to correct it, then `{_settings[guildId].Prefix}resume`!", false, null, options);
                             await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"PokeNav did not respond within 10 seconds in Guild {guildId}."));
+                            return;
                         }
-                        typing.Dispose();
                     }
                 }
                 else

@@ -59,38 +59,23 @@ namespace CompanionBot
         public async Task CreatePoIAsync([Remainder, Summary("The PoI data from the IITC plugin.")] List<string[]> data)
         {
             //order of params: type name lat lng (isEx)
-            // first item must be PokeNav prefix
 
-            if (data.Count == 0 || data[0].Length == 0 || String.IsNullOrEmpty(data[0][0]))
-                await ReplyAsync("Bad Format!");
-            else
+            List<string> commands = new List<string>();
+            foreach (string[] current in data)
             {
-                char prefix = data[0][0][0];
-                List<string> commands = new List<string>();
-                for (int i = 1; i < data.Count; i++)
+                if (current.Length < 4 || current.Length > 5)
                 {
-                    string[] current = data[i];
-                    if (current.Length < 4 || current.Length > 5)
-                    {
-                        await ReplyAsync("Bad Format!");
-                    }
-                    else
-                    {
-                        string type;
-                        try
-                        {
-                            type = ((LocationType)Convert.ToInt16(current[0])).ToString();
-                        }
-                        catch (Exception)
-                        {
-                            await ReplyAsync("Bad Format!");
-                            continue;
-                        }
-                        commands.Add($"{prefix}create poi {type} «{current[1]}» {current[2]} {current[3]}{(current.Length > 4 && current[4] == "1" ? " \"ex_eligible: 1\"" : "")}");
-                    }
+                    await ReplyAsync("Bad Format!");
                 }
-                await _queue.EnqueueCreate(Context, commands);
+                else
+                {
+                    if (Enum.TryParse(current[0], out LocationType type))
+                        commands.Add($"create poi {type} «{current[1]}» {current[2]} {current[3]}{(current.Length > 4 && current[4] == "1" ? " \"ex_eligible: 1\"" : "")}");
+                    else
+                        await ReplyAsync("Bad Format!");
+                }
             }
+            await _queue.EnqueueCreate(Context, commands);
         }
 
         [Command("pause"), Alias("p", "stop"), Summary("Pauses the Bulk Export. To start again, run the `resume` Command.")]
@@ -105,7 +90,7 @@ namespace CompanionBot
             return _queue.Resume(Context);
         }
 
-        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook(Group ="g"), RequireOwner(Group ="g")]
+        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook(Group = "g"), RequireOwner(Group = "g")]
         public Task Edit([Remainder, Summary("List of Edits to make, provided by the IITC Plugin.")] List<EditData> data)
         {
             return _queue.EnqueueEdit(Context, data);
