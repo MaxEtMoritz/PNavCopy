@@ -55,11 +55,6 @@ namespace CompanionBot
             _queue = queue;
         }
 
-        private enum LocationType
-        {
-            pokestop, gym
-        }
-
         [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm")]
         public async Task CreatePoIAsync([Remainder, Summary("The PoI data from the IITC plugin.")] List<string[]> data)
         {
@@ -94,7 +89,7 @@ namespace CompanionBot
                         commands.Add($"{prefix}create poi {type} «{current[1]}» {current[2]} {current[3]}{(current.Length > 4 && current[4] == "1" ? " \"ex_eligible: 1\"" : "")}");
                     }
                 }
-                await _queue.Enqueue(Context, commands);
+                await _queue.EnqueueCreate(Context, commands);
             }
         }
 
@@ -110,10 +105,10 @@ namespace CompanionBot
             return _queue.Resume(Context);
         }
 
-        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook]
-        public async Task EditAsync([Remainder, Summary("List of Edits to make, provided by the IITC Plugin.")] List<EditData> data)
+        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook(Group ="g"), RequireOwner(Group ="g")]
+        public Task Edit([Remainder, Summary("List of Edits to make, provided by the IITC Plugin.")] List<EditData> data)
         {
-
+            return _queue.EnqueueEdit(Context, data);
         }
     }
 
@@ -176,5 +171,10 @@ namespace CompanionBot
         public Int16 t; // TODO check if it works to declare it directly as LocationData!
         public string n;
         public IDictionary<char, string> e;
+    }
+
+    public enum LocationType
+    {
+        pokestop, gym
     }
 }
