@@ -47,7 +47,7 @@ namespace CompanionBot
             {
                 CancellationTokenSource source = new CancellationTokenSource();
                 tokens[context.Guild.Id] = source;
-                workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token)); // TODO does this already start the Task???
+                workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token));
             }
             return Task.CompletedTask;
         }
@@ -69,6 +69,7 @@ namespace CompanionBot
             }
             else
             {
+                _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"Pause failed in Guild {context.Guild.Id}: No Bulk Export was running."));
                 context.Channel.SendMessageAsync("Nothing to Pause here, no Bulk Export running at the moment!");
             }
             return Task.CompletedTask;
@@ -82,16 +83,18 @@ namespace CompanionBot
                 {
                     CancellationTokenSource source = new CancellationTokenSource();
                     tokens[context.Guild.Id] = source;
-                    workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token)); // TODO does this already start the Task???
+                    workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token));
                 }
                 else
                 {
                     context.Channel.SendMessageAsync("No Data to Export present!");
+                    _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"Resume failed in Guild {context.Guild.Id}: No Data was present."));
                 }
             }
             else
             {
                 context.Channel.SendMessageAsync("Bulk Export is already running, no need to Resume!");
+                _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"Resume failed in Guild {context.Guild.Id}: Bulk Export was already running."));
             }
             return Task.CompletedTask;
         }
@@ -112,6 +115,7 @@ namespace CompanionBot
                     if(channel == null)
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Mod-Channel was no Message Channel for Guild {guildId}!"));
+                        await invokedChannel.SendMessageAsync($"There was a problem with the mod-channel! try to run `{_settings[guildId].Prefix}set mod-channel` and then `{_settings[guildId].Prefix}resume` to try again!");
                         return;
                     }
 

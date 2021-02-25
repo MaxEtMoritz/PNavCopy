@@ -24,6 +24,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Discord.Addons.CommandsExtension">
+      <HintPath>..\..\..\Discord.Addons.CommandsExtension\bin\Debug\netstandard2.0\Discord.Addons.CommandsExtension.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="config.json" />
   </ItemGroup>
 

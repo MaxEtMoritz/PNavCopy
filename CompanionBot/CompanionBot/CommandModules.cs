@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Addons.CommandsExtension;
 using Discord.Commands;
 using Discord.WebSocket;
 using Interactivity;
@@ -10,11 +11,11 @@ using System.Threading.Tasks;
 
 namespace CompanionBot
 {
-    public class GeneralModule : ModuleBase<SocketCommandContext>
+    public class General : ModuleBase<SocketCommandContext>
     {
         private readonly CommandService _commands;
         private readonly GuildSettings _settings;
-        public GeneralModule(CommandService commands, GuildSettings settings)
+        public General(CommandService commands, GuildSettings settings)
         {
             _commands = commands;
             _settings = settings;
@@ -27,131 +28,32 @@ namespace CompanionBot
         }
 
         [Command("help"), Summary("Shows info on Commands.")]
-        public async Task ShowHelpAsync([Summary("The name of the Command you want help for.")] string commandName = null)
+        public async Task ShowHelpAsync([Summary("The name of the Command you want help for."), Remainder] string commandName = null)
         {
-            //show a list of commands or specific Info on a command.
-            string response = "";
-            if (String.IsNullOrEmpty(commandName))
-            {
-                response += $"__**Available Commands:**__\nType `{_settings[Context.Guild.Id].Prefix}help commandName` for more info on specific Commands.";
+            var embed = _commands.GetDefaultHelpEmbed(commandName, "" + _settings[Context.Guild.Id].Prefix);
+            await ReplyAsync(embed: embed);
+        }
 
-                foreach (ModuleInfo module in _commands.Modules)
-                {
-                    if (String.IsNullOrEmpty(module.Group))
-                    {
-                        foreach (var command in module.Commands)
-                        {
-                            response += "\n__" + command.Name + "__\n\t" + command.Summary;
-                        }
-                    }
-                    else
-                    {
-                        response += "\n__" + module.Group + "__\n\t" + module.Summary;
-                    }
-                }
-            }
-            else
-            {
-                SearchResult result = _commands.Search(commandName);
-                if (result.IsSuccess && result.Error == null)
-                {
-                    foreach (var item in result.Commands)
-                    {
-                        CommandInfo command = item.Command;
-                        response += "__**" + command.Name + "**__";
-                        if (command.Aliases.Count > 1)
-                        {
-                            response += "\n__Aliases:__ ";
-                            foreach (string alias in command.Aliases)
-                            {
-                                if (alias != command.Name)
-                                    response += alias + " ";
-                            }
-                        }
-                        response += "\n\t" + command.Summary;
-                        response += $"\nUsage: `{_settings[Context.Guild.Id].Prefix}{command.Name}";
-                        if (command.Parameters.Count > 0)
-                        {
-                            foreach (ParameterInfo arg in command.Parameters)
-                            {
-                                if (arg.IsOptional)
-                                {
-                                    response += $" [{arg.Name}]";
-                                }
-                                else
-                                {
-                                    response += " " + arg.Name;
-                                }
-                            }
-                        }
-                        response += "`";
-                        if (command.Parameters.Count > 0)
-                        {
-                            response += "\n__Parameters:__";
-                            foreach (ParameterInfo param in command.Parameters)
-                            {
-                                response += "\n";
-                                if (param.IsRemainder)
-                                    response += "[Remainder] ";
-                                response += param.Type.Name + " **" + param.Name + "**";
-                                if (param.IsOptional)
-                                    response += " (optional)";
-                                if (!String.IsNullOrEmpty(param.Summary))
-                                {
-                                    response += "\n\t" + param.Summary;
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    var moduleResult = _commands.Modules.Where((info) => { return info.Group == commandName || info.Aliases.Contains(commandName); });
-                    if (moduleResult.Any())
-                    {
-                        foreach (var module in moduleResult)
-                        {
-                            response = $"__**{module.Group}**__";
-                            if (module.Aliases.Count > 1)
-                            {
-                                response += "\n__Aliases:__ ";
-                                foreach (string alias in module.Aliases)
-                                {
-                                    if (alias != module.Group)
-                                        response += alias + " ";
-                                }
-                            }
-                            if (!String.IsNullOrEmpty(module.Summary))
-                            {
-                                response += $"\n\t{module.Summary}";
-                            }
-                            response += $"\nUsage: `{_settings[Context.Guild.Id].Prefix}{module.Group} subCommand`";
-                            response += "\n__Available Sub-Commands:__";
-                            foreach (var command in module.Commands)
-                            {
-                                response += $"\n__{command.Name}__\n\t{command.Summary}";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        response = "no command or command group called \"" + commandName + "\" found.";
-                    }
-                }
-            }
-            await ReplyAsync(response);
+        [Command("my-settings"), Alias("ms"), Summary("Shows your current Settings.")]
+        public Task ShowSettings()
+        {
+            string response = "Your current Settings are:";
+            Settings settings = _settings[Context.Guild.Id];
+            response += $"\nPrefix:\t{settings.Prefix}";
+            response += $"\nPokeNav Prefix:\t{settings.PNavPrefix}";
+            response += $"\nPokeNav Mod-Channel:\t{(settings.PNavChannel != null ? "<#" + settings.PNavChannel + ">" : "none")}";
+            return ReplyAsync(response);
         }
     }
 
-    public class RepostModule : ModuleBase<SocketCommandContext>
+    [Name("PoI Management")]
+    public class PoIManagement : ModuleBase<SocketCommandContext>
     {
         private readonly MessageQueue _queue;
-        public RepostModule(MessageQueue queue)
+        public PoIManagement(MessageQueue queue)
         {
             _queue = queue;
         }
-
-        // TODO Make resume and pause Commands for createmultiple!
 
         private enum LocationType
         {
@@ -199,15 +101,13 @@ namespace CompanionBot
         [Command("pause"), Alias("p", "stop"), Summary("Pauses the Bulk Export. To start again, run the `resume` Command.")]
         public Task PauseCM()
         {
-            _queue.Pause(Context);
-            return Task.CompletedTask;
+            return _queue.Pause(Context);
         }
 
         [Command("resume"), Alias("r", "restart"), Summary("Resume the Bulk Export.")]
         public Task ResumeCM()
         {
-            _queue.Resume(Context);
-            return Task.CompletedTask;
+            return _queue.Resume(Context);
         }
 
         [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook]
@@ -217,7 +117,7 @@ namespace CompanionBot
         }
     }
 
-    [Group("set"), Alias("s"), Summary("Configure the Bot"), RequireUserPermission(GuildPermission.ManageGuild)]
+    [Group("set"), Alias("s"), Name("Configuration"), Summary("Configure the Bot"), RequireUserPermission(GuildPermission.ManageGuild)]
     public class ConfigurationModule : ModuleBase<SocketCommandContext>
     {
         private readonly GuildSettings _settings;
