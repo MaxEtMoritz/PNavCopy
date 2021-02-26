@@ -51,6 +51,7 @@ function wrapper (plugin_info) {
     lat: undefined,
     lng: undefined,
     prefix: '$',
+    companionPrefix: '!',
     language: undefined,
     useBot: false
   };
@@ -64,6 +65,7 @@ function wrapper (plugin_info) {
 
   var lCommBounds;
   const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
+  const discordMessageLimit = 2000; // a message can be 2000 characters at max in Discord
 
   const strings = {
     en: {
@@ -90,6 +92,8 @@ function wrapper (plugin_info) {
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.',
       bulkExportProgressTitle: 'PokeNav Bulk Export Progress',
+      companionPrefixText: 'Prefix:',
+      companionPrefixTitle: 'The Prefix for the Companion Bot. Default is !',
       exportDialogTitle: 'Export',
       exportProgressBarDescription: 'Progress:',
       exportStateTextExporting: 'Exporting...',
@@ -101,6 +105,7 @@ function wrapper (plugin_info) {
       importDialogTitle: 'Import',
       importInputText: 'Paste the data you exported in this text field!',
       importInvalidFormat: 'The text you pasted has an invalid format! Make sure that it is the right text and that it is complete!',
+      lblErrorCmpText: 'Prefix can only be one character!',
       lblErrorCnText: 'Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!',
       lblErrorPfText: 'Prefix must be only one Character!',
       lblErrorRdText: 'Invalid Radius! Please check if it is a valid Number!',
@@ -228,6 +233,8 @@ function wrapper (plugin_info) {
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Speichert den Fortschritt lokal und beendet den Export. Starten Sie zum Fortsetzen des Exports diesen in den Einstellungen neu.',
       bulkExportProgressTitle: 'Fortschritt des PokeNav Massen-Exports',
+      companionPrefixText: 'Präfix:',
+      companionPrefixTitle: 'Präfix für den Begleit-Bot. Standardmäßig !',
       exportDialogTitle: 'Export',
       exportProgressBarDescription: 'Fortschritt:',
       exportStateTextExporting: 'Exportiere...',
@@ -239,6 +246,7 @@ function wrapper (plugin_info) {
       importDialogTitle: 'Import',
       importInputText: 'Fügen Sie die exportierten Daten in dieses Textfeld ein.',
       importInvalidFormat: 'Der eingefügte Text hat ein ungültiges Format. Stellen Sie sicher, dass Sie den richtigen Text vollständig eingefügt haben!',
+      lblErrorCmpText: 'Präfix kann nur ein Zeichen sein!',
       lblErrorCnText: 'Ungültiges Koordinaten-Format! Bitte geben Sie sie wie Folgt ein: 00.0...00, 0.0...00!',
       lblErrorPfText: 'Präfix darf nur ein Zeichen sein!',
       lblErrorRdText: 'Ungüliger Radius! Bitte überprüfen Sie, ob Sie eine gültige Zahl eingegeben haben!',
@@ -648,6 +656,10 @@ function wrapper (plugin_info) {
             <input type="checkbox" id="useBot" ${window.plugin.pnav.settings.useBot ? 'checked' : ''}></input>
             ${getString('useBotText')}
           </label>
+          <label title="${getString('companionPrefixTitle')}">
+            ${getString('companionPrefixText')}
+            <input type="text" id="companionPrefix" pattern="^.$" value="${window.plugin.pnav.settings.companionPrefix}" placeholder="!" size="1"/>
+          </label>
         </p>
         <p>
           <Label title="${getString('pnavCodenameTitle')}">
@@ -717,11 +729,12 @@ function wrapper (plugin_info) {
       buttons: {
         OK () {
           let allOK = true;
+          var settings = {...window.plugin.pnav.settings};
           if (
             !$('#pnavhookurl').val() ||
             new RegExp(validURL).test($('#pnavhookurl').val())
           ) {
-            window.plugin.pnav.settings.webhookUrl = $('#pnavhookurl').val();
+            settings.webhookUrl = $('#pnavhookurl').val();
             if ($('#lblErrorWH').length > 0) {
               $('#lblErrorWH').remove();
             }
@@ -732,12 +745,12 @@ function wrapper (plugin_info) {
             allOK = false;
           }
           if ($('#pnavprefix').val() && $('#pnavprefix').val().length == 1) {
-            window.plugin.pnav.settings.prefix = $('#pnavprefix').val();
+            settings.prefix = $('#pnavprefix').val();
             if ($('#lblErrorPf').length > 0) {
               $('#lblErrorPf').remove();
             }
           } else if (!$('#pnavprefix').val()) {
-            window.plugin.pnav.settings.prefix = '$';
+            settings.prefix = '$';
             if ($('#lblErrorPf').length > 0) {
               $('#lblErrorPf').remove();
             }
@@ -747,8 +760,24 @@ function wrapper (plugin_info) {
               $('#prefix').after(`<label id="lblErrorPf" style="color:red">${getString('lblErrorPfText')}</label>`);
             }
           }
+          if ($('#companionPrefix').val() && $('#companionPrefix').val().length == 1) {
+            settings.companionPrefix = $('#companionPrefix').val();
+            if ($('#lblErrorCmp').length > 0) {
+              $('#lblErrorCmp').remove();
+            }
+          } else if (!$('#companionPrefix').val()) {
+            settings.companionPrefix = '!';
+            if ($('#lblErrorCmp').length > 0) {
+              $('#lblErrorCmp').remove();
+            }
+          } else {
+            allOK = false;
+            if ($('#lblErrorCmp').length == 0) {
+              $('#companionPrefix').after(`<br><label id="lblErrorCmp" style="color:red">${getString('lblErrorCmpText')}</label>`);
+            }
+          }
           if (!$('#pnavRadius').val()) {
-            delete window.plugin.pnav.settings.radius;
+            delete settings.radius;
             if ($('#lblErrorRd').length > 0) {
               $('#lblErrorRd').remove();
             }
@@ -756,7 +785,7 @@ function wrapper (plugin_info) {
             new RegExp('^\\d+(\\.\\d+)?$').test($('#pnavRadius').val()) &&
             !Number.isNaN(parseFloat($('#pnavRadius').val()))
           ) {
-            window.plugin.pnav.settings.radius = parseFloat($('#pnavRadius').val());
+            settings.radius = parseFloat($('#pnavRadius').val());
             if ($('#lblErrorRd').length > 0) {
               $('#lblErrorRd').remove();
             }
@@ -767,8 +796,8 @@ function wrapper (plugin_info) {
             allOK = false;
           }
           if (!$('#pnavCenter').val()) {
-            delete window.plugin.pnav.settings.lat;
-            delete window.plugin.pnav.settings.lng;
+            delete settings.lat;
+            delete settings.lng;
             if ($('#lblErrorCn').length > 0) {
               $('#lblErrorCn').remove();
             }
@@ -788,8 +817,8 @@ function wrapper (plugin_info) {
               lng >= -180 &&
               lng <= 180
             ) {
-              window.plugin.pnav.settings.lat = lat;
-              window.plugin.pnav.settings.lng = lng;
+              settings.lat = lat;
+              settings.lng = lng;
               if ($('#lblErrorCn').length > 0) {
                 $('#lblErrorCn').remove();
               }
@@ -801,25 +830,26 @@ function wrapper (plugin_info) {
             }
           }
           if (!$('#pnavCodename').val()) {
-            window.plugin.pnav.settings.name = window.PLAYER.nickname;
+            settings.name = window.PLAYER.nickname;
           } else {
-            window.plugin.pnav.settings.name = $('#pnavCodename').val();
+            settings.name = $('#pnavCodename').val();
           }
-          window.plugin.pnav.settings.useBot = $('#useBot').prop('checked');
+          settings.useBot = $('#useBot').prop('checked');
           if (!window.plugin.pnav.timer) {
             if (allOK) {
               localStorage.setItem(
                 'plugin-pnav-settings',
-                JSON.stringify(window.plugin.pnav.settings)
+                JSON.stringify(settings)
               );
+              window.plugin.pnav.settings = settings;
               lCommBounds.clearLayers();
-              if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
+              if (settings.lat && settings.lng && settings.radius) {
                 var circle = L.circle(L.latLng([
-                  window.plugin.pnav.settings.lat,
-                  window.plugin.pnav.settings.lng
-                ]), {radius: window.plugin.pnav.settings.radius * 1000,
+                  settings.lat,
+                  settings.lng
+                ]), {radius: settings.radius * 1000,
                   interactive: false,
-                  fill: false,
+                  fillOpacity: 0.1,
                   color: '#000000'});
                 lCommBounds.addLayer(circle);
               }
@@ -1135,28 +1165,40 @@ function wrapper (plugin_info) {
   }
 
   /**
+   * Edit Data that lists what edits should be made.
+   * @typedef {object} editData
+   * @property {string} oldType
+   * @property {string} oldName
+   * @property {string} guid
+   * @property {string} [latitude]
+   * @property {string} [longitude]
+   * @property {string} [name]
+   * @property {string} [type]
+   * @property {number} [ex_eligible]
+   */
+
+  /**
+   * data about portals
+   * @typedef {object} portalData
+   * @property {string} type
+   * @property {string} guid
+   * @property {string} name
+   * @property {string} lat
+   * @property {string} lng
+   * @property {boolean} [isEx]
+   */
+
+  /**
    * Checks if a single Poi has been modified
-   * @param {{
-   * type: string,
-   * guid: string,
-   * name: string,
-   * lat: (string|number),
-   * lng: (string|number),
-   * isEx:(boolean|undefined)
-   * }} currentData
-   * @return {{
-   * oldType: string,
-   * oldName: string,
-   * guid: string,
-   * latitude:(string|undefined),
-   * longitude:(string|undefined),
-   * name: (string|undefined),
-   * type:(string|undefined),
-   * ex_eligible:(number|undefined)
-   * } | null} returns the found changes or null if none were found or a problem occurred.
+   * @param {portalData} currentData
+   * @return {editData | null} returns the found changes or null if none were found or a problem occurred.
    */
   function checkForSingleModification (currentData) {
+
+    /** @type {editData} */
     let changes = {};
+
+    /** @type {portalData} */
     var savedData;
     if (pNavData.pokestop[currentData.guid]) {
       savedData = pNavData.pokestop[currentData.guid];
@@ -1195,7 +1237,7 @@ function wrapper (plugin_info) {
   /**
    * fetch previous data from local storage and add
    * @param {string} type - expected values pokestop or gym
-   * @return {object[] | null} returns the data to export or null if Pogo Tools Data was not found.
+   * @return {portalData[] | null} returns the data to export or null if Pogo Tools Data was not found.
    */
   function gatherExportData (type) {
     var pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
@@ -1214,7 +1256,9 @@ function wrapper (plugin_info) {
         typeof window.plugin.pnav.settings.lat === 'undefined' ||
         typeof window.plugin.pnav.settings.lng === 'undefined' ||
         typeof window.plugin.pnav.settings.radius === 'undefined';
-      var exportData = pogoData.filter(function (object) {
+
+      /** @type {portalData[]} */
+      var exportData = pogoData.filter(function (/** @type{portalData}*/object) {
         return (
           (!doneGuids || !doneGuids.includes(object.guid)) &&
           (distanceNotCheckable ||
@@ -1318,19 +1362,18 @@ function wrapper (plugin_info) {
 
   /**
    * One Export step when the Companion Discord bot should be used.
-   * @param {object} data all locations that need exporting
+   * @param {portalData[]} data all locations that need exporting
    * @param {string} type the location type of the given data
    * @param {HTMLElement} dialog the dialog of the bulk export
    * @param {number} i the current index
    * @return {number} the new index after the export step
    */
   async function botExport (data, type, dialog, i) {
-    var content = '!cm ';
-    const messageLimit = 2000; // a message can be 2000 characters at max in Discord
-    var currentSize = content.length + 2 + 5; // command plus outer array brackets plus PokeNav prefix array element
-    var toExport = [[window.plugin.pnav.settings.prefix]];
+    var content = `${window.plugin.pnav.settings.companionPrefix}cm `;
+    var currentSize = content.length + 2; // command plus outer array brackets
+    var toExport = [];
     let j = i;
-    while (j < data.length && currentSize + 10 < messageLimit) {
+    while (j < data.length && currentSize + 10 < discordMessageLimit) {
       let entry = data[j];
       let count = 13; // "[type,"name","lat","lng",ex]," -> results in 12 extra chars for no ex, if ex it is 14 (including ex itself). type is always one char, so add it right here.
       if (entry.isEx) {
@@ -1343,7 +1386,7 @@ function wrapper (plugin_info) {
       count += entry.lat.toString().length; // most of the time, lat and lng were strings in Pogo Tools, but on some PoIs it were numbers
       count += entry.lng.toString().length; // and .length of a number is undefined, turning count to NaN when adding it.
       count += entry.name.toString().length; // even with the name it is like that! sometimes it is just a number (had a PokeStop named 1895)!
-      if (currentSize + count + 10 < messageLimit) {
+      if (currentSize + count + 10 < discordMessageLimit) {
         currentSize += count;
         let current = [
           type === 'pokestop' ? 0 : 1,
@@ -1437,6 +1480,25 @@ function wrapper (plugin_info) {
     } else {
       return i;
     }
+  }
+
+  /**
+   *
+   * @param {editData[]} changes
+   */
+  function botEdit (changes) {
+    if (!changes || !(changes instanceof Array)) {
+      return;
+    }
+    var t = setInterval(() => {
+      var data = [];
+      var count = 2;
+      var i = 0;
+      while (i <= changes.length && count < wait - 10) {
+        var current = changes[i];
+
+      }
+    }, wait);
   }
 
   /**
