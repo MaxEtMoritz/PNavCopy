@@ -716,7 +716,16 @@ function wrapper (plugin_info) {
     }
     if (window.plugin.pogo) {
       html += `
-      <p><button type="Button" id="btnBulkModify" style="width:100%" title="${getString('btnBulkModifyTitle')}" onclick="window.plugin.pnav.bulkModify();return false;">${getString('btnBulkModifyText')}</button></p>
+      <p><button type="Button" id="btnBulkModify" style="width:100%" title="${getString('btnBulkModifyTitle')}" onclick="
+      if (window.plugin.pnav.settings.useBot && window.plugin.pnav.settings.webhookUrl)
+      {
+        window.plugin.pnav.botEdit();
+        return false;
+      } else {
+        window.plugin.pnav.bulkModify();
+        return false;
+      }">
+      ${getString('btnBulkModifyText')}</button></p>
       `;
     }
 
@@ -1483,23 +1492,118 @@ function wrapper (plugin_info) {
   }
 
   /**
-   *
-   * @param {editData[]} changes
+   * assembles the edit data in a compact format for the companion bot and send it.
+   * @param {editData[]} [changes] - optional list of changes that should be transferred.
    */
-  function botEdit (changes) {
+  window.plugin.pnav.botEdit = function (changes) {
     if (!changes || !(changes instanceof Array)) {
+      // eslint-disable-next-line no-param-reassign
+      changes = checkForModifications();
+    }
+    if (window.plugin.pnav.timer) {
+      console.log('Bulk Export already running!');
       return;
     }
-    var t = setInterval(() => {
+    var j = 0;
+    window.plugin.pnav.timer = setInterval(() => {
+      $('#editProgressBar', dlg).val(j);
+      $('#editNumber', dlg).val(j);
+      $('#editTimeRemaining', dlg).val(); // TODO finish updating the dialog, testing everything!
+      if (j >= changes.length) {
+        clearInterval(window.plugin.pnav.timer);
+        window.plugin.pnav.timer = null;
+        return;
+      }
       var data = [];
       var count = 2;
-      var i = 0;
+      var i = j;
       while (i <= changes.length && count < wait - 10) {
         var current = changes[i];
-
+        var e = {};
+        if (current.type) {
+          switch (current.type) {
+          case 'pokestop':
+            e.t = 0;
+            break;
+          case 'gym':
+            e.t = 1;
+            break;
+          case 'none':
+            e.t = 2;
+            break;
+          default:
+            break;
+          }
+          count += 4; // t:0,
+        }
+        if (current.latitude) {
+          e.a = current.latitude;
+          count += 5 + current.latitude.toString().length; // a:"",
+        }
+        if (current.longitude) {
+          e.o = current.longitude;
+          count += 5 + current.latitude.toString().length; // o:"",
+        }
+        if (current.name) {
+          e.n = current.name;
+          count += 5 + current.name.toString().length; // n:"",
+        }
+        if (current.ex_eligible) {
+          e.e = current.ex_eligible;
+          count += 4; // e:1,
+        }
+        data.push({n: current.oldName,
+          t: current.oldType === 'pokestop' ? 0 : 1,
+          e});
+        count += 16 + current.oldName.toString().length; // {n:"",t:0,e:{}}, => 16 chars including type.
+        i++;
       }
+      $.ajax({
+        method: 'POST',
+        url: window.plugin.pnav.settings.webhookUrl,
+        contentType: 'application/json',
+        data: {
+          username: window.plugin.pnav.settings.name,
+          avatar_url: '',
+          content: data
+        },
+        success () {
+          j = i;
+        },
+        error (jgXHR, textStatus, errorThrown) {
+          console.error(`${textStatus} - ${errorThrown}`);
+        }
+      });
     }, wait);
-  }
+    var dlg = window.dialog({id: 'botEditDialog',
+      width: 'auto',
+      height: 'auto',
+      title: getString('botEditDialogTitle'),
+      html: `
+        <h3 id="editState">${getString('exportStateTextExporting')}</h3>
+        <p>
+         <label>
+            ${getString('exportProgressBarDescription')}
+            <progress id="editProgressBar" value="0" max="${changes.length}"/>
+          </label>
+        </p>
+        <label id="editNumber">0</label>
+        <label>${getString('of')} ${changes.length}</label>
+        <br>
+        <label>${getString('exportTimeRemainingDescription')}</label>
+        <label id="editTimeRemaining">???</label>
+        <label>s</label>
+      `,
+      buttons: {
+        OK: {
+          click () {
+            // TODO save state!
+          },
+          text: getString(''),
+          title: getString('')
+        }
+      }});
+  };
 
   /**
    * updates the bulk export dialog (called by the specific export functions).
