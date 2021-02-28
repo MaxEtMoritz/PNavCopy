@@ -109,7 +109,7 @@ namespace CompanionBot
                     tokens[context.Guild.Id] = source;
                     workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token));
                 }
-                else if (editQueues.ContainsKey(context.Guild.Id)&&editQueues[context.Guild.Id].Any())
+                else if (editQueues.ContainsKey(context.Guild.Id) && editQueues[context.Guild.Id].Any())
                 {
                     CancellationTokenSource source = new CancellationTokenSource();
                     tokens[context.Guild.Id] = source;
@@ -217,9 +217,9 @@ namespace CompanionBot
                             return;
                         }
                         EditData current = queue.Dequeue();
-                        string type = (current.t <= 0 ?"stop":"gym");
+                        string type = (current.t <= 0 ? "stop" : "gym");
                         var t = channel.SendMessageAsync($"{_settings[guildId].PNavPrefix}{type}-info {current.n}");
-                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.n,StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error"), timeout: TimeSpan.FromSeconds(10));
+                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.n, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error"), timeout: TimeSpan.FromSeconds(10));
                         await t;
                         if (result.IsSuccess)
                         {
@@ -229,7 +229,7 @@ namespace CompanionBot
                                 await channel.SendMessageAsync("Edit Failed! PoI not found!");
                                 continue;
                             }
-                            else if(embed.Title== "Select Location")
+                            else if (embed.Title == "Select Location")
                             {
                                 // TODO handle the Location Select Dialog or skip this edit!
 
@@ -238,45 +238,51 @@ namespace CompanionBot
                                 // or let the User decide and react like a user did.
                             }
                             string text = embed.Footer.Value.Text.Split('\u25AB')[2];
-                            if(!uint.TryParse(text.Substring(2),out uint id))
+                            if (!uint.TryParse(text.Substring(2), out uint id))
                             {
                                 await channel.SendMessageAsync("Error: Parsing of Location ID failed!");
                                 await _logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Parsing of location Id failed in Guild {guildId}! Embed had the Footer {text}!"));
                                 continue;
                             }
-                            string editString = $"{_settings[guildId].PNavPrefix}update poi {id}";
-                            foreach (var item in current.e)
+                            string editString;
+                            if (current.e.ContainsKey('t') && current.e['t'] == ((int)LocationType.none).ToString())
+                                editString = $"{_settings[guildId].PNavPrefix}delete poi {id}";
+                            else
                             {
-                                string newEdit = " \"";
-                                switch (item.Key)
+                                editString = $"{_settings[guildId].PNavPrefix}update poi {id}";
+                                foreach (var item in current.e)
                                 {
-                                    case 'n':
-                                        newEdit += $"name: {item.Value}\"";
-                                        break;
-                                    case 't':
-                                        newEdit += "type: ";
-                                        if(!Enum.TryParse(item.Value, out LocationType locationType))
-                                        {
-                                            await channel.SendMessageAsync($"Error: Unknown Location Type number {item.Value}");
-                                            await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"unknown Location Type Number in Guild {guildId}: {item.Value}"));
-                                        }
-                                        newEdit += locationType + "\"";
-                                        break;
-                                    case 'a':
-                                        newEdit += $"latitude: {item.Value}\"";
-                                        break;
-                                    case 'o':
-                                        newEdit += $"longitude: {item.Value}\"";
-                                        break;
-                                    case 'e':
-                                        newEdit += $"ex_eligible: {item.Value}\"";
-                                        break;
-                                    default:
-                                        await _logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Unknown Edits Key in Guild {guildId}: '{item.Key}' (Value {item.Value})!"));
-                                        await channel.SendMessageAsync($"Error: Unknown Edit Key '{item.Key}'!");
-                                        continue;
+                                    string newEdit = " \"";
+                                    switch (item.Key)
+                                    {
+                                        case 'n':
+                                            newEdit += $"name: {item.Value}\"";
+                                            break;
+                                        case 't':
+                                            newEdit += "type: ";
+                                            if (!Enum.TryParse(item.Value, out LocationType locationType))
+                                            {
+                                                await channel.SendMessageAsync($"Error: Unknown Location Type number {item.Value}");
+                                                await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"unknown Location Type Number in Guild {guildId}: {item.Value}"));
+                                            }
+                                            newEdit += locationType + "\"";
+                                            break;
+                                        case 'a':
+                                            newEdit += $"latitude: {item.Value}\"";
+                                            break;
+                                        case 'o':
+                                            newEdit += $"longitude: {item.Value}\"";
+                                            break;
+                                        case 'e':
+                                            newEdit += $"ex_eligible: {item.Value}\"";
+                                            break;
+                                        default:
+                                            await _logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Unknown Edits Key in Guild {guildId}: '{item.Key}' (Value {item.Value})!"));
+                                            await channel.SendMessageAsync($"Error: Unknown Edit Key '{item.Key}'!");
+                                            continue;
+                                    }
+                                    editString += newEdit;
                                 }
-                                editString += newEdit;
                             }
                             t = channel.SendMessageAsync(editString);
                             result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1, timeout: TimeSpan.FromSeconds(10));

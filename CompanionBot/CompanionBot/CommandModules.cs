@@ -160,6 +160,6 @@ namespace CompanionBot
 
     public enum LocationType
     {
-        pokestop, gym
+        pokestop, gym, none
     }
 }
