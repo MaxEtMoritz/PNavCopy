@@ -50,8 +50,6 @@ function wrapper (plugin_info) {
     radius: undefined,
     lat: undefined,
     lng: undefined,
-    prefix: '$',
-    companionPrefix: '!',
     language: undefined,
     useBot: false
   };
@@ -62,6 +60,10 @@ function wrapper (plugin_info) {
     gym: {}
   };
   const request = new XMLHttpRequest();
+
+  // both bots react to mentions, no need to fiddle around with prefixes!
+  const pNavId = 428187007965986826n;
+  const companionId = 806533005626572813n;
 
   var lCommBounds;
   const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
@@ -92,8 +94,6 @@ function wrapper (plugin_info) {
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.',
       bulkExportProgressTitle: 'PokeNav Bulk Export Progress',
-      companionPrefixText: 'Prefix:',
-      companionPrefixTitle: 'The Prefix for the Companion Bot. Default is !',
       exportDialogTitle: 'Export',
       exportProgressBarDescription: 'Progress:',
       exportStateTextExporting: 'Exporting...',
@@ -105,16 +105,14 @@ function wrapper (plugin_info) {
       importDialogTitle: 'Import',
       importInputText: 'Paste the data you exported in this text field!',
       importInvalidFormat: 'The text you pasted has an invalid format! Make sure that it is the right text and that it is complete!',
-      lblErrorCmpText: 'Prefix can only be one character!',
       lblErrorCnText: 'Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!',
-      lblErrorPfText: 'Prefix must be only one Character!',
       lblErrorRdText: 'Invalid Radius! Please check if it is a valid Number!',
       lblErrorWHText: 'Invalid URL! Please delete or correct it!',
       lCommBoundsName: 'PokeNav Community',
       Modification: 'Modification ',
       of: ' of ',
       pnavCenterDescription: 'Community Center:',
-      pnavCenterTitle: `Paste the Center Coordinate of your Community here (you can view it typing ${window.plugin.pnav.settings.prefix}show settings in Admin Channel)`,
+      pnavCenterTitle: `Paste the Center Coordinate of your Community here (you can view it typing @PokeNav show settings in Admin Channel)`,
       pNavChangesMadeDescription: 'The following has changed:',
       pnavCodenameDescription: 'Name:',
       pnavCodenameTitle: 'The Name that will be displayed if you send to the PokeNav channel. Default is your Ingess Codename.',
@@ -173,8 +171,6 @@ function wrapper (plugin_info) {
         },
         ' the POI Information Command for the POI.'
       ],
-      pnavprefixDescription: 'PokeNav Prefix:',
-      pnavprefixTitle: 'Input the Prefix for the PokeNav Bot here. Default Prefix is $.',
       pnavRadiusDescription: 'Community Radius (Km):',
       pnavRadiusTitle: 'Enter the specified Community Radius in kilometers here.',
       pnavsettingsTitle: 'PokeNav Settings',
@@ -233,8 +229,6 @@ function wrapper (plugin_info) {
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Speichert den Fortschritt lokal und beendet den Export. Starten Sie zum Fortsetzen des Exports diesen in den Einstellungen neu.',
       bulkExportProgressTitle: 'Fortschritt des PokeNav Massen-Exports',
-      companionPrefixText: 'Präfix:',
-      companionPrefixTitle: 'Präfix für den Begleit-Bot. Standardmäßig !',
       exportDialogTitle: 'Export',
       exportProgressBarDescription: 'Fortschritt:',
       exportStateTextExporting: 'Exportiere...',
@@ -246,15 +240,13 @@ function wrapper (plugin_info) {
       importDialogTitle: 'Import',
       importInputText: 'Fügen Sie die exportierten Daten in dieses Textfeld ein.',
       importInvalidFormat: 'Der eingefügte Text hat ein ungültiges Format. Stellen Sie sicher, dass Sie den richtigen Text vollständig eingefügt haben!',
-      lblErrorCmpText: 'Präfix kann nur ein Zeichen sein!',
       lblErrorCnText: 'Ungültiges Koordinaten-Format! Bitte geben Sie sie wie Folgt ein: 00.0...00, 0.0...00!',
-      lblErrorPfText: 'Präfix darf nur ein Zeichen sein!',
       lblErrorRdText: 'Ungüliger Radius! Bitte überprüfen Sie, ob Sie eine gültige Zahl eingegeben haben!',
       lblErrorWHText: 'Ungültige URL! Bitte löschen oder korrigieren Sie sie!',
       Modification: 'Änderung ',
       of: ' von ',
       pnavCenterDescription: 'Community-Mittelpunkt:',
-      pnavCenterTitle: `Fügen Sie die Mittelpunkt-Koordinate Ihrer Community hier ein. Sie können sie abrufen, indem Sie &quot;${window.plugin.pnav.settings.prefix}show settings&quot; in den PokeNav Administratoren-Kanal eigeben.`,
+      pnavCenterTitle: `Fügen Sie die Mittelpunkt-Koordinate Ihrer Community hier ein. Sie können sie abrufen, indem Sie &quot;@PokeNav show settings&quot; in den PokeNav Administratoren-Kanal eigeben.`,
       pNavChangesMadeDescription: 'Folgendes wurde geändert:',
       pnavCodenameDescription: 'Name:',
       pnavCodenameTitle: 'Der Name, der beim Senden über den WebHook angezeigt wird. Standardmäßig ist es Ihr Ingress-Codename.',
@@ -313,8 +305,6 @@ function wrapper (plugin_info) {
         },
         ' den POI Informations-Befehl für diesen POI.'
       ],
-      pnavprefixDescription: 'PokeNav Präfix:',
-      pnavprefixTitle: 'Geben Sie hier die Präfix des PokeNav-Bots ein. Die Standard-Präfix ist $.',
       pnavRadiusDescription: 'Community-Radius (Km):',
       pnavRadiusTitle: 'Geben Sie hier den Radius ihrer Community in Kilometern ein.',
       pnavsettingsTitle: 'PokeNav-Einstellungen',
@@ -499,7 +489,7 @@ function wrapper (plugin_info) {
       var isEx;
 
       /** @type {string} */
-      var prefix = window.plugin.pnav.settings.prefix;
+      const prefix = `<@${pNavId}> `;
       if (window.plugin.pogo) {
         if ($('.pogoStop span').css('background-position') == '100% 0%') {
           type = 'pokestop';
@@ -640,12 +630,6 @@ function wrapper (plugin_info) {
             <select id="pnavLanguage" onchange="window.plugin.pnav.settings.language = this.value;alert(window.plugin.pnav.getString('alertLanguageAfterReload'));"></select>
           </label>
         </p>
-        <p id="prefix">
-          <label title="${getString('pnavprefixTitle')}">
-            ${getString('pnavprefixDescription')}
-            <input type="text" id="pnavprefix" pattern="^.$" value="${window.plugin.pnav.settings.prefix}" placeholder="$" size="1"/>
-          </label>
-        </p>
         <p id="webhook">
           <label title="${getString('pnavhookurlTitle')}">
             ${getString('pnavhookurlDescription')}
@@ -655,10 +639,6 @@ function wrapper (plugin_info) {
           <label title="${getString('useBotTitle')}">
             <input type="checkbox" id="useBot" ${window.plugin.pnav.settings.useBot ? 'checked' : ''}></input>
             ${getString('useBotText')}
-          </label>
-          <label title="${getString('companionPrefixTitle')}">
-            ${getString('companionPrefixText')}
-            <input type="text" id="companionPrefix" pattern="^.$" value="${window.plugin.pnav.settings.companionPrefix}" placeholder="!" size="1"/>
           </label>
         </p>
         <p>
@@ -752,38 +732,6 @@ function wrapper (plugin_info) {
               $('#webhook').after(`<label id="lblErrorWH" style="color:red">${getString('lblErrorWHText')}</label>`);
             }
             allOK = false;
-          }
-          if ($('#pnavprefix').val() && $('#pnavprefix').val().length == 1) {
-            settings.prefix = $('#pnavprefix').val();
-            if ($('#lblErrorPf').length > 0) {
-              $('#lblErrorPf').remove();
-            }
-          } else if (!$('#pnavprefix').val()) {
-            settings.prefix = '$';
-            if ($('#lblErrorPf').length > 0) {
-              $('#lblErrorPf').remove();
-            }
-          } else {
-            allOK = false;
-            if ($('#lblErrorPf').length == 0) {
-              $('#prefix').after(`<label id="lblErrorPf" style="color:red">${getString('lblErrorPfText')}</label>`);
-            }
-          }
-          if ($('#companionPrefix').val() && $('#companionPrefix').val().length == 1) {
-            settings.companionPrefix = $('#companionPrefix').val();
-            if ($('#lblErrorCmp').length > 0) {
-              $('#lblErrorCmp').remove();
-            }
-          } else if (!$('#companionPrefix').val()) {
-            settings.companionPrefix = '!';
-            if ($('#lblErrorCmp').length > 0) {
-              $('#lblErrorCmp').remove();
-            }
-          } else {
-            allOK = false;
-            if ($('#lblErrorCmp').length == 0) {
-              $('#companionPrefix').after(`<br><label id="lblErrorCmp" style="color:red">${getString('lblErrorCmpText')}</label>`);
-            }
           }
           if (!$('#pnavRadius').val()) {
             delete settings.radius;
@@ -962,11 +910,11 @@ function wrapper (plugin_info) {
       var poi = changeList[i];
       $('#pNavPoiInfo', modDialog).on('click', function () {
         if (window.plugin.pnav.settings.webhookUrl) {
-          sendMessage(`${window.plugin.pnav.settings.prefix}${poi.oldType}-info ${poi.oldName}`);
+          sendMessage(`<@${pNavId}> ${poi.oldType}-info ${poi.oldName}`);
         } else {
           const input = $('#copyInput');
           input.show();
-          input.val(`${window.plugin.pnav.settings.prefix}${poi.oldType}-info ${poi.oldName}`);
+          input.val(`<@${pNavId}> ${poi.oldType}-info ${poi.oldName}`);
           copyfieldvalue('copyInput');
           input.hide();
         }
@@ -989,7 +937,7 @@ function wrapper (plugin_info) {
       $('#pNavModCommand', modDialog).on('click', function () {
         if ($('#pNavPoiId', modDialog).val() && new RegExp('^\\d*$').test($('#pNavPoiId', modDialog).val())) {
           sendModCommand($('#pNavPoiId', modDialog).val(), poi);
-          updateDone(poi);
+          updateDone([poi.guid]);
           i++;
           if (i == changeList.length) {
             modDialog.dialog('close');
@@ -1006,27 +954,33 @@ function wrapper (plugin_info) {
     }
   };
 
-  function updateDone (poi) {
+  /**
+   * updates the export state after an edit step.
+   * @param {number[]} guidList - list of guids that were edited.
+   */
+  function updateDone (guidList) {
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoGyms = pogoData.gyms ? pogoData.gyms : {};
     const pogoStops = pogoData.stops ? pogoData.stops : {};
-    if (Object.keys(pogoStops).includes(poi.guid)) {
-      pNavData.pokestop[poi.guid] = pogoStops[poi.guid];
-      if (Object.keys(pNavData.gym).includes(poi.guid)) {
-        delete pNavData.gym[poi.guid];
-      }
-    } else if (Object.keys(pogoGyms).includes(poi.guid)) {
-      pNavData.gym[poi.guid] = pogoGyms[poi.guid];
-      if (Object.keys(pNavData.pokestop).includes(poi.guid)) {
-        delete pNavData.pokestop[poi.guid];
-      }
-    } else {
-      if (poi.oldType === 'gym') {
-        delete pNavData.gym[poi.guid];
+    guidList.forEach((guid) => {
+      if (Object.keys(pogoStops).includes(guid)) {
+        pNavData.pokestop[guid] = pogoStops[guid];
+        if (Object.keys(pNavData.gym).includes(guid)) {
+          delete pNavData.gym[guid];
+        }
+      } else if (Object.keys(pogoGyms).includes(guid)) {
+        pNavData.gym[guid] = pogoGyms[guid];
+        if (Object.keys(pNavData.pokestop).includes(guid)) {
+          delete pNavData.pokestop[guid];
+        }
       } else {
-        delete pNavData.pokestop[poi.guid];
+        if (Object.keys(pNavData.pokestop).includes(guid)) {
+          delete pNavData.pokestop[guid];
+        } else {
+          delete pNavData.gym[guid];
+        }
       }
-    }
+    });
     saveToLocalStorage();
   }
 
@@ -1050,12 +1004,12 @@ function wrapper (plugin_info) {
     $('#pNavModCommand', dialog).prop('title', getString('pNavModCommandTitleDisabled', {send: Boolean(window.plugin.pnav.settings.webhookUrl)}));
   }
 
-  function sendModCommand (pNavId, changes) {
+  function sendModCommand (changes) {
     let command = '';
     if (changes.type && changes.type === 'none') {
-      command = `${window.plugin.pnav.settings.prefix}delete poi ${pNavId}`;
+      command = `<@${pNavId}> delete poi ${pNavId}`;
     } else {
-      command = `${window.plugin.pnav.settings.prefix}update poi ${pNavId}`;
+      command = `<@${pNavId}> update poi ${pNavId}`;
       for (const [
         key,
         value
@@ -1378,7 +1332,7 @@ function wrapper (plugin_info) {
    * @return {number} the new index after the export step
    */
   async function botExport (data, type, dialog, i) {
-    var content = `${window.plugin.pnav.settings.companionPrefix}cm `;
+    var content = `<@${companionId}>cm `;
     var currentSize = content.length + 2; // command plus outer array brackets
     var toExport = [];
     let j = i;
@@ -1459,7 +1413,7 @@ function wrapper (plugin_info) {
     // escaping Hyphens in Portal Names
     let name = entry.name
       .replaceAll('"', '\\"');
-    let prefix = window.plugin.pnav.settings.prefix;
+    let prefix = `<@${pNavId}> `;
     let ex = Boolean(entry.isEx);
     let options = ex ? ' "ex_eligible: 1"' : '';
     var content = `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`;
@@ -1507,11 +1461,14 @@ function wrapper (plugin_info) {
     var j = 0;
     window.plugin.pnav.timer = setInterval(() => {
       $('#editProgressBar', dlg).val(j);
-      $('#editNumber', dlg).val(j);
-      $('#editTimeRemaining', dlg).val(); // TODO finish updating the dialog, testing everything!
+      $('#editNumber', dlg).text(j);
+      $('#editTimeRemaining', dlg).text(); // TODO finish updating the dialog, testing everything!
       if (j >= changes.length) {
         clearInterval(window.plugin.pnav.timer);
         window.plugin.pnav.timer = null;
+        $('#editState', dlg).text(getString('exportStateTextReady'));
+        $('#editOkButton', dlg.parent).text('OK');
+        $('#editOkButton', dlg.parent).prop('title', '');
         return;
       }
       var data = [];
@@ -1568,6 +1525,12 @@ function wrapper (plugin_info) {
           content: data
         },
         success () {
+          var guidList = [];
+          let subarray = changes.slice(j, i - 1);
+          subarray.forEach((data) => {
+            guidList.push(data.guid);
+          });
+          updateDone(guidList);
           j = i;
         },
         error (jgXHR, textStatus, errorThrown) {
@@ -1597,10 +1560,16 @@ function wrapper (plugin_info) {
       buttons: {
         OK: {
           click () {
-            // TODO save state!
+            // eslint-disable-next-line no-underscore-dangle
+            if (window._current_highlighter === getString('portalHighlighterName')) {
+              window.changePortalHighlights(getString('portalHighlighterName')); // re-validate highlighter if active
+            }
+            clearInterval(window.plugin.pnav.timer);
+            dlg.dialog('close');
           },
-          text: getString(''),
-          title: getString('')
+          text: getString('bulkExportProgressButtonText'),
+          title: getString('bulkExportProgressButtonTitle'),
+          id: 'editOKButton'
         }
       }});
   };
