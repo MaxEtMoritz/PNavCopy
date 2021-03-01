@@ -40,7 +40,6 @@ namespace CompanionBot
             string response = "Your current Settings are:";
             Settings settings = _settings[Context.Guild.Id];
             response += $"\nPrefix:\t{settings.Prefix}";
-            response += $"\nPokeNav Prefix:\t{settings.PNavPrefix}";
             response += $"\nPokeNav Mod-Channel:\t{(settings.PNavChannel != null ? "<#" + settings.PNavChannel + ">" : "none")}";
             return ReplyAsync(response);
         }
@@ -102,25 +101,18 @@ namespace CompanionBot
     {
         private readonly GuildSettings _settings;
         private readonly InteractivityService _interactive;
-        public ConfigurationModule(GuildSettings settings, InteractivityService inter)
+        private readonly string prefix;
+        public ConfigurationModule(GuildSettings settings, InteractivityService inter, IConfiguration config)
         {
             _settings = settings;
             _interactive = inter;
-        }
-
-        [Command("pokenav-prefix"), Alias("pp"), Summary("Set the PokeNav Prefix for this Server.")]
-        public async Task SetPokeNavPrefix([Summary("The Prefix the PokeNav Bot uses on this Server")] char prefix)
-        {
-            Settings current = _settings[Context.Guild.Id];
-            current.PNavPrefix = prefix;
-            _settings[Context.Guild.Id] = current;
-            await ReplyAsync($"PokeNav Prefix successfully set to '{prefix}'.");
+            prefix = $"<@{config["pokeNavId"]}> ";
         }
 
         [Command("mod-channel", RunMode = RunMode.Async), Alias("mc"), Summary("Sets the PokeNav Moderation Channel for this Server by sending `show mod-channel`-Command to PokeNav.")]
         public async Task SetModChannel()
         {
-            var T = ReplyAsync($"{_settings[Context.Guild.Id].PNavPrefix}show mod-channel");
+            var T = ReplyAsync($"{prefix}show mod-channel");
             var result = await _interactive.NextMessageAsync((message) =>
             {
                 return message.Author.Id == 428187007965986826 && message.Channel.Id == Context.Channel.Id && message.MentionedChannels.Count == 1;
@@ -136,7 +128,7 @@ namespace CompanionBot
             }
             else
             {
-                await ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure you have set the right PokeNav Prefix (run `{_settings[Context.Guild.Id].Prefix}set pokenav-prefix` to change) and PokeNav is able to respond in this Channel!");
+                await ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure PokeNav is able to respond in this Channel!");
             }
         }
 

@@ -95,16 +95,14 @@ namespace CompanionBot
     public struct Settings
     {
         public char Prefix { get; set; }
-        public char PNavPrefix { get; set; }
         public ulong? PNavChannel { get; set; }
 
         public static readonly Settings Default = new Settings('!');
 
-        public Settings(char prefix = '!', ulong? pokeNavChannel = null, char pokeNavPrefix = '$')
+        public Settings(char prefix = '!', ulong? pokeNavChannel = null)
         {
             Prefix = prefix;
             PNavChannel = pokeNavChannel;
-            PNavPrefix = pokeNavPrefix;
         }
     }
 }

@@ -7,6 +7,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Interactivity;
+using Microsoft.Extensions.Configuration;
 
 namespace CompanionBot
 {
@@ -15,18 +16,20 @@ namespace CompanionBot
         private readonly IDiscordClient _client;
         private readonly Logger _logger;
         private static InteractivityService _inter;
+        private readonly string prefix;
         private readonly Dictionary<ulong, CancellationTokenSource> tokens = new Dictionary<ulong, CancellationTokenSource>();
         private readonly Dictionary<ulong, Queue<string>> createQueues = new Dictionary<ulong, Queue<string>>();
         private readonly Dictionary<ulong, Queue<EditData>> editQueues = new Dictionary<ulong, Queue<EditData>>();
         private readonly Dictionary<ulong, Task> workers = new Dictionary<ulong, Task>();
         private readonly GuildSettings _settings;
 
-        public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings)
+        public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings, IConfiguration config)
         {
             _client = client;
             _inter = interactive;
             _logger = logger;
             _settings = settings;
+            prefix = $"<@{config["pokeNavId"]}> ";
         }
 
         public Task EnqueueCreate(ICommandContext context, List<string> commands)
@@ -161,7 +164,7 @@ namespace CompanionBot
                         }
                         string current = queue.Dequeue();
                         IDisposable typing = channel.EnterTypingState(typingOptions);
-                        var t = channel.SendMessageAsync(_settings[guildId].PNavPrefix + current, false, null, options);
+                        var t = channel.SendMessageAsync($"{prefix}{current}", false, null, options);
                         // wait for PokeNav to respond...
                         var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error"), null, TimeSpan.FromSeconds(10));
                         await t;
@@ -218,7 +221,7 @@ namespace CompanionBot
                         }
                         EditData current = queue.Dequeue();
                         string type = (current.t <= 0 ? "stop" : "gym");
-                        var t = channel.SendMessageAsync($"{_settings[guildId].PNavPrefix}{type}-info {current.n}");
+                        var t = channel.SendMessageAsync($"{prefix}{type}-info {current.n}");
                         var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.n, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error"), timeout: TimeSpan.FromSeconds(10));
                         await t;
                         if (result.IsSuccess)
@@ -246,10 +249,10 @@ namespace CompanionBot
                             }
                             string editString;
                             if (current.e.ContainsKey('t') && current.e['t'] == ((int)LocationType.none).ToString())
-                                editString = $"{_settings[guildId].PNavPrefix}delete poi {id}";
+                                editString = $"{prefix}delete poi {id}";
                             else
                             {
-                                editString = $"{_settings[guildId].PNavPrefix}update poi {id}";
+                                editString = $"{prefix}update poi {id}";
                                 foreach (var item in current.e)
                                 {
                                     string newEdit = " \"";
@@ -290,17 +293,15 @@ namespace CompanionBot
                             if (!result.IsSuccess)
                             {
                                 //no response in timeout!
-                                await channel.SendMessageAsync($"PokeNav did not respond in time! maybe you have not set the right PokeNav Prefix? run `{_settings[guildId].Prefix}set pokenav-prefix` to correct it, then `{_settings[guildId].Prefix}resume`!");
+                                await channel.SendMessageAsync($"PokeNav did not respond in time! Please try again manually!");
                                 await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"PokeNav did not respond in guild {guildId}!"));
-                                return;
                             }
                         }
                         else
                         {
                             // no response in timeout!
-                            await channel.SendMessageAsync($"PokeNav did not respond in time! maybe you have not set the right PokeNav Prefix? run `{_settings[guildId].Prefix}set pokenav-prefix` to correct it, then `{_settings[guildId].Prefix}resume`!");
+                            await channel.SendMessageAsync($"PokeNav did not respond in time! Please try again manually!");
                             await _logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"PokeNav did not respond in guild {guildId}!"));
-                            return;
                         }
                     }
                 }
