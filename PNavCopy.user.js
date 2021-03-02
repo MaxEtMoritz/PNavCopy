@@ -77,6 +77,7 @@ function wrapper (plugin_info) {
       alertNoModifications: 'No modifications detected!',
       alertOutsideArea: 'This location is outside the specified Community Area!',
       alertProblemPogoTools: 'There was a problem reading the Pogo Tools Data File.',
+      botEditDialogTitle: 'Edit export',
       btnBulkExportGymsText: 'Export all Pogo Tools Gyms',
       btnBulkExportGymsTitle: 'Grab the File where all Gyms are stored by PoGo Tools and send them one by one via WebHook. This can take much time!',
       btnBulkExportStopsText: 'Export all Pogo Tools Stops',
@@ -212,6 +213,7 @@ function wrapper (plugin_info) {
       alertNoModifications: 'Keine Änderungen gefunden!',
       alertOutsideArea: 'Dieser POI liegt nicht in den angegebenen Community-Grenzen!',
       alertProblemPogoTools: 'Es ist ein Problem beim Lesen der Pogo-Tools-Daten aufgetreten!',
+      botEditDialogTitle: 'Bearbeitungs-Export',
       btnBulkExportGymsText: 'Exportiere alle Pogo Tools Arenen',
       btnBulkExportGymsTitle: 'Exportiere alle Arenen aus Pogo Tools eine nach der Anderen über den angegebenen WebHook. Dies kann eine Weile dauern!',
       btnBulkExportStopsText: 'Exportiere alle Pogo Tools Stops',
@@ -696,15 +698,7 @@ function wrapper (plugin_info) {
     }
     if (window.plugin.pogo) {
       html += `
-      <p><button type="Button" id="btnBulkModify" style="width:100%" title="${getString('btnBulkModifyTitle')}" onclick="
-      if (window.plugin.pnav.settings.useBot && window.plugin.pnav.settings.webhookUrl)
-      {
-        window.plugin.pnav.botEdit();
-        return false;
-      } else {
-        window.plugin.pnav.bulkModify();
-        return false;
-      }">
+      <p><button type="Button" id="btnBulkModify" style="width:100%" title="${getString('btnBulkModifyTitle')}" onclick="window.plugin.pnav.bulkModify(); return false;">
       ${getString('btnBulkModifyText')}</button></p>
       `;
     }
@@ -861,6 +855,10 @@ function wrapper (plugin_info) {
 
   window.plugin.pnav.bulkModify = function (changes) {
     const changeList = (changes && changes instanceof Array) ? changes : checkForModifications();
+    if (window.plugin.pnav.settings.useBot && window.plugin.pnav.settings.webhookUrl) {
+      botEdit(changeList);
+      return;
+    }
     if (changeList && changeList.length > 0) {
       // console.log(changeList);
       const send = Boolean(window.plugin.pnav.settings.webhookUrl);
@@ -1449,7 +1447,7 @@ function wrapper (plugin_info) {
    * assembles the edit data in a compact format for the companion bot and send it.
    * @param {editData[]} [changes] - optional list of changes that should be transferred.
    */
-  window.plugin.pnav.botEdit = function (changes) {
+  function botEdit (changes) { // uncaught TypeError: e is null! don't know which e, why it is null and what its value should be... happens after exiting the function!
     if (!changes || !(changes instanceof Array)) {
       // eslint-disable-next-line no-param-reassign
       changes = checkForModifications();
@@ -1459,27 +1457,27 @@ function wrapper (plugin_info) {
       return;
     }
     var j = 0;
-    window.plugin.pnav.timer = setInterval(() => {
+
+    function work () {
       $('#editProgressBar', dlg).val(j);
-      $('#editNumber', dlg).text(j);
-      $('#editTimeRemaining', dlg).text(); // TODO finish updating the dialog, testing everything!
+      $('#editNumber', dlg).text(j); // TODO finish updating the dialog, testing everything!
       if (j >= changes.length) {
         clearInterval(window.plugin.pnav.timer);
         window.plugin.pnav.timer = null;
         $('#editState', dlg).text(getString('exportStateTextReady'));
-        $('#editOkButton', dlg.parent).text('OK');
-        $('#editOkButton', dlg.parent).prop('title', '');
+        $('#editOKButton', dlg.parent).text('OK');
+        $('#editOKButton', dlg.parent).prop('title', '');
         return;
       }
       var data = [];
       var count = 2;
       var i = j;
-      while (i <= changes.length && count < wait - 10) {
+      while (i < changes.length && count < wait - 10) {
         var current = changes[i];
         var e = {};
         if (current.type) {
           switch (current.type) {
-          case 'pokestop':
+          case 'stop':
             e.t = 0;
             break;
           case 'gym':
@@ -1491,53 +1489,57 @@ function wrapper (plugin_info) {
           default:
             break;
           }
-          count += 4; // t:0,
+          count += 6; // "t":0,
         }
         if (current.latitude) {
           e.a = current.latitude;
-          count += 5 + current.latitude.toString().length; // a:"",
+          count += 7 + current.latitude.toString().length; // "a":"",
         }
         if (current.longitude) {
           e.o = current.longitude;
-          count += 5 + current.latitude.toString().length; // o:"",
+          count += 7 + current.latitude.toString().length; // "o":"",
         }
         if (current.name) {
           e.n = current.name;
-          count += 5 + current.name.toString().length; // n:"",
+          count += 7 + current.name.toString().length; // "n":"",
         }
         if (current.ex_eligible) {
           e.e = current.ex_eligible;
-          count += 4; // e:1,
+          count += 6; // "e":1,
         }
         data.push({n: current.oldName,
-          t: current.oldType === 'pokestop' ? 0 : 1,
+          t: current.oldType === 'stop' ? 0 : 1,
           e});
-        count += 16 + current.oldName.toString().length; // {n:"",t:0,e:{}}, => 16 chars including type.
+        count += 22 + current.oldName.toString().length; // {"n":"","t":0,"e":{}}, => 22 chars including type.
         i++;
       }
       $.ajax({
         method: 'POST',
         url: window.plugin.pnav.settings.webhookUrl,
         contentType: 'application/json',
-        data: {
+        context: this,
+        processData: false,
+        data: JSON.stringify({
           username: window.plugin.pnav.settings.name,
           avatar_url: '',
-          content: data
-        },
+          content: `<@${companionId}> e ${JSON.stringify(data)}`
+        }),
         success () {
           var guidList = [];
-          let subarray = changes.slice(j, i - 1);
+          let subarray = changes.slice(j, i);
           subarray.forEach((data) => {
             guidList.push(data.guid);
           });
           updateDone(guidList);
           j = i;
+          return true;
         },
         error (jgXHR, textStatus, errorThrown) {
           console.error(`${textStatus} - ${errorThrown}`);
         }
       });
-    }, wait);
+    }
+
     var dlg = window.dialog({id: 'botEditDialog',
       width: 'auto',
       height: 'auto',
@@ -1552,10 +1554,6 @@ function wrapper (plugin_info) {
         </p>
         <label id="editNumber">0</label>
         <label>${getString('of')} ${changes.length}</label>
-        <br>
-        <label>${getString('exportTimeRemainingDescription')}</label>
-        <label id="editTimeRemaining">???</label>
-        <label>s</label>
       `,
       buttons: {
         OK: {
@@ -1572,7 +1570,12 @@ function wrapper (plugin_info) {
           id: 'editOKButton'
         }
       }});
-  };
+
+    work(); // start immediately, not wait 2s for the first message!
+    if (j < changes.length) {
+      window.plugin.pnav.timer = setInterval(work, wait);
+    }
+  }
 
   /**
    * updates the bulk export dialog (called by the specific export functions).
