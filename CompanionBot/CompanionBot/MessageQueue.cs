@@ -452,7 +452,7 @@ namespace CompanionBot
                         {
                             await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending PoI Info Command in Guild {guildId}: {e.Message}", e));
                         }
-                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.n, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error"), timeout: TimeSpan.FromSeconds(10));
+                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.n, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error" || msg.Embeds.First().Title == "Select Location"), timeout: TimeSpan.FromSeconds(10));
                         await t;
                         if (result.IsSuccess)
                         {
@@ -476,6 +476,26 @@ namespace CompanionBot
                                 // Possibilities to decide: case sensitivity of the name, Coordinates (would require additional data from the script, google maps link on the names), presence of quotes or ticks in the name, underscore or space, maybe more...
 
                                 // or let the User decide and react like a user did.
+
+                                int? onlyOneExactMatch = null;
+                                for (int i = 0; i< embed.Fields.Length;i++)
+                                {
+                                    var field = embed.Fields[i];
+                                    string name = field.Name.Substring(3); // TODO is this correct?
+                                    if (current.n == name && onlyOneExactMatch == null)
+                                        onlyOneExactMatch = i;
+                                    else if (current.n == name && onlyOneExactMatch!=null)
+                                    {
+                                        onlyOneExactMatch = null;
+                                        break;
+                                    }
+
+                                    if(onlyOneExactMatch !=null)
+                                    {
+                                        // assume this is the right one!
+                                        // TODO select this one!
+                                    }
+                                }
                             }
                             string text = embed.Footer.Value.Text.Split('\u25AB')[2];
                             if (!uint.TryParse(text.Substring(2), out uint id))
