@@ -64,14 +64,14 @@ namespace CompanionBot
             {
                 if (current.Length < 4 || current.Length > 5)
                 {
-                    await ReplyAsync("Bad Format!");
+                    await ReplyAsync($"Bad Format! Length was {current.Length}, but only 4 or 5 are possible! Skipped the corrupt entry!");
                 }
                 else
                 {
                     if (Enum.TryParse(current[0], out LocationType type))
                         commands.Add($"create poi {type} «{current[1]}» {current[2]} {current[3]}{(current.Length > 4 && current[4] == "1" ? " \"ex_eligible: 1\"" : "")}");
                     else
-                        await ReplyAsync("Bad Format!");
+                        await ReplyAsync($"Bad Format! Unknown Location Type {current[0]}! expected 0 or 1! Skipped the corrupt entry!");
                 }
             }
             await _queue.EnqueueCreate(Context, commands);

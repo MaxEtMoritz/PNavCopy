@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Addons.Collectors;
 using Discord.Commands;
 using Discord.WebSocket;
 using Interactivity;
