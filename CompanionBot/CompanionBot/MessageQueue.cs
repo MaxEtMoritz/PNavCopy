@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -13,7 +14,7 @@ namespace CompanionBot
 {
     public class MessageQueue
     {
-        private readonly IDiscordClient _client;
+        private readonly DiscordSocketClient _client;
         private readonly Logger _logger;
         private static InteractivityService _inter;
         private readonly string prefix;
@@ -70,7 +71,7 @@ namespace CompanionBot
                         EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
                         embed.Fields.Find((x) => x.Name == "Creations").Value = createQueues[context.Guild.Id].Count;
                         x.Embed = embed.Build();
-                    }, typingOptions);
+                    }, options);
                 }
                 catch (Exception e)
                 {
@@ -86,7 +87,7 @@ namespace CompanionBot
                 IUserMessage msg = context.Channel.SendMessageAsync(embed: embed.Build()).Result;
                 try
                 {
-                    msg.PinAsync(typingOptions);
+                    msg.PinAsync(options);
                 }
                 catch (Exception e)
                 {
@@ -128,7 +129,7 @@ namespace CompanionBot
                         EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
                         embed.Fields.Find((x) => x.Name == "Edits").Value = editQueues[context.Guild.Id].Count;
                         x.Embed = embed.Build();
-                    }, typingOptions);
+                    }, options);
                 }
                 catch (Exception e)
                 {
@@ -144,7 +145,7 @@ namespace CompanionBot
                 IUserMessage msg = context.Channel.SendMessageAsync(embed: embed.Build()).Result;
                 try
                 {
-                    msg.PinAsync(typingOptions);
+                    msg.PinAsync(options);
                 }
                 catch (Exception e)
                 {
@@ -214,7 +215,7 @@ namespace CompanionBot
                         EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
                         embed.Title = "Exporting...";
                         x.Embed = embed.Build();
-                    }, typingOptions);
+                    }, options);
                 }
                 if (createQueues.ContainsKey(context.Guild.Id) && createQueues[context.Guild.Id].Any())
                 {
@@ -255,7 +256,7 @@ namespace CompanionBot
 
                 if (_settings[guildId].PNavChannel != null)
                 {
-                    IMessageChannel channel = await _client.GetChannelAsync((ulong)_settings[guildId].PNavChannel) as IMessageChannel;
+                    IMessageChannel channel = _client.GetChannel((ulong)_settings[guildId].PNavChannel) as IMessageChannel;
 
                     if (channel == null)
                     {
@@ -318,7 +319,7 @@ namespace CompanionBot
                                     EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
                                     embed.Fields.Find((x) => x.Name == "Creations").Value = queue.Count;
                                     x.Embed = embed.Build();
-                                }, typingOptions);
+                                }, options);
                             }
                             catch (Exception e)
                             {
@@ -346,7 +347,7 @@ namespace CompanionBot
                                 EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
                                 embed.Title = "Paused";
                                 x.Embed = embed.Build();
-                            }, typingOptions);
+                            }, options);
                         }
                         catch (Exception e)
                         {
@@ -368,7 +369,7 @@ namespace CompanionBot
                             EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
                             embed.Fields.Find((x) => x.Name == "Creations").Value = queue.Count;
                             x.Embed = embed.Build();
-                        }, typingOptions);
+                        }, options);
                     }
                     catch (Exception e)
                     {
@@ -383,14 +384,6 @@ namespace CompanionBot
                 tokens.Remove(guildId, out CancellationTokenSource source);
                 if (message != null)
                 {
-                    try
-                    {
-                        await message.UnpinAsync(typingOptions);
-                    }
-                    catch (Exception e)
-                    {
-                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while un-pinning progress message in Guild {guildId}: {e.Message}", e));
-                    }
                     try
                     {
                         await message.DeleteAsync(options);
@@ -417,7 +410,7 @@ namespace CompanionBot
             {
                 if (_settings[guildId].PNavChannel != null)
                 {
-                    IMessageChannel channel = await _client.GetChannelAsync((ulong)_settings[guildId].PNavChannel) as IMessageChannel;
+                    IMessageChannel channel = _client.GetChannel((ulong)_settings[guildId].PNavChannel) as IMessageChannel;
 
                     if (channel == null)
                     {
@@ -478,24 +471,181 @@ namespace CompanionBot
                                 // or let the User decide and react like a user did.
 
                                 int? onlyOneExactMatch = null;
-                                for (int i = 0; i< embed.Fields.Length;i++)
+                                for (int i = 0; i < embed.Fields.Length; i++)
                                 {
                                     var field = embed.Fields[i];
                                     string name = field.Name.Substring(3); // TODO is this correct?
                                     if (current.n == name && onlyOneExactMatch == null)
                                         onlyOneExactMatch = i;
-                                    else if (current.n == name && onlyOneExactMatch!=null)
+                                    else if (current.n == name && onlyOneExactMatch != null)
                                     {
                                         onlyOneExactMatch = null;
                                         break;
                                     }
+                                }
 
-                                    if(onlyOneExactMatch !=null)
+                                if (onlyOneExactMatch != null)
+                                {
+                                    // assume this is the right one!
+                                    var field = embed.Fields[(int)onlyOneExactMatch];
+                                    Emoji reaction = new Emoji(field.Name.Substring(0, 2));
+
+                                    try
                                     {
-                                        // assume this is the right one!
-                                        // TODO select this one!
+                                        await result.Value.AddReactionAsync(reaction, options);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while selecting right location in Guild {guildId}: {e.Message}", e));
                                     }
                                 }
+                                else
+                                {
+                                    // edit progress message to show that user action is required!
+                                    if (message != null)
+                                    {
+                                        try
+                                        {
+                                            await message.ModifyAsync((x) =>
+                                            {
+                                                EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
+                                                embed.Title = "Action Required!";
+                                                embed.Color = Color.DarkRed;
+                                                embed.Description = $"head to <#{channel.Id}> and select the right PoI to edit!";
+                                                embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
+                                                x.Embed = embed.Build();
+                                            }, options);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
+                                        }
+                                    }
+
+                                    string prompt = $"@here please select the right location! If you are not sure, let it time out!\nThe following info is available:";
+                                    prompt += $"\n\tname: {current.n}";
+                                    prompt += $"\n\ttype: {current.t}";
+                                    prompt += "\n\tedits:";
+                                    foreach (var item in current.e)
+                                    {
+                                        prompt += $"\n\t\t{item.Key}: {item.Value}"; // TODO make it more obvious what it means!
+                                    }
+                                    try
+                                    {
+                                        await channel.SendMessageAsync(prompt, options: options);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending selection prompt in Guild {guildId}: {e.Message}", e));
+                                    }
+                                    //https://stackoverflow.com/a/12858633 answer by user dtb on StackOverflow
+                                    SemaphoreSlim reactSignal = new SemaphoreSlim(0, 1);
+                                    Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task> reactHandler = delegate (Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channl, SocketReaction reaction)
+                                    {
+                                        bool validEmote = new Regex($"[1-{embed.Fields.Length}]\u20e3").IsMatch(reaction.Emote.Name); // TODO is that right?
+                                        if (channl.Id == channel.Id && result.Value.Id == reaction.MessageId && reaction.User.Value.Id != 428187007965986826 && validEmote)
+                                        {
+                                            reactSignal.Release();
+                                            try
+                                            {
+                                                result.Value.AddReactionAsync(reaction.Emote);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error reacting to message in Guild {guildId}: {e.Message}", e));
+                                            }
+                                        }
+                                        return Task.CompletedTask;
+                                    };
+                                    _client.ReactionAdded += reactHandler;
+                                    if (!await reactSignal.WaitAsync(result.Value.Timestamp.AddSeconds(58) - DateTime.Now)) // that should wait a bit shorter than PokeNav is waiting!
+                                    {
+                                        // No one reacted!
+                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Timeout while waiting for User Reaction in Guild {guildId}."));
+                                        try
+                                        {
+                                            await channel.SendMessageAsync("No one reacted! Please try again manually!");
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending error message in Guild {guildId}: {e.Message}", e));
+                                        }
+                                        _client.ReactionAdded -= reactHandler;
+                                        reactSignal.Dispose();
+                                        if (message != null)
+                                        {
+                                            try
+                                            {
+                                                await message.ModifyAsync((x) =>
+                                                {
+                                                    EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
+                                                    embed.Title = "Exporting...";
+                                                    embed.Color = null;
+                                                    embed.Description = $"This is still to do:";
+                                                    embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
+                                                    x.Embed = embed.Build();
+                                                }, options);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
+                                            }
+                                        }
+                                        continue;
+                                    }
+                                    _client.ReactionAdded -= reactHandler;
+                                    if (message != null)
+                                    {
+                                        try
+                                        {
+                                            await message.ModifyAsync((x) =>
+                                            {
+                                                EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
+                                                embed.Title = "Exporting...";
+                                                embed.Color = null;
+                                                embed.Description = $"This is still to do:";
+                                                embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
+                                                x.Embed = embed.Build();
+                                            }, options);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
+                                        }
+                                    }
+                                }
+
+                                //https://stackoverflow.com/a/12858633 answer by user dtb on StackOverflow
+                                SemaphoreSlim signal = new SemaphoreSlim(0, 1);
+                                Func<SocketMessage, Task> handler = delegate (SocketMessage msg)
+                                {
+                                    if (msg.Channel == channel && msg.Author.Id == 428187007965986826 && msg.Embeds.Count==1 && string.IsNullOrEmpty(msg.Content))
+                                    {
+                                        embed = msg.Embeds.First();
+                                        signal.Release();
+                                    }
+                                    return Task.CompletedTask;
+                                };
+                                _client.MessageReceived += handler;
+                                //_client.MessageReceived += delegate (SocketMessage msg) { Console.WriteLine("Sie haben Post! um " + DateTime.Now); return Task.CompletedTask; };
+                                // wait for 10 seconds for the message to get sent
+                                if (!await signal.WaitAsync(10000))
+                                {
+                                    // Timeout!
+                                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Timeout while waiting for PokeNav to send the new Message in Guild {guildId}."));
+                                    try
+                                    {
+                                        await channel.SendMessageAsync("PokeNav did not update the select message within 10 seconds, please try again manually!");
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending error message in Guild {guildId}: {e.Message}", e));
+                                    }
+                                    _client.MessageReceived -= handler;
+                                    signal.Dispose();
+                                    continue;
+                                }
+                                _client.MessageReceived -= handler;
                             }
                             string text = embed.Footer.Value.Text.Split('\u25AB')[2];
                             if (!uint.TryParse(text.Substring(2), out uint id))
@@ -611,7 +761,7 @@ namespace CompanionBot
                                     EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
                                     embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
                                     x.Embed = embed.Build();
-                                }, typingOptions);
+                                }, options);
                             }
                             catch (Exception e)
                             {
@@ -639,7 +789,7 @@ namespace CompanionBot
                                 EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
                                 embed.Title = "Paused";
                                 x.Embed = embed.Build();
-                            }, typingOptions);
+                            }, options);
                         }
                         catch (Exception e)
                         {
@@ -661,7 +811,7 @@ namespace CompanionBot
                             EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
                             embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
                             x.Embed = embed.Build();
-                        }, typingOptions);
+                        }, options);
                     }
                     catch (Exception e)
                     {
@@ -675,14 +825,6 @@ namespace CompanionBot
                 workers.Remove(guildId);
                 if (message != null)
                 {
-                    try
-                    {
-                        await message.UnpinAsync(typingOptions);
-                    }
-                    catch (Exception e)
-                    {
-                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while un-pinning progress message in Guild {guildId}: {e.Message}", e));
-                    }
                     try
                     {
                         await message.DeleteAsync(options);
