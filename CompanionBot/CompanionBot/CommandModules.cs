@@ -145,7 +145,7 @@ namespace CompanionBot
     public struct EditData
     {
         // t: type, n: name, a: l**a**titude, o: l**o**ngitude, e: ex-eligibility (or edits on top-level)
-        public Int16 t; // TODO check if it works to declare it directly as LocationData!
+        public LocationType t;
         public string n;
         public IDictionary<char, string> e;
     }

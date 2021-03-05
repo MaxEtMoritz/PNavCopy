@@ -435,7 +435,7 @@ namespace CompanionBot
                             token.ThrowIfCancellationRequested();
                         }
                         EditData current = queue.Dequeue();
-                        string type = (current.t <= 0 ? "stop" : "gym");
+                        string type = current.t == 0 ? "stop" : current.t.ToString();
                         Task t = Task.CompletedTask;
                         try
                         {
@@ -464,17 +464,13 @@ namespace CompanionBot
                             }
                             else if (embed.Title == "Select Location")
                             {
-                                // TODO handle the Location Select Dialog or skip this edit!
-
-                                // Possibilities to decide: case sensitivity of the name, Coordinates (would require additional data from the script, google maps link on the names), presence of quotes or ticks in the name, underscore or space, maybe more...
-
-                                // or let the User decide and react like a user did.
+                                // handle the Location Select Dialog or skip this edit!
 
                                 int? onlyOneExactMatch = null;
                                 for (int i = 0; i < embed.Fields.Length; i++)
                                 {
                                     var field = embed.Fields[i];
-                                    string name = field.Name.Substring(3); // TODO is this correct?
+                                    string name = field.Name.Substring(3);
                                     if (current.n == name && onlyOneExactMatch == null)
                                         onlyOneExactMatch = i;
                                     else if (current.n == name && onlyOneExactMatch != null)
@@ -523,12 +519,39 @@ namespace CompanionBot
                                     }
 
                                     string prompt = $"@here please select the right location! If you are not sure, let it time out!\nThe following info is available:";
-                                    prompt += $"\n\tname: {current.n}";
-                                    prompt += $"\n\ttype: {current.t}";
-                                    prompt += "\n\tedits:";
+                                    prompt += $"\n\tName: {current.n}";
+                                    prompt += $"\n\tType: {current.t}";
+                                    prompt += "\n\tEdits:";
                                     foreach (var item in current.e)
                                     {
-                                        prompt += $"\n\t\t{item.Key}: {item.Value}"; // TODO make it more obvious what it means!
+                                        switch (item.Key)
+                                        {
+                                            case 'n':
+                                                prompt += $"\n\t\tName => {item.Value}";
+                                                break;
+                                            case 't':
+                                                prompt += "\n\t\tType => ";
+                                                if (Enum.TryParse(item.Value, out LocationType locationType))
+                                                {
+                                                    prompt += locationType;
+                                                }
+                                                else
+                                                {
+                                                    prompt += "unknown";
+                                                }
+                                                break;
+                                            case 'a':
+                                                prompt += $"\n\t\tLatitude => {item.Value}";
+                                                break;
+                                            case 'o':
+                                                prompt += $"\n\t\tLongitude => {item.Value}";
+                                                break;
+                                            case 'e':
+                                                prompt += $"\n\t\tEx-eligibility => {(item.Value=="0" ? bool.FalseString : bool.TrueString)}";
+                                                break;
+                                            default:
+                                                break;
+                                        }
                                     }
                                     try
                                     {
@@ -542,7 +565,7 @@ namespace CompanionBot
                                     SemaphoreSlim reactSignal = new SemaphoreSlim(0, 1);
                                     Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task> reactHandler = delegate (Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channl, SocketReaction reaction)
                                     {
-                                        bool validEmote = new Regex($"[1-{embed.Fields.Length}]\u20e3").IsMatch(reaction.Emote.Name); // TODO is that right?
+                                        bool validEmote = new Regex($"[1-{embed.Fields.Length}]\u20e3").IsMatch(reaction.Emote.Name);
                                         if (channl.Id == channel.Id && result.Value.Id == reaction.MessageId && reaction.User.Value.Id != 428187007965986826 && validEmote)
                                         {
                                             reactSignal.Release();
@@ -619,7 +642,7 @@ namespace CompanionBot
                                 SemaphoreSlim signal = new SemaphoreSlim(0, 1);
                                 Func<SocketMessage, Task> handler = delegate (SocketMessage msg)
                                 {
-                                    if (msg.Channel == channel && msg.Author.Id == 428187007965986826 && msg.Embeds.Count==1 && string.IsNullOrEmpty(msg.Content))
+                                    if (msg.Channel == channel && msg.Author.Id == 428187007965986826 && msg.Embeds.Count == 1 && string.IsNullOrEmpty(msg.Content))
                                     {
                                         embed = msg.Embeds.First();
                                         signal.Release();
