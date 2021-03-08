@@ -1,6 +1,6 @@
 {
   "name": "pnavcopy",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Copy portal info to clipboard or send it to Discord in the format the PokeNav Discord bot needs.",
   "main": ".eslintrc.js",
   "dependencies": {},
