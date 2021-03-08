@@ -542,7 +542,24 @@ function wrapper (plugin_info) {
           input.hide();
         } else if (type !== 'none') {
           if (window.plugin.pnav.settings.webhookUrl) {
-            sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+            if (window.plugin.pnav.settings.useBot) {
+              $.ajax({
+                method: 'POST',
+                url: window.plugin.pnav.settings.webhookUrl,
+                contentType: 'application/json',
+                processData: false,
+                data: JSON.stringify({
+                  username: window.plugin.pnav.settings.name,
+                  avatar_url: '',
+                  content: `<@${companionId}> cm [${type === 'pokestop' ? 0 : 1},${name},${lat},${lng}${isEx ? ',1' : ''}]`
+                }),
+                error (jgXHR, textStatus, errorThrown) {
+                  console.error(`${textStatus} - ${errorThrown}`);
+                }
+              });
+            } else {
+              sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+            }
             console.log('sent!');
           } else {
             input.show();
@@ -1460,7 +1477,7 @@ function wrapper (plugin_info) {
 
     function work () {
       $('#editProgressBar', dlg).val(j);
-      $('#editNumber', dlg).text(j); // TODO finish updating the dialog, testing everything!
+      $('#editNumber', dlg).text(j);
       if (j >= changes.length) {
         clearInterval(window.plugin.pnav.timer);
         window.plugin.pnav.timer = null;
@@ -1532,7 +1549,6 @@ function wrapper (plugin_info) {
           });
           updateDone(guidList);
           j = i;
-          return true;
         },
         error (jgXHR, textStatus, errorThrown) {
           console.error(`${textStatus} - ${errorThrown}`);
@@ -1570,7 +1586,13 @@ function wrapper (plugin_info) {
           id: 'editOKButton'
         }
       }});
-
+    $('.ui-button.ui-dialog-titlebar-button-close', dlg.parent).on(
+      'click',
+      function () {
+        clearInterval(window.plugin.pnav.timer);
+        window.plugin.pnav.timer = null;
+      }
+    );
     work(); // start immediately, not wait 2s for the first message!
     if (j < changes.length) {
       window.plugin.pnav.timer = setInterval(work, wait);
@@ -1665,30 +1687,6 @@ function wrapper (plugin_info) {
     request.open('POST', window.plugin.pnav.settings.webhookUrl);
     request.setRequestHeader('Content-type', 'application/json');
     request.send(JSON.stringify(params), false);
-  }
-
-  function sendMessageFetch (message) {
-    const params = {
-      username: window.plugin.pnav.settings.name,
-      avatar_url: '',
-      content: message
-    };
-    fetch(window.plugin.pnav.settings.webhookUrl, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: params
-    })
-      .then((response) => {
-        if (response.ok) {
-          return true;
-        } else {
-          console.error(`HTTP Error: ${response.status} - ${response.statusText}${response.bodyUsed ? `; body: ${response.body}` : ''}`);
-          return false;
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-      });
   }
 
   function waitForPogoButtons (mutationList, invokingObserver) {
