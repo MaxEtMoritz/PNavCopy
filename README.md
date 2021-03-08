@@ -1,7 +1,7 @@
 # IITC-Plugin: Copy PokeNav Command
 IITC Plugin that copies Portal Info to Clipboard or sends it directly to Discord via WebHook in the format needed by the PokeNav Discord Bot as follows:
 
-```<Bot prefix ($ by default)>create poi <type> "<name>" <latitude> <longitude> "ex-eligibility: 1" (if Ex Gym)```
+```@PokeNav create poi <type> "<name>" <latitude> <longitude> "ex-eligibility: 1" (if Ex Gym)```
 
 
 ## Prerequisites
@@ -19,12 +19,12 @@ You should be asked if you want to install an external Plugin. Confirm the Insta
 
 ## Features
 With This Plugin you can...
-- Classify a portal manually as Stop, Gym or EX Gym or use the Info already collected with Pogo Tools (see [Integrations section](https://github.com/MaxEtMoritz/PNavCopy#integrations))
-- Copy The Command to Clipboard or use a WebHook to send it directly to the appropriate Discord channel
+- Classify a portal manually as Stop, Gym or EX Gym or use the Info already collected with Pogo Tools (see [Integrations section](#integrations))
+- Copy The Command to Clipboard, use a WebHook to send it directly to the appropriate Discord channel or use the [Companion Bot](#about-the-companion-bot)
 - Send all the Data already collected with PoGo Tools to PokeNav with a few Clicks
 - Pause the Bulk export and start off where you ended it
 - Check for modifications of Pogo Tools data automatically
-- Send or copy modification or deletion Commands for PokeNav
+- Send or copy modification or deletion Commands for PokeNav, or let the [Companion Bot](#about-the-companion-bot) do the work.
 - View your PokeNav community bounds as a circle on the map
 - Represent the state of the export in Colors with a highlighter: PokeStops are blue, Gyms red and Ex raid gyms have a red border and yellow filling.
 
@@ -58,5 +58,5 @@ __Note:__ The Companion Bot is still under construction and i don't know yet whe
 ## How to contribute?
 You can contribute by...
 - translating this Plugin into your native language. A guide on how to translate can be found [here](/Translating.md).
-- contributing Code to the plugin. Please fork this repository, open a new branch for your Changes and open a pull request if you are done. I will then take a look at it and if i consider it good, i'll merge it into the test branch and later on into main if everything is working.
+- contributing Code to the plugin. Please fork this repository and open a pull request. I will then take a look at it and if i consider it good, i'll merge it into the test branch and later on into main if everything is working.
 - reporting Bugs and other issues.
