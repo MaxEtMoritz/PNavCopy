@@ -10,7 +10,7 @@ using Discord.WebSocket;
 using Interactivity;
 using Microsoft.Extensions.Configuration;
 
-namespace CompanionBot
+namespace Bot
 {
     public class MessageQueue
     {
@@ -103,6 +103,27 @@ namespace CompanionBot
                 workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token));
             }
             return Task.CompletedTask;
+        }
+
+        public Task EnqueueCreate(ulong guildId, PortalData[] data)
+        {
+            Queue<string> queue;
+            if (createQueues.ContainsKey(guildId))
+            {
+                queue = createQueues[guildId];
+            }
+            else
+            {
+                queue = new Queue<string>();
+                createQueues[guildId] = queue;
+            }
+
+            foreach (PortalData item in data)
+            {
+                string command = $"<@> create poi";//TODO
+                //TODO build command!
+                queue.Enqueue(command);
+            }
         }
 
         public Task EnqueueEdit(ICommandContext context, List<EditData> edits)
@@ -547,7 +568,7 @@ namespace CompanionBot
                                                 prompt += $"\n\t\tLongitude => {item.Value}";
                                                 break;
                                             case 'e':
-                                                prompt += $"\n\t\tEx-eligibility => {(item.Value=="0" ? bool.FalseString : bool.TrueString)}";
+                                                prompt += $"\n\t\tEx-eligibility => {(item.Value == "0" ? bool.FalseString : bool.TrueString)}";
                                                 break;
                                             default:
                                                 break;

@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CompanionBot
+namespace Bot
 {
     public class General : ModuleBase<SocketCommandContext>
     {

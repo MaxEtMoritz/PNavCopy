@@ -7,7 +7,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace CompanionBot
+namespace Bot
 {
     public class CommandHandler
     {

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CompanionBot
+namespace Bot
 {
     class RequireWebhookAttribute : PreconditionAttribute
     {

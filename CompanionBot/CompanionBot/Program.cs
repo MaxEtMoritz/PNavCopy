@@ -2,11 +2,15 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Interactivity;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Bot;
+using API;
 
 namespace CompanionBot
 {
@@ -19,10 +23,12 @@ namespace CompanionBot
         private IServiceProvider _services;
 
         public static void Main(string[] args)
-        => new Program().MainAsync().GetAwaiter().GetResult();
+            => new Program().MainAsync(args).GetAwaiter().GetResult();
 
-        public async Task MainAsync()
+
+        public async Task MainAsync(string[] args)
         {
+
             _config = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile(path: "config.json")
@@ -51,8 +57,23 @@ namespace CompanionBot
             handler = _services.GetRequiredService<CommandHandler>();
             await handler.InstallCommandsAsync();
 
+            // create the API
+            CreateHostBuilder(args, _services).Build().Run();
+
             // Block this task until the program is closed.
             await Task.Delay(-1);
         }
+
+        public static IHostBuilder CreateHostBuilder(string[] args, IServiceProvider services) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                }).ConfigureServices((x) =>
+                {
+                    x.AddSingleton(services.GetRequiredService<DiscordSocketClient>())
+                        .AddSingleton(services.GetRequiredService<MessageQueue>())
+                        .AddSingleton(services.GetRequiredService<Logger>());
+                });
     }
 }

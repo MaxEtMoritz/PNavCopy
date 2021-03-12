@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace CompanionBot
+namespace Bot
 {
     public class GuildSettings
     {
@@ -34,7 +34,7 @@ namespace CompanionBot
                         catch (Exception e)
                         {
                             logger.Log(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Unable to read Settings File: {e.GetType().Name} - {e.Message}", e));
-                            return Settings.Default;
+                            return Settings.Default();
                         }
 
                         try
@@ -45,7 +45,7 @@ namespace CompanionBot
                         {
                             logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Invalid Settings File (JSON parsing failed)! Exception: {e.GetType().Name} - {e.Message}", e));
                             settings = new Dictionary<ulong, Settings>();
-                            return Settings.Default;
+                            return Settings.Default();
                         }
 
                         if (settings.ContainsKey(server))
@@ -54,13 +54,13 @@ namespace CompanionBot
                         }
                         else
                         {
-                            return Settings.Default;
+                            return Settings.Default();
                         }
                     }
                     else
                     {
                         settings = new Dictionary<ulong, Settings>();
-                        return Settings.Default;
+                        return Settings.Default();
                     }
                 }
                 else
@@ -71,7 +71,7 @@ namespace CompanionBot
                     }
                     else
                     {
-                        return Settings.Default;
+                        return Settings.Default();
                     }
                 }
             }
@@ -96,13 +96,27 @@ namespace CompanionBot
     {
         public char Prefix { get; set; }
         public ulong? PNavChannel { get; set; }
+        public uint Pwd { get; set; }
+        private static readonly Random rand = new Random();
 
-        public static readonly Settings Default = new Settings('!');
-
-        public Settings(char prefix = '!', ulong? pokeNavChannel = null)
+        public Settings(char prefix = '!', ulong? pokeNavChannel = null, uint? Password = null)
         {
             Prefix = prefix;
             PNavChannel = pokeNavChannel;
+            if(Password == null)
+            {
+                Pwd = (uint)rand.Next(int.MaxValue) + (uint)rand.Next(int.MaxValue);
+            }
+            else
+            {
+                Pwd = (uint)Password;
+            }
+        }
+
+        public static Settings Default()
+        {
+            // switched away from property because every new settings would get the same password then!
+            return new Settings('!');
         }
     }
 }

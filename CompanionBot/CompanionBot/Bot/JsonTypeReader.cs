@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace CompanionBot
+namespace Bot
 {
     class JsonTypeReader<T> : TypeReader
     {
