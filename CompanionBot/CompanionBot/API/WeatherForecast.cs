@@ -1,6 +1,6 @@
 using System;
 
-namespace API
+namespace CompanionBot.API
 {
     public class WeatherForecast
     {

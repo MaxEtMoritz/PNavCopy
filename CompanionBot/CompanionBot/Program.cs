@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Bot;
-using API;
+using CompanionBot.API;
 
 namespace CompanionBot
 {

@@ -1,37 +1,35 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Bot;
+using Discord.WebSocket;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Bot;
-using Discord.WebSocket;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace CompanionBot.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CreationsController : ControllerBase
+    public class EditsController : ControllerBase
     {
         private readonly MessageQueue _queue;
         private readonly DiscordSocketClient _client;
         private readonly GuildSettings _settings;
-        public CreationsController(MessageQueue queue, DiscordSocketClient client, GuildSettings settings)
+        public EditsController(MessageQueue queue, DiscordSocketClient client, GuildSettings settings)
         {
             _queue = queue;
             _client = client;
             _settings = settings;
         }
 
-        // POST api/<CreationsController>
+        // POST api/<EditsController>
         [HttpPost("{guildId}")]
-        public async Task<ActionResult> Post(ulong guildId,[FromQuery] uint pwd, [FromBody] PortalData[] data)
+        public async Task<ActionResult> Post(ulong guildId, [FromQuery] uint pwd, [FromBody] EditData[] data)
         {
             if (_client.Guilds.Any((x) => x.Id == guildId))
             {
                 if (pwd == _settings[guildId].Pwd)
-                    await _queue.EnqueueCreate(guildId, data);
+                    await _queue.EnqueueEdit(guildId, data);
                 else
                     return Unauthorized("Wrong Password!");
             }

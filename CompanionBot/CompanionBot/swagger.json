@@ -1,0 +1,284 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "version": "1",
+        "title": "CompanionBot API"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:5000/api"
+        },
+        {
+            "url": "https://localhost:5001/api"
+        }
+    ],
+    "paths": {
+        "/Creations": {
+            "post": {
+                "description": "Create new PoI",
+                "parameters": [
+                    {
+                        "name": "guildId",
+                        "in": "path",
+                        "description": "ID of the server",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "ulong"
+                        }
+                    },
+                    {
+                        "name": "pwd",
+                        "in": "query",
+                        "required": true,
+                        "description": "\"Password\" for the guild.",
+                        "schema": {
+                            "type": "integer",
+                            "format": "uint"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/PortalData"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "All okay"
+                    },
+                    "401": {
+                        "description": "The Password was invalid"
+                    },
+                    "404": {
+                        "description": "The guild was not found or the Companion Bot is no member of this guild."
+                    },
+                    "default": {
+                        "description": "Unexpected error"
+                    }
+                }
+            }
+        },
+        "/Edits": {
+            "post": {
+                "description": "Recieves Edits the Companion Bot should make.",
+                "parameters": [
+                    {
+                        "name": "guildId",
+                        "in": "path",
+                        "description": "ID of the server",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "ulong"
+                        }
+                    },
+                    {
+                        "name": "pwd",
+                        "in": "query",
+                        "required": true,
+                        "description": "\"Password\" for the guild.",
+                        "schema": {
+                            "type": "integer",
+                            "format": "uint"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/EditData"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "All okay"
+                    },
+                    "401": {
+                        "description": "The Password was invalid"
+                    },
+                    "404": {
+                        "description": "The guild was not found or the Companion Bot is no member of this guild."
+                    },
+                    "default": {
+                        "description": "Unexpected error"
+                    }
+                }
+            }
+        },
+        "/Progress": {
+            "get": {
+                "description": "Returns the Progress of the Export.",
+                "parameters": [
+                    {
+                        "name": "guildId",
+                        "description": "ID of the guild the progress should be retrieved for.",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "ulong"
+                        }
+                    },
+                    {
+                        "name": "pwd",
+                        "description": "Password for the guild",
+                        "required": true,
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "format": "uint"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All okay, here is the Progress!",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Progress"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "The Password was wrong."
+                    },
+                    "404": {
+                        "description": "The guild was not found or the Companion Bot is no member of that guild."
+                    },
+                    "default": {
+                        "description": "Unexpected Error"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "PortalData": {
+                "type": "object",
+                "required": [
+                    "type",
+                    "guid",
+                    "name",
+                    "lat",
+                    "lng"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "lat": {
+                        "type": "string",
+                        "pattern": "^\\d+\\.?\\d*$"
+                    },
+                    "lng": {
+                        "type": "string",
+                        "pattern": "^\\d+\\.?\\d*$"
+                    },
+                    "guid": {
+                        "type": "string",
+                        "pattern": "^[\\d|a-f]{32}\\.16$"
+                    },
+                    "isEx": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "EditData": {
+                "type": "object",
+                "required": [
+                    "oldType",
+                    "oldName",
+                    "guid"
+                ],
+                "properties": {
+                    "oldType": {
+                        "type": "string",
+                        "enum": [
+                            "pokestop",
+                            "gym"
+                        ]
+                    },
+                    "oldName": {
+                        "type": "string"
+                    },
+                    "guid": {
+                        "type": "string",
+                        "pattern": "^[\\d|a-f]{32}\\.16$"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "pokestop",
+                            "gym",
+                            "none"
+                        ]
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "latitude": {
+                        "type": "string",
+                        "pattern": "^\\d+\\.?\\d*$"
+                    },
+                    "longitude": {
+                        "type": "string",
+                        "pattern": "^\\d+\\.?\\d*$"
+                    },
+                    "ex_eligible": {
+                        "type": "integer",
+                        "enum": [
+                            0,
+                            1
+                        ]
+                    }
+                }
+            },
+            "Progress": {
+                "type": "object",
+                "required": [
+                    "creations",
+                    "edits",
+                    "estimatedTimeRemaining",
+                    "attentionRequired"
+                ],
+                "properties": {
+                    "creations": {
+                        "type": "integer"
+                    },
+                    "edits": {
+                        "type": "integer"
+                    },
+                    "attentionRequired": {
+                        "type": "boolean"
+                    },
+                    "estimatedTimeRemaining": {
+                        "type": "string",
+                        "format": "time"
+                    }
+                }
+            }
+        }
+    }
+}

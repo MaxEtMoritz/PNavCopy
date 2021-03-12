@@ -33,5 +33,6 @@ public class Progress
     public int Creations { get; set; }
     public int Edits { get; set; }
     public TimeSpan EstimatedTimeRemaining { get; set; }
+    public bool AttentionNeeded { get; set; }
 }
 

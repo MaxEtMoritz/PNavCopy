@@ -23,11 +23,29 @@ namespace Bot
         private readonly Dictionary<ulong, Queue<EditData>> editQueues = new Dictionary<ulong, Queue<EditData>>();
         private readonly Dictionary<ulong, Task> workers = new Dictionary<ulong, Task>();
         private readonly Dictionary<ulong, IUserMessage> progress = new Dictionary<ulong, IUserMessage>();
+
+        internal Task EnqueueEdit(ulong guildId, global::EditData[] data)
+        {
+            // TODO: implement it
+            throw new NotImplementedException();
+        }
+
+        internal Progress GetProgress(ulong guildId)
+        {
+            return new Progress()
+            {
+                Creations = createQueues.ContainsKey(guildId) ? createQueues[guildId].Count : 0,
+                Edits = editQueues.ContainsKey(guildId) ? editQueues[guildId].Count : 0,
+                EstimatedTimeRemaining = TimeSpan.FromSeconds(0), // TODO: implement time guessing!
+                AttentionNeeded = false // TODO: track whether user attention is needed!
+            };
+        }
+
         private readonly GuildSettings _settings;
         RequestOptions options;
         RequestOptions typingOptions;
         EmbedBuilder defaultEmbed;
-
+        // FIXME: Make a helper method that updates the Progress Message instead of duplicating the code always!
         public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings, IConfiguration config)
         {
             _client = client;
@@ -120,10 +138,53 @@ namespace Bot
 
             foreach (PortalData item in data)
             {
-                string command = $"<@> create poi";//TODO
-                //TODO build command!
+                string command = $"<@428187007965986826> create poi {item.Type} «{item.Name}» {item.Lat} {item.Lng}";
+                if (item.IsEx != null)
+                    command += $" \"ex_eligible: {Convert.ToInt16(item.IsEx)}\"";
                 queue.Enqueue(command);
             }
+
+            if (progress.ContainsKey(guildId))
+            {
+                try
+                {
+                    progress[guildId].ModifyAsync((x) =>
+                    {
+                        EmbedBuilder embed = progress[guildId].Embeds.First().ToEmbedBuilder();
+                        embed.Fields.Find((x) => x.Name == "Creations").Value = createQueues[guildId].Count;
+                        x.Embed = embed.Build();
+                    }, options);
+                }
+                catch (Exception e)
+                {
+                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueCreate), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
+                }
+            }
+            else
+            {
+                var embed = defaultEmbed.WithCurrentTimestamp();
+                embed.Fields[0].Value = createQueues[guildId].Count;
+                embed.Fields[1].Value = editQueues.ContainsKey(guildId) ? editQueues[guildId].Count : 0;
+                embed.Footer.Text = $"use {_settings[guildId].Prefix}pause or {_settings[guildId].Prefix}resume to manage the export!";
+                IUserMessage msg = context.Channel.SendMessageAsync(embed: embed.Build()).Result; // FIXME
+                try
+                {
+                    msg.PinAsync(options);
+                }
+                catch (Exception e)
+                {
+                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueCreate), $"Error pinning progress message in Guild {guildId}: {e.Message}", e));
+                }
+                progress[guildId] = msg;
+            }
+
+            if (!workers.ContainsKey(guildId) || (workers[guildId].IsCompleted && !workers[guildId].IsCompleted))
+            {
+                CancellationTokenSource source = new CancellationTokenSource();
+                tokens[guildId] = source;
+                workers.Add(guildId, Work(guildId, context.Channel, source.Token)); // FIXME
+            }
+            return Task.CompletedTask;
         }
 
         public Task EnqueueEdit(ICommandContext context, List<EditData> edits)
