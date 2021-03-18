@@ -1,4 +1,4 @@
-﻿using Bot;
+﻿using CompanionBot.Bot;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -29,7 +29,7 @@ namespace CompanionBot.API.Controllers
             if (_client.Guilds.Any((x) => x.Id == guildId))
             {
                 if (pwd == _settings[guildId].Pwd)
-                    await _queue.EnqueueEdit(guildId, data);
+                    return await _queue.EnqueueEdit(guildId, data);
                 else
                     return Unauthorized("Wrong Password!");
             }
@@ -37,7 +37,6 @@ namespace CompanionBot.API.Controllers
             {
                 return NotFound("Guild not found!");
             }
-            return Ok();
         }
     }
 }

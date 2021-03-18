@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Bot
+namespace CompanionBot.Bot
 {
     public class General : ModuleBase<SocketCommandContext>
     {
@@ -74,7 +74,7 @@ namespace Bot
                         await ReplyAsync($"Bad Format! Unknown Location Type {current[0]}! expected 0 or 1! Skipped the corrupt entry!");
                 }
             }
-            await _queue.EnqueueCreate(Context, commands);
+            await _queue.EnqueueCreate(Context.Guild.Id, commands, Context.Channel);
         }
 
         [Command("pause"), Alias("p", "stop"), Summary("Pauses the Bulk Export. To start again, run the `resume` Command.")]
@@ -142,7 +142,7 @@ namespace Bot
         }
     }
 
-    public struct EditData
+    internal struct EditData
     {
         // t: type, n: name, a: l**a**titude, o: l**o**ngitude, e: ex-eligibility (or edits on top-level)
         public LocationType t;

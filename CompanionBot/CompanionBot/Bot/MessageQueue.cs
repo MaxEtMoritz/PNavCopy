@@ -8,9 +8,10 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Interactivity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
-namespace Bot
+namespace CompanionBot.Bot
 {
     public class MessageQueue
     {
@@ -20,27 +21,9 @@ namespace Bot
         private readonly string prefix;
         private readonly Dictionary<ulong, CancellationTokenSource> tokens = new Dictionary<ulong, CancellationTokenSource>();
         private readonly Dictionary<ulong, Queue<string>> createQueues = new Dictionary<ulong, Queue<string>>();
-        private readonly Dictionary<ulong, Queue<EditData>> editQueues = new Dictionary<ulong, Queue<EditData>>();
+        private readonly Dictionary<ulong, Queue<CompanionBot.EditData>> editQueues = new Dictionary<ulong, Queue<CompanionBot.EditData>>();
         private readonly Dictionary<ulong, Task> workers = new Dictionary<ulong, Task>();
         private readonly Dictionary<ulong, IUserMessage> progress = new Dictionary<ulong, IUserMessage>();
-
-        internal Task EnqueueEdit(ulong guildId, global::EditData[] data)
-        {
-            // TODO: implement it
-            throw new NotImplementedException();
-        }
-
-        internal Progress GetProgress(ulong guildId)
-        {
-            return new Progress()
-            {
-                Creations = createQueues.ContainsKey(guildId) ? createQueues[guildId].Count : 0,
-                Edits = editQueues.ContainsKey(guildId) ? editQueues[guildId].Count : 0,
-                EstimatedTimeRemaining = TimeSpan.FromSeconds(0), // TODO: implement time guessing!
-                AttentionNeeded = false // TODO: track whether user attention is needed!
-            };
-        }
-
         private readonly GuildSettings _settings;
         RequestOptions options;
         RequestOptions typingOptions;
@@ -65,11 +48,22 @@ namespace Bot
             defaultEmbed.Footer = new EmbedFooterBuilder() { Text = "use pause or resume Commands to manage the export!" };
         }
 
-        public Task EnqueueCreate(ICommandContext context, List<string> commands)
+        internal Progress GetProgress(ulong guildId)
         {
-            if (createQueues.ContainsKey(context.Guild.Id))
+            return new Progress()
             {
-                var queue = createQueues[context.Guild.Id];
+                Creations = createQueues.ContainsKey(guildId) ? createQueues[guildId].Count : 0,
+                Edits = editQueues.ContainsKey(guildId) ? editQueues[guildId].Count : 0,
+                EstimatedTimeRemaining = TimeSpan.FromSeconds(0), // TODO: implement time guessing!
+                AttentionNeeded = false // TODO: track whether user attention is needed!
+            };
+        }
+
+        public Task EnqueueCreate(ulong guildId, List<string> commands, IMessageChannel channel = null)
+        {
+            if (createQueues.ContainsKey(guildId))
+            {
+                var queue = createQueues[guildId];
                 foreach (string command in commands)
                 {
                     queue.Enqueue(command);
@@ -77,71 +71,12 @@ namespace Bot
             }
             else
             {
-                createQueues.Add(context.Guild.Id, new Queue<string>(commands));
+                createQueues.Add(guildId, new Queue<string>(commands));
             }
 
-            if (progress.ContainsKey(context.Guild.Id))
+            if (channel == null && _settings[guildId].PNavChannel != null)
             {
-                try
-                {
-                    progress[context.Guild.Id].ModifyAsync((x) =>
-                    {
-                        EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
-                        embed.Fields.Find((x) => x.Name == "Creations").Value = createQueues[context.Guild.Id].Count;
-                        x.Embed = embed.Build();
-                    }, options);
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueCreate), $"Error while editing progress message in Guild {context.Guild.Id}: {e.Message}", e));
-                }
-            }
-            else
-            {
-                var embed = defaultEmbed.WithCurrentTimestamp();
-                embed.Fields[0].Value = createQueues[context.Guild.Id].Count;
-                embed.Fields[1].Value = editQueues.ContainsKey(context.Guild.Id) ? editQueues[context.Guild.Id].Count : 0;
-                embed.Footer.Text = $"use {_settings[context.Guild.Id].Prefix}pause or {_settings[context.Guild.Id].Prefix}resume to manage the export!";
-                IUserMessage msg = context.Channel.SendMessageAsync(embed: embed.Build()).Result;
-                try
-                {
-                    msg.PinAsync(options);
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueCreate), $"Error pinning progress message in Guild {context.Guild.Id}: {e.Message}", e));
-                }
-                progress[context.Guild.Id] = msg;
-            }
-
-            if (!workers.ContainsKey(context.Guild.Id) || (workers[context.Guild.Id].IsCompleted && !workers[context.Guild.Id].IsCompleted))
-            {
-                CancellationTokenSource source = new CancellationTokenSource();
-                tokens[context.Guild.Id] = source;
-                workers.Add(context.Guild.Id, Work(context.Guild.Id, context.Channel, source.Token));
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task EnqueueCreate(ulong guildId, PortalData[] data)
-        {
-            Queue<string> queue;
-            if (createQueues.ContainsKey(guildId))
-            {
-                queue = createQueues[guildId];
-            }
-            else
-            {
-                queue = new Queue<string>();
-                createQueues[guildId] = queue;
-            }
-
-            foreach (PortalData item in data)
-            {
-                string command = $"<@428187007965986826> create poi {item.Type} «{item.Name}» {item.Lat} {item.Lng}";
-                if (item.IsEx != null)
-                    command += $" \"ex_eligible: {Convert.ToInt16(item.IsEx)}\"";
-                queue.Enqueue(command);
+                channel = _client.GetChannel((ulong)_settings[guildId].PNavChannel) as IMessageChannel;
             }
 
             if (progress.ContainsKey(guildId))
@@ -160,13 +95,13 @@ namespace Bot
                     _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueCreate), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
                 }
             }
-            else
+            else if (channel != null)
             {
                 var embed = defaultEmbed.WithCurrentTimestamp();
                 embed.Fields[0].Value = createQueues[guildId].Count;
                 embed.Fields[1].Value = editQueues.ContainsKey(guildId) ? editQueues[guildId].Count : 0;
                 embed.Footer.Text = $"use {_settings[guildId].Prefix}pause or {_settings[guildId].Prefix}resume to manage the export!";
-                IUserMessage msg = context.Channel.SendMessageAsync(embed: embed.Build()).Result; // FIXME
+                IUserMessage msg = channel.SendMessageAsync(embed: embed.Build()).Result;
                 try
                 {
                     msg.PinAsync(options);
@@ -178,71 +113,99 @@ namespace Bot
                 progress[guildId] = msg;
             }
 
-            if (!workers.ContainsKey(guildId) || (workers[guildId].IsCompleted && !workers[guildId].IsCompleted))
+            if (channel != null && !workers.ContainsKey(guildId) || (workers[guildId].IsCompleted && !workers[guildId].IsCanceled))
             {
                 CancellationTokenSource source = new CancellationTokenSource();
                 tokens[guildId] = source;
-                workers.Add(guildId, Work(guildId, context.Channel, source.Token)); // FIXME
+                workers.Add(guildId, Work(guildId, channel, source.Token));
             }
             return Task.CompletedTask;
         }
 
-        public Task EnqueueEdit(ICommandContext context, List<EditData> edits)
+        public Task<ActionResult> EnqueueCreate(ulong guildId, PortalData[] data)
         {
-            if (editQueues.ContainsKey(context.Guild.Id))
+            List<string> list = new List<string>();
+
+            foreach (PortalData item in data)
             {
-                var queue = editQueues[context.Guild.Id];
-                foreach (EditData data in edits)
+                string command = $"create poi {item.Type} «{item.Name}» {item.Lat} {item.Lng}";
+                if (item.IsEx != null)
+                    command += $" \"ex_eligible: {Convert.ToInt16(item.IsEx)}\"";
+                list.Add(command);
+            }
+
+            EnqueueCreate(guildId, list);
+
+            if (_settings[guildId].PNavChannel == null)
+            {
+                return Task.FromResult((ActionResult)new OkObjectResult($"No Mod-Channel was set! Run {_settings[guildId].Prefix}set mod-channel in your server!"));
+            }
+
+            return Task.FromResult((ActionResult)new OkResult());
+        }
+
+        public Task<ActionResult> EnqueueEdit(ulong guildId, List<CompanionBot.EditData> edits, IMessageChannel channel = null)
+        {
+            if (editQueues.ContainsKey(guildId))
+            {
+                var queue = editQueues[guildId];
+                foreach (CompanionBot.EditData data in edits)
                 {
                     queue.Enqueue(data);
                 }
             }
             else
             {
-                editQueues.Add(context.Guild.Id, new Queue<EditData>(edits));
+                editQueues.Add(guildId, new Queue<CompanionBot.EditData>(edits));
             }
 
-            if (progress.ContainsKey(context.Guild.Id))
+            if (channel == null && _settings[guildId].PNavChannel != null)
+                channel = _client.GetChannel((ulong)_settings[guildId].PNavChannel) as IMessageChannel;
+
+            if (channel == null)
+                return Task.FromResult((ActionResult)new OkObjectResult($"No Mod-Channel was set! please run {_settings[guildId].Prefix}set mod-channel in your Server!"));
+
+            if (progress.ContainsKey(guildId))
             {
                 try
                 {
-                    progress[context.Guild.Id].ModifyAsync((x) =>
+                    progress[guildId].ModifyAsync((x) =>
                     {
-                        EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
-                        embed.Fields.Find((x) => x.Name == "Edits").Value = editQueues[context.Guild.Id].Count;
+                        EmbedBuilder embed = progress[guildId].Embeds.First().ToEmbedBuilder();
+                        embed.Fields.Find((x) => x.Name == "Edits").Value = editQueues[guildId].Count;
                         x.Embed = embed.Build();
                     }, options);
                 }
                 catch (Exception e)
                 {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueEdit), $"Error while editing progress message in Guild {context.Guild.Id}: {e.Message}", e));
+                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueEdit), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
                 }
             }
             else
             {
                 var embed = defaultEmbed.WithCurrentTimestamp();
-                embed.Fields[0].Value = createQueues.ContainsKey(context.Guild.Id) ? createQueues[context.Guild.Id].Count : 0;
-                embed.Fields[1].Value = editQueues[context.Guild.Id].Count;
-                embed.Footer.Text = $"use {_settings[context.Guild.Id].Prefix}pause or {_settings[context.Guild.Id].Prefix}resume to manage the export!";
-                IUserMessage msg = context.Channel.SendMessageAsync(embed: embed.Build()).Result;
+                embed.Fields[0].Value = createQueues.ContainsKey(guildId) ? createQueues[guildId].Count : 0;
+                embed.Fields[1].Value = editQueues[guildId].Count;
+                embed.Footer.Text = $"use {_settings[guildId].Prefix}pause or {_settings[guildId].Prefix}resume to manage the export!";
+                IUserMessage msg = channel.SendMessageAsync(embed: embed.Build()).Result;
                 try
                 {
                     msg.PinAsync(options);
                 }
                 catch (Exception e)
                 {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueEdit), $"Error pinning progress message in Guild {context.Guild.Id}: {e.Message}", e));
+                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueEdit), $"Error pinning progress message in Guild {guildId}: {e.Message}", e));
                 }
-                progress[context.Guild.Id] = msg;
+                progress[guildId] = msg;
             }
 
-            if (!workers.ContainsKey(context.Guild.Id) || (workers[context.Guild.Id].IsCompleted && !workers[context.Guild.Id].IsCanceled))
+            if (!workers.ContainsKey(guildId) || (workers[guildId].IsCompleted && !workers[guildId].IsCanceled))
             {
                 CancellationTokenSource source = new CancellationTokenSource();
-                tokens[context.Guild.Id] = source;
-                workers[context.Guild.Id] = Edit(context.Guild.Id, context.Channel, source.Token);
+                tokens[guildId] = source;
+                workers[guildId] = Edit(guildId, channel, source.Token);
             }
-            return Task.CompletedTask;
+            return Task.FromResult((ActionResult)new OkResult());
         }
 
         public Task Pause(ICommandContext context)
@@ -516,7 +479,7 @@ namespace Bot
                             s.Dispose();
                             token.ThrowIfCancellationRequested();
                         }
-                        EditData current = queue.Dequeue();
+                        CompanionBot.EditData current = queue.Dequeue();
                         string type = current.t == 0 ? "stop" : current.t.ToString();
                         Task t = Task.CompletedTask;
                         try
@@ -601,10 +564,10 @@ namespace Bot
                                     }
 
                                     string prompt = $"@here please select the right location! If you are not sure, let it time out!\nThe following info is available:";
-                                    prompt += $"\n\tName: {current.n}";
-                                    prompt += $"\n\tType: {current.t}";
+                                    prompt += $"\n\tName: {current.OldName}";
+                                    prompt += $"\n\tType: {current.OldType}";
                                     prompt += "\n\tEdits:";
-                                    foreach (var item in current.e)
+                                    foreach (var item in current)
                                     {
                                         switch (item.Key)
                                         {

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Bot;
+using CompanionBot.Bot;
 using CompanionBot.API;
 
 namespace CompanionBot

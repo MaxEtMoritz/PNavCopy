@@ -1,4 +1,4 @@
-﻿using Bot;
+﻿using CompanionBot.Bot;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Mvc;
 using System;

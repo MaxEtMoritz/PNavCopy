@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Bot;
+using CompanionBot.Bot;
 using Discord.WebSocket;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -31,7 +31,7 @@ namespace CompanionBot.API.Controllers
             if (_client.Guilds.Any((x) => x.Id == guildId))
             {
                 if (pwd == _settings[guildId].Pwd)
-                    await _queue.EnqueueCreate(guildId, data);
+                    return await _queue.EnqueueCreate(guildId, data);
                 else
                     return Unauthorized("Wrong Password!");
             }
@@ -39,7 +39,6 @@ namespace CompanionBot.API.Controllers
             {
                 return NotFound("Guild not found!");
             }
-            return Ok();
         }
     }
 }
