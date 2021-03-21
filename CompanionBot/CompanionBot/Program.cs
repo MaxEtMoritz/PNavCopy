@@ -46,8 +46,6 @@ namespace CompanionBot
             await _client.StartAsync();
             commandService = _services.GetRequiredService<CommandService>();
             commandService.Log += _services.GetRequiredService<Logger>().Log;
-            commandService.AddTypeReader(typeof(List<string[]>), new JsonTypeReader<List<string[]>>());
-            commandService.AddTypeReader(typeof(List<EditData>), new JsonTypeReader<List<EditData>>());
             handler = _services.GetRequiredService<CommandHandler>();
             await handler.InstallCommandsAsync();
 

@@ -4,9 +4,12 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Interactivity;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace CompanionBot
@@ -49,30 +52,39 @@ namespace CompanionBot
     public class PoIManagement : ModuleBase<SocketCommandContext>
     {
         private readonly MessageQueue _queue;
-        public PoIManagement(MessageQueue queue)
+        private readonly Logger _logger;
+        public PoIManagement(MessageQueue queue, Logger logger)
         {
             _queue = queue;
+            _logger = logger;
         }
 
-        [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm")]
-        public async Task CreatePoIAsync([Remainder, Summary("The PoI data from the IITC plugin.")] List<string[]> data)
+        [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm"), RequireAttachedJson]
+        public async Task CreatePoIAsync()
         {
-            //order of params: type name lat lng (isEx)
+            string dataString = "";
+            using (var client = new WebClient())
+            {
+                client.Encoding = Encoding.UTF8; // TODO find right Encoding! Test Files are UTF-8 encoded, but i don't know how the Userscript will encode!
+                try
+                {
+                    dataString = await client.DownloadStringTaskAsync(Context.Message.Attachments.First().Url);
+                }
+                catch (WebException e)
+                {
+                    dataString = "[]";
+                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(CreatePoIAsync), $"Download of attached File failed: {e.Response}", e));
+                    await ReplyAsync($"Download of Attached File Failed: {e.Response}");
+                }
+            }
+
+            // Command Exception thrown!
+            PortalData[] data = JsonConvert.DeserializeObject<PortalData[]>(dataString);
 
             List<string> commands = new List<string>();
-            foreach (string[] current in data)
+            foreach (PortalData current in data)
             {
-                if (current.Length < 4 || current.Length > 5)
-                {
-                    await ReplyAsync($"Bad Format! Length was {current.Length}, but only 4 or 5 are possible! Skipped the corrupt entry!");
-                }
-                else
-                {
-                    if (Enum.TryParse(current[0], out LocationType type))
-                        commands.Add($"create poi {type} «{current[1]}» {current[2]} {current[3]}{(current.Length > 4 && current[4] == "1" ? " \"ex_eligible: 1\"" : "")}");
-                    else
-                        await ReplyAsync($"Bad Format! Unknown Location Type {current[0]}! expected 0 or 1! Skipped the corrupt entry!");
-                }
+                commands.Add($"create poi {current.type} «{current.name}» {current.lat} {current.lng}{(current.isEx != null ? $" \"ex_eligible: {Convert.ToInt16((bool)current.isEx)}\"" : "")}");
             }
             await _queue.EnqueueCreate(Context, commands);
         }
@@ -89,10 +101,28 @@ namespace CompanionBot
             return _queue.Resume(Context);
         }
 
-        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook(Group = "g"), RequireOwner(Group = "g")]
-        public Task Edit([Remainder, Summary("List of Edits to make, provided by the IITC Plugin.")] List<EditData> data)
+        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook(Group = "g"), RequireOwner(Group = "g"), RequireAttachedJson]
+        public async Task Edit()
         {
-            return _queue.EnqueueEdit(Context, data);
+            string dataString = "";
+            using (var client = new WebClient())
+            {
+                client.Encoding = Encoding.UTF8; // TODO find the right Encoding! The test files are encoded in UTF-8 but i don't know how the Userscript will end up encoding the files!
+                try
+                {
+                    dataString = await client.DownloadStringTaskAsync(Context.Message.Attachments.First().Url);
+                }
+                catch (WebException e)
+                {
+                    dataString = "[]";
+                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Download of attached File failed: {e.Response}", e));
+                    await ReplyAsync($"Download of Attached File Failed: {e.Response}");
+                }
+            }
+
+            // Command Exception Thrown!
+            List<EditData> data = JsonConvert.DeserializeObject<List<EditData>>(dataString);
+            await _queue.EnqueueEdit(Context, data);
         }
     }
 
@@ -140,18 +170,5 @@ namespace CompanionBot
             _settings[Context.Guild.Id] = current;
             await ReplyAsync($"Prefix successfully set to '{prefix}'.");
         }
-    }
-
-    public struct EditData
-    {
-        // t: type, n: name, a: l**a**titude, o: l**o**ngitude, e: ex-eligibility (or edits on top-level)
-        public LocationType t;
-        public string n;
-        public IDictionary<char, string> e;
-    }
-
-    public enum LocationType
-    {
-        pokestop, gym, none
     }
 }

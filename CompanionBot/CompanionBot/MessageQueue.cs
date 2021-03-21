@@ -435,17 +435,17 @@ namespace CompanionBot
                             token.ThrowIfCancellationRequested();
                         }
                         EditData current = queue.Dequeue();
-                        string type = current.t == 0 ? "stop" : current.t.ToString();
+                        string type = current.oldType == "pokestop" ? "stop" : current.oldType;
                         Task t = Task.CompletedTask;
                         try
                         {
-                            t = channel.SendMessageAsync($"{prefix}{type}-info {current.n}");
+                            t = channel.SendMessageAsync($"{prefix}{type}-info {current.oldName}");
                         }
                         catch (Exception e)
                         {
                             await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending PoI Info Command in Guild {guildId}: {e.Message}", e));
                         }
-                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.n, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error" || msg.Embeds.First().Title == "Select Location"), timeout: TimeSpan.FromSeconds(10));
+                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.oldName, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error" || msg.Embeds.First().Title == "Select Location"), timeout: TimeSpan.FromSeconds(10));
                         await t;
                         if (result.IsSuccess)
                         {
@@ -471,9 +471,9 @@ namespace CompanionBot
                                 {
                                     var field = embed.Fields[i];
                                     string name = field.Name.Substring(3);
-                                    if (current.n == name && onlyOneExactMatch == null)
+                                    if (current.oldName == name && onlyOneExactMatch == null)
                                         onlyOneExactMatch = i;
-                                    else if (current.n == name && onlyOneExactMatch != null)
+                                    else if (current.oldName == name && onlyOneExactMatch != null)
                                     {
                                         onlyOneExactMatch = null;
                                         break;
@@ -519,39 +519,12 @@ namespace CompanionBot
                                     }
 
                                     string prompt = $"@here please select the right location! If you are not sure, let it time out!\nThe following info is available:";
-                                    prompt += $"\n\tName: {current.n}";
-                                    prompt += $"\n\tType: {current.t}";
+                                    prompt += $"\n\tName: {current.oldName}";
+                                    prompt += $"\n\tType: {current.oldType}";
                                     prompt += "\n\tEdits:";
-                                    foreach (var item in current.e)
+                                    foreach (var pair in current.edits)
                                     {
-                                        switch (item.Key)
-                                        {
-                                            case 'n':
-                                                prompt += $"\n\t\tName => {item.Value}";
-                                                break;
-                                            case 't':
-                                                prompt += "\n\t\tType => ";
-                                                if (Enum.TryParse(item.Value, out LocationType locationType))
-                                                {
-                                                    prompt += locationType;
-                                                }
-                                                else
-                                                {
-                                                    prompt += "unknown";
-                                                }
-                                                break;
-                                            case 'a':
-                                                prompt += $"\n\t\tLatitude => {item.Value}";
-                                                break;
-                                            case 'o':
-                                                prompt += $"\n\t\tLongitude => {item.Value}";
-                                                break;
-                                            case 'e':
-                                                prompt += $"\n\t\tEx-eligibility => {(item.Value=="0" ? bool.FalseString : bool.TrueString)}";
-                                                break;
-                                            default:
-                                                break;
-                                        }
+                                        prompt += $"\n\t\t{pair.Key} => {pair.Value}";
                                     }
                                     try
                                     {
@@ -685,57 +658,14 @@ namespace CompanionBot
                                 continue;
                             }
                             string editString;
-                            if (current.e.ContainsKey('t') && current.e['t'] == ((int)LocationType.none).ToString())
+                            if (current.edits.ContainsKey("type") && current.edits["type"] == "none")
                                 editString = $"{prefix}delete poi {id}";
                             else
                             {
                                 editString = $"{prefix}update poi {id}";
-                                foreach (var item in current.e)
+                                foreach (var pair in current.edits)
                                 {
-                                    string newEdit = " \"";
-                                    switch (item.Key)
-                                    {
-                                        case 'n':
-                                            newEdit += $"name: {item.Value}\"";
-                                            break;
-                                        case 't':
-                                            newEdit += "type: ";
-                                            if (!Enum.TryParse(item.Value, out LocationType locationType))
-                                            {
-                                                try
-                                                {
-                                                    await channel.SendMessageAsync($"Error: Unknown Location Type number {item.Value}");
-                                                }
-                                                catch (Exception e)
-                                                {
-                                                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
-                                                }
-                                                await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"unknown Location Type Number in Guild {guildId}: {item.Value}"));
-                                            }
-                                            newEdit += locationType + "\"";
-                                            break;
-                                        case 'a':
-                                            newEdit += $"latitude: {item.Value}\"";
-                                            break;
-                                        case 'o':
-                                            newEdit += $"longitude: {item.Value}\"";
-                                            break;
-                                        case 'e':
-                                            newEdit += $"ex_eligible: {item.Value}\"";
-                                            break;
-                                        default:
-                                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Unknown Edits Key in Guild {guildId}: '{item.Key}' (Value {item.Value})!"));
-                                            try
-                                            {
-                                                await channel.SendMessageAsync($"Error: Unknown Edit Key '{item.Key}'!");
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
-                                            }
-                                            continue;
-                                    }
-                                    editString += newEdit;
+                                    editString += $" \"{pair.Key}: {pair.Value}\"";
                                 }
                             }
                             try
