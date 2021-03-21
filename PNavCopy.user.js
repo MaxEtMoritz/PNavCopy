@@ -1019,23 +1019,17 @@ function wrapper (plugin_info) {
     $('#pNavModCommand', dialog).prop('title', getString('pNavModCommandTitleDisabled', {send: Boolean(window.plugin.pnav.settings.webhookUrl)}));
   }
 
-  function sendModCommand (changes) {
+  function sendModCommand (poiId, changes) {
     let command = '';
     if (changes.type && changes.type === 'none') {
-      command = `<@${pNavId}> delete poi ${pNavId}`;
+      command = `<@${pNavId}> delete poi ${poiId}`;
     } else {
-      command = `<@${pNavId}> update poi ${pNavId}`;
+      command = `<@${pNavId}> update poi ${poiId}`;
       for (const [
         key,
         value
-      ] of Object.entries(changes)) {
-        if (key !== 'oldType' && key !== 'oldName' && key !== 'guid') {
-          if (key === 'name') {
-            command += ` "${key}: ${value.replaceAll('"', '\\"')}"`;
-          } else {
-            command += ` "${key}: ${value}"`;
-          }
-        }
+      ] of Object.entries(changes.edits)) {
+        command += ` «${key}: ${value}»`;
       }
     }
     if (window.plugin.pnav.settings.webhookUrl) {
@@ -1049,6 +1043,10 @@ function wrapper (plugin_info) {
     }
   }
 
+  /**
+   * Checks for Modifications in PoGoTools Data.
+   * @return {editData[]} returns a list of edits.
+   */
   function checkForModifications () {
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoStops = (pogoData && pogoData.pokestops) ? pogoData.pokestops : {};
@@ -1059,17 +1057,19 @@ function wrapper (plugin_info) {
     var changeList = [];
     if (pogoData) {
       Object.values(pNavData.pokestop).forEach(function (stop) {
-        let detectedChanges = {};
+
+        /** @type {editData}*/
+        let detectedChanges = {edits: {}};
         let originalData;
         if (!keysStops.includes(stop.guid)) {
           if (keysGyms.includes(stop.guid)) {
-            detectedChanges.type = 'gym';
+            detectedChanges.edits.type = 'gym';
             originalData = pogoGyms[stop.guid];
             if (originalData.isEx) {
-              detectedChanges.ex_eligible = 1;
+              detectedChanges.edits.ex_eligible = 1;
             }
           } else {
-            detectedChanges.type = 'none';
+            detectedChanges.edits.type = 'none';
           }
         } else {
           originalData = pogoStops[stop.guid];
@@ -1077,18 +1077,18 @@ function wrapper (plugin_info) {
         // compare data
         if (originalData) {
           if (originalData.name !== stop.name) {
-            detectedChanges.name = originalData.name;
+            detectedChanges.edits.name = originalData.name;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
           if (originalData.lat != stop.lat) {
-            detectedChanges.latitude = originalData.lat;
+            detectedChanges.edits.latitude = originalData.lat;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
           if (originalData.lng != stop.lng) {
-            detectedChanges.longitude = originalData.lng;
+            detectedChanges.edits.longitude = originalData.lng;
           }
         }
-        if (Object.keys(detectedChanges).length > 0) {
+        if (Object.keys(detectedChanges.edits).length > 0) {
           detectedChanges.oldName = stop.name;
           detectedChanges.oldType = 'stop';
           detectedChanges.guid = stop.guid;
@@ -1096,14 +1096,16 @@ function wrapper (plugin_info) {
         }
       });
       Object.values(pNavData.gym).forEach(function (gym) {
-        let detectedChanges = {};
+
+        /** @type {editData}*/
+        let detectedChanges = {edits: {}};
         let originalData;
         if (!keysGyms.includes(gym.guid)) {
           if (keysStops.includes(gym.guid)) {
-            detectedChanges.type = 'pokestop';
+            detectedChanges.edits.type = 'pokestop';
             originalData = pogoStops[gym.guid];
           } else {
-            detectedChanges.type = 'none';
+            detectedChanges.edits.type = 'none';
           }
         } else {
           originalData = pogoGyms[gym.guid];
@@ -1111,22 +1113,22 @@ function wrapper (plugin_info) {
         // compare data
         if (originalData) {
           if (originalData.name !== gym.name) {
-            detectedChanges.name = originalData.name;
+            detectedChanges.edits.name = originalData.name;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
           if (originalData.lat != gym.lat) {
-            detectedChanges.latitude = originalData.lat;
+            detectedChanges.edits.latitude = originalData.lat;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
           if (originalData.lng != gym.lng) {
-            detectedChanges.longitude = originalData.lng;
+            detectedChanges.edits.longitude = originalData.lng;
           }
           if (originalData.isEx !== gym.isEx) {
             const newEx = originalData.isEx ? originalData.isEx : false;
-            detectedChanges.ex_eligible = newEx ? 1 : 0;
+            detectedChanges.edits.ex_eligible = newEx ? 1 : 0;
           }
         }
-        if (Object.keys(detectedChanges).length > 0) {
+        if (Object.keys(detectedChanges.edits).length > 0) {
           detectedChanges.oldName = gym.name;
           detectedChanges.oldType = 'gym';
           detectedChanges.guid = gym.guid;
@@ -1148,11 +1150,12 @@ function wrapper (plugin_info) {
    * @property {string} oldType
    * @property {string} oldName
    * @property {string} guid
-   * @property {string} [latitude]
-   * @property {string} [longitude]
-   * @property {string} [name]
-   * @property {string} [type]
-   * @property {number} [ex_eligible]
+   * @property {object} edits
+   * @property {string} [edits.latitude]
+   * @property {string} [edits.longitude]
+   * @property {string} [edits.name]
+   * @property {string} [edits.type]
+   * @property {number} [edits.ex_eligible]
    */
 
   /**
@@ -1188,19 +1191,19 @@ function wrapper (plugin_info) {
       return null;
     }
     if (currentData.type !== savedData.type) {
-      changes.type = currentData.type;
+      changes.edits.type = currentData.type;
     }
     if (currentData.lat != savedData.lat) {
-      changes.latitude = currentData.lat.toString();
+      changes.edits.latitude = currentData.lat.toString();
     }
     if (currentData.lng != savedData.lng) {
-      changes.longitude = currentData.lng.toString();
+      changes.edits.longitude = currentData.lng.toString();
     }
     if (currentData.name != savedData.name) {
-      changes.name = currentData.name;
+      changes.edits.name = currentData.name;
     }
     if (currentData.isEx !== savedData.isEx) {
-      changes.ex_eligible = currentData.isEx ? 1 : 0;
+      changes.edits.ex_eligible = currentData.isEx ? 1 : 0;
     }
     if (Object.keys(changes).length > 0) {
       changes.oldName = savedData.name;
@@ -1461,142 +1464,32 @@ function wrapper (plugin_info) {
   }
 
   /**
-   * assembles the edit data in a compact format for the companion bot and send it.
+   * assembles the edit data for the companion bot and sends it.
    * @param {editData[]} [changes] - optional list of changes that should be transferred.
    */
-  function botEdit (changes) { // uncaught TypeError: e is null! don't know which e, why it is null and what its value should be... happens after exiting the function!
-    if (!changes || !(changes instanceof Array)) {
-      // eslint-disable-next-line no-param-reassign
+  function botEdit (changes) {
+    if (typeof changes == 'undefined') {
       changes = checkForModifications();
     }
-    if (window.plugin.pnav.timer) {
-      console.log('Bulk Export already running!');
+    if (changes.length == 0) {
+      console.log('nothing to modify!');
       return;
     }
-    var j = 0;
-
-    function work () {
-      $('#editProgressBar', dlg).val(j);
-      $('#editNumber', dlg).text(j);
-      if (j >= changes.length) {
-        clearInterval(window.plugin.pnav.timer);
-        window.plugin.pnav.timer = null;
-        $('#editState', dlg).text(getString('exportStateTextReady'));
-        $('#editOKButton', dlg.parent).text('OK');
-        $('#editOKButton', dlg.parent).prop('title', '');
-        return;
+    var data = new FormData();
+    data.append('content', '!e');
+    data.append('username', window.plugin.pnav.settings.name);
+    data.append('file', new Blob([JSON.stringify(changes, null, 2)], {type: 'text/plain'}), 'data.json');
+    $.ajax({
+      method: 'POST',
+      url: window.plugin.pnav.settings.webhookUrl,
+      contentType: false,
+      processData: false,
+      data,
+      error (jgXHR, textStatus, errorThrown) {
+        console.error(`${textStatus} - ${errorThrown}`);
       }
-      var data = [];
-      var count = 2;
-      var i = j;
-      while (i < changes.length && count < wait - 10) {
-        var current = changes[i];
-        var e = {};
-        if (current.type) {
-          switch (current.type) {
-          case 'stop':
-            e.t = 0;
-            break;
-          case 'gym':
-            e.t = 1;
-            break;
-          case 'none':
-            e.t = 2;
-            break;
-          default:
-            break;
-          }
-          count += 6; // "t":0,
-        }
-        if (current.latitude) {
-          e.a = current.latitude;
-          count += 7 + current.latitude.toString().length; // "a":"",
-        }
-        if (current.longitude) {
-          e.o = current.longitude;
-          count += 7 + current.latitude.toString().length; // "o":"",
-        }
-        if (current.name) {
-          e.n = current.name;
-          count += 7 + current.name.toString().length; // "n":"",
-        }
-        if (current.ex_eligible) {
-          e.e = current.ex_eligible;
-          count += 6; // "e":1,
-        }
-        data.push({n: current.oldName,
-          t: current.oldType === 'stop' ? 0 : 1,
-          e});
-        count += 22 + current.oldName.toString().length; // {"n":"","t":0,"e":{}}, => 22 chars including type.
-        i++;
-      }
-      $.ajax({
-        method: 'POST',
-        url: window.plugin.pnav.settings.webhookUrl,
-        contentType: 'application/json',
-        context: this,
-        processData: false,
-        data: JSON.stringify({
-          username: window.plugin.pnav.settings.name,
-          avatar_url: '',
-          content: `<@${companionId}> e ${JSON.stringify(data)}`
-        }),
-        success () {
-          var guidList = [];
-          let subarray = changes.slice(j, i);
-          subarray.forEach((data) => {
-            guidList.push(data.guid);
-          });
-          updateDone(guidList);
-          j = i;
-        },
-        error (jgXHR, textStatus, errorThrown) {
-          console.error(`${textStatus} - ${errorThrown}`);
-        }
-      });
-    }
-
-    var dlg = window.dialog({id: 'botEditDialog',
-      width: 'auto',
-      height: 'auto',
-      title: getString('botEditDialogTitle'),
-      html: `
-        <h3 id="editState">${getString('exportStateTextExporting')}</h3>
-        <p>
-         <label>
-            ${getString('exportProgressBarDescription')}
-            <progress id="editProgressBar" value="0" max="${changes.length}"/>
-          </label>
-        </p>
-        <label id="editNumber">0</label>
-        <label>${getString('of')} ${changes.length}</label>
-      `,
-      buttons: {
-        OK: {
-          click () {
-            // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName')) {
-              window.changePortalHighlights(getString('portalHighlighterName')); // re-validate highlighter if active
-            }
-            clearInterval(window.plugin.pnav.timer);
-            dlg.dialog('close');
-          },
-          text: getString('bulkExportProgressButtonText'),
-          title: getString('bulkExportProgressButtonTitle'),
-          id: 'editOKButton'
-        }
-      }});
-    $('.ui-button.ui-dialog-titlebar-button-close', dlg.parent).on(
-      'click',
-      function () {
-        clearInterval(window.plugin.pnav.timer);
-        window.plugin.pnav.timer = null;
-      }
-    );
-    work(); // start immediately, not wait 2s for the first message!
-    if (j < changes.length) {
-      window.plugin.pnav.timer = setInterval(work, wait);
-    }
+    });
+    // TODO save state on success
   }
 
   /**
