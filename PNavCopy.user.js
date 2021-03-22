@@ -67,7 +67,6 @@ function wrapper (plugin_info) {
 
   var lCommBounds;
   const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
-  const discordMessageLimit = 2000; // a message can be 2000 characters at max in Discord
 
   const strings = {
     en: {
@@ -857,9 +856,9 @@ function wrapper (plugin_info) {
 
   /**
    * saves the State of the Bulk Export to local Storage.
-   * @param {object[]} data
+   * @param {pogoToolsData[]} data
    * @param {string} type
-   * @param {number} index
+   * @param {number} [index]
    */
   function saveState (data, type, index) {
     const addToDone = data.slice(0, index);
@@ -952,7 +951,7 @@ function wrapper (plugin_info) {
       $('#pNavModCommand', modDialog).on('click', function () {
         if ($('#pNavPoiId', modDialog).val() && new RegExp('^\\d*$').test($('#pNavPoiId', modDialog).val())) {
           sendModCommand($('#pNavPoiId', modDialog).val(), poi);
-          updateDone([poi.guid]);
+          updateDone([poi]);
           i++;
           if (i == changeList.length) {
             modDialog.dialog('close');
@@ -971,28 +970,28 @@ function wrapper (plugin_info) {
 
   /**
    * updates the export state after an edit step.
-   * @param {number[]} guidList - list of guids that were edited.
+   * @param {editData[]} changeList - list of changes that were made.
    */
-  function updateDone (guidList) {
+  function updateDone (changeList) {
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoGyms = pogoData.gyms ? pogoData.gyms : {};
     const pogoStops = pogoData.stops ? pogoData.stops : {};
-    guidList.forEach((guid) => {
-      if (Object.keys(pogoStops).includes(guid)) {
-        pNavData.pokestop[guid] = pogoStops[guid];
-        if (Object.keys(pNavData.gym).includes(guid)) {
-          delete pNavData.gym[guid];
+    changeList.forEach((change) => {
+      if (Object.keys(pogoStops).includes(change.guid)) {
+        pNavData.pokestop[change.guid] = pogoStops[change.guid];
+        if (Object.keys(pNavData.gym).includes(change.guid)) {
+          delete pNavData.gym[change.guid];
         }
-      } else if (Object.keys(pogoGyms).includes(guid)) {
-        pNavData.gym[guid] = pogoGyms[guid];
-        if (Object.keys(pNavData.pokestop).includes(guid)) {
-          delete pNavData.pokestop[guid];
+      } else if (Object.keys(pogoGyms).includes(change.guid)) {
+        pNavData.gym[change.guid] = pogoGyms[change.guid];
+        if (Object.keys(pNavData.pokestop).includes(change.guid)) {
+          delete pNavData.pokestop[change.guid];
         }
       } else {
-        if (Object.keys(pNavData.pokestop).includes(guid)) {
-          delete pNavData.pokestop[guid];
+        if (Object.keys(pNavData.pokestop).includes(change.guid)) {
+          delete pNavData.pokestop[change.guid];
         } else {
-          delete pNavData.gym[guid];
+          delete pNavData.gym[change.guid];
         }
       }
     });
@@ -1021,7 +1020,7 @@ function wrapper (plugin_info) {
 
   function sendModCommand (poiId, changes) {
     let command = '';
-    if (changes.type && changes.type === 'none') {
+    if (changes.edits.type && changes.edits.type === 'none') {
       command = `<@${pNavId}> delete poi ${poiId}`;
     } else {
       command = `<@${pNavId}> update poi ${poiId}`;
@@ -1170,6 +1169,17 @@ function wrapper (plugin_info) {
    */
 
   /**
+   * data like it is stored in PoGoTools Plugin (mainly portalData without type field).
+   * @external
+   * @typedef {object} pogoToolsData
+   * @property {string} guid
+   * @property {string} name
+   * @property {string} lat
+   * @property {string} lng
+   * @property {boolean} [isEx]
+   */
+
+  /**
    * Checks if a single Poi has been modified
    * @param {portalData} currentData
    * @return {editData | null} returns the found changes or null if none were found or a problem occurred.
@@ -1218,14 +1228,14 @@ function wrapper (plugin_info) {
   /**
    * fetch previous data from local storage and add
    * @param {string} type - expected values pokestop or gym
-   * @return {portalData[] | null} returns the data to export or null if Pogo Tools Data was not found.
+   * @return {pogoToolsData[] | null} returns the data to export or null if Pogo Tools Data was not found.
    */
   function gatherExportData (type) {
     var pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const modified = checkForModifications();
     const exportBlacklist = [];
     modified.forEach(function (modification) {
-      if (modification.type && modification.type === type) {
+      if (modification.edits.type && modification.edits.type === type) {
         exportBlacklist.push(modification.guid);
       }
     });
@@ -1238,8 +1248,8 @@ function wrapper (plugin_info) {
         typeof window.plugin.pnav.settings.lng === 'undefined' ||
         typeof window.plugin.pnav.settings.radius === 'undefined';
 
-      /** @type {portalData[]} */
-      var exportData = pogoData.filter(function (/** @type{portalData}*/object) {
+      /** @type {pogoToolsData[]} */
+      var exportData = pogoData.filter(function (/** @type {pogoToolsData}*/object) {
         return (
           (!doneGuids || !doneGuids.includes(object.guid)) &&
           (distanceNotCheckable ||
@@ -1262,17 +1272,19 @@ function wrapper (plugin_info) {
         alert(getString('alertProblemPogoTools'));
         return;
       }
+      if (window.plugin.pnav.settings.useBot) {
+        botExport(data, type); // jump to BotExport immediately before opening the dialog, this is not needed!
+        return;
+      }
       var i = 0;
       window.onbeforeunload = function () {
         saveState(data, type, i);
         return null;
       };
 
-      var whatToDo = (window.plugin.pnav.settings.useBot ? botExport : normalExport);
-
       window.plugin.pnav.timer = setInterval(() => {
         if (i < data.length && data.length > 0) {
-          whatToDo(data, type, thisDialog, i).then((result) => {
+          normalExport(data, type, thisDialog, i).then((result) => {
             i = result;
           });
         } else {
@@ -1330,7 +1342,7 @@ function wrapper (plugin_info) {
         }
       );
       if (data.length > 0) {
-        whatToDo(data, type, dialog, 0).then((result) => {
+        normalExport(data, type, dialog, 0).then((result) => {
           i = result;
         }); // start immediately instead of waiting 2 seconds.
       } else {
@@ -1343,78 +1355,43 @@ function wrapper (plugin_info) {
 
   /**
    * One Export step when the Companion Discord bot should be used.
-   * @param {portalData[]} data all locations that need exporting
+   * @param {pogoToolsData[]} data all locations that need exporting
    * @param {string} type the location type of the given data
-   * @param {HTMLElement} dialog the dialog of the bulk export
-   * @param {number} i the current index
-   * @return {number} the new index after the export step
    */
-  async function botExport (data, type, dialog, i) {
-    var content = `<@${companionId}>cm `;
-    var currentSize = content.length + 2; // command plus outer array brackets
-    var toExport = [];
-    let j = i;
-    while (j < data.length && currentSize + 10 < discordMessageLimit) {
-      let entry = data[j];
-      let count = 13; // "[type,"name","lat","lng",ex]," -> results in 12 extra chars for no ex, if ex it is 14 (including ex itself). type is always one char, so add it right here.
-      if (entry.isEx) {
-        count += 2;
-      }
-      if (typeof (entry.name) === 'undefined' || typeof (entry.lat) === 'undefined' || typeof (entry.lng) === 'undefined') {
-        j++; // yes, in my testings i came across a PokeStop that somehow had no name in Pogo Tools... but that makes no sense to export because PokeNav would refuse this anyway.
-        break;
-      }
-      count += entry.lat.toString().length; // most of the time, lat and lng were strings in Pogo Tools, but on some PoIs it were numbers
-      count += entry.lng.toString().length; // and .length of a number is undefined, turning count to NaN when adding it.
-      count += entry.name.toString().length; // even with the name it is like that! sometimes it is just a number (had a PokeStop named 1895)!
-      if (currentSize + count + 10 < discordMessageLimit) {
-        currentSize += count;
-        let current = [
-          type === 'pokestop' ? 0 : 1,
-          entry.name.toString(),
-          entry.lat.toString(),
-          entry.lng.toString()
-        ];
-        if (entry.isEx) {
-          current.push(1);
-        }
-        toExport.push(current);
-        j++;
-      } else {
-        break;
-      }
-    }
-    content += JSON.stringify(toExport);
-    const params = {
-      username: window.plugin.pnav.settings.name,
-      avatar_url: '',
-      content
-    };
-    var success = await fetch(window.plugin.pnav.settings.webhookUrl, {
+  function botExport (data, type) {
+    // TODO adapt to Bot Changes!
+    /** @type {portalData[]} */
+    var exportdata = [...data];
+    exportdata.forEach((element) => {
+      element.type = type; // convert pogoToolsData to portalData
+    });
+    var formData = new FormData();
+    var date = new Date();
+    formData.append('content', `<@${companionId}> cm`);
+    formData.append('username', window.plugin.pnav.settings.name);
+    formData.append('file', new Blob([JSON.stringify(exportdata, null, 2)], {type: 'application/json'}), `creations-${window.plugin.pnav.settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`);
+    $.ajax({
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(params)
-    })
-      .then((response) => {
-        if (!response.ok) {
-          console.error(`HTTP Error: ${response.status} - ${response.statusText}${response.bodyUsed ? `; body: ${response.body}` : ''}`);
+      url: window.plugin.pnav.settings.webhookUrl,
+      contentType: false,
+      processData: false,
+      data: formData,
+      error (jgXHR, textStatus, errorThrown) {
+        console.error(`${textStatus} - ${errorThrown}`);
+      },
+      success () {
+        saveState(data, type);
+        // eslint-disable-next-line no-underscore-dangle
+        if (window._current_highlighter === getString('portalHighlighterName')) { // re-validate highlighter if it is enabled.
+          window.changePortalHighlights(getString('portalHighlighterName'));
         }
-        return response.ok;
-      })
-      .catch((error) => {
-        console.error(error);
-        return false;
-      });
-    if (success) {
-      updateExportDialog(dialog, j, Object.keys(data).length, Math.ceil(((Object.keys(data).length - j) / 40) * (wait / 1000))); // 40 locations per message is my experience from testing.
-      return j; // return the new i!
-    } else {
-      return i;
-    }
+      }
+    });
   }
 
   /**
    * One Export step when only the WebHook should be used.
+   * @async
    * @param {object} data all locations that need exporting
    * @param {string} type the location type of the given data
    * @param {HTMLElement} dialog the dialog of the bulk export
@@ -1468,17 +1445,22 @@ function wrapper (plugin_info) {
    * @param {editData[]} [changes] - optional list of changes that should be transferred.
    */
   function botEdit (changes) {
+    if (typeof window.plugin.pnav.settings.webhookUrl === 'undefined') {
+      console.error('no Webhook URL present!');
+      return;
+    }
     if (typeof changes == 'undefined') {
       changes = checkForModifications();
     }
     if (changes.length == 0) {
-      console.log('nothing to modify!');
+      console.log('nothing to export!');
       return;
     }
     var data = new FormData();
-    data.append('content', '!e');
+    var date = new Date();
+    data.append('content', `<@${companionId}> e`);
     data.append('username', window.plugin.pnav.settings.name);
-    data.append('file', new Blob([JSON.stringify(changes, null, 2)], {type: 'text/plain'}), 'data.json');
+    data.append('file', new Blob([JSON.stringify(changes, null, 2)], {type: 'application/json'}), `edits-${window.plugin.pnav.settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`);
     $.ajax({
       method: 'POST',
       url: window.plugin.pnav.settings.webhookUrl,
@@ -1487,9 +1469,15 @@ function wrapper (plugin_info) {
       data,
       error (jgXHR, textStatus, errorThrown) {
         console.error(`${textStatus} - ${errorThrown}`);
+      },
+      success () {
+        updateDone(changes);
+        // eslint-disable-next-line no-underscore-dangle
+        if (window._current_highlighter === getString('portalHighlighterName')) { // re-validate highlighter if it is enabled.
+          window.changePortalHighlights(getString('portalHighlighterName'));
+        }
       }
     });
-    // TODO save state on success
   }
 
   /**
