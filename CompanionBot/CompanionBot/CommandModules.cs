@@ -65,7 +65,7 @@ namespace CompanionBot
             string dataString = "";
             using (var client = new WebClient())
             {
-                client.Encoding = Encoding.UTF8; // TODO find right Encoding! Test Files are UTF-8 encoded, but i don't know how the Userscript will encode!
+                client.Encoding = Encoding.UTF8;
                 try
                 {
                     dataString = await client.DownloadStringTaskAsync(Context.Message.Attachments.First().Url);
@@ -107,7 +107,7 @@ namespace CompanionBot
             string dataString = "";
             using (var client = new WebClient())
             {
-                client.Encoding = Encoding.UTF8; // TODO find the right Encoding! The test files are encoded in UTF-8 but i don't know how the Userscript will end up encoding the files!
+                client.Encoding = Encoding.UTF8;
                 try
                 {
                     dataString = await client.DownloadStringTaskAsync(Context.Message.Attachments.First().Url);

@@ -26,7 +26,9 @@ namespace CompanionBot
         private readonly GuildSettings _settings;
         RequestOptions options;
         RequestOptions typingOptions;
-        EmbedBuilder defaultEmbed;
+        private TimeSpan averageCreateTime = TimeSpan.FromSeconds(1);
+        private TimeSpan averageEditTime = TimeSpan.FromSeconds(2);
+        // TODO Implement Time Guessing (through all Guilds) and display this Info in Progress Embed!
 
         public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings, IConfiguration config)
         {
@@ -39,7 +41,6 @@ namespace CompanionBot
             options.RetryMode = RetryMode.RetryRatelimit;
             typingOptions = RequestOptions.Default;
             typingOptions.RetryMode = RetryMode.AlwaysFail;
-            defaultEmbed = new EmbedBuilder();
             defaultEmbed.Title = "Exporting...";
             defaultEmbed.Description = "This is still to do:";
             defaultEmbed.Fields.Add(new EmbedFieldBuilder() { Name = "Creations", Value = 0, IsInline = true });
@@ -239,6 +240,58 @@ namespace CompanionBot
             {
                 context.Channel.SendMessageAsync("Bulk Export is already running, no need to Resume!");
                 _logger.Log(new LogMessage(LogSeverity.Info, nameof(Resume), $"Resume failed in Guild {context.Guild.Id}: Bulk Export was already running."));
+            }
+            return Task.CompletedTask;
+        }
+
+        private Task UpdateProgress(ulong guild, IMessageChannel channel, bool actionRequired = false)
+        {
+            List<EmbedFieldBuilder> fields = new List<EmbedFieldBuilder>();
+            fields.Add(new EmbedFieldBuilder()
+            {
+                Name = "Creations",
+                Value = createQueues.ContainsKey(guild) ? createQueues[guild].Count : 0,
+                IsInline = true
+            });
+            fields.Add(new EmbedFieldBuilder()
+            {
+                Name = "Edits",
+                Value = editQueues.ContainsKey(guild) ? editQueues[guild].Count : 0,
+                IsInline = true
+            });
+            EmbedBuilder embed = new EmbedBuilder()
+            {
+                Description = "This is still to do:",
+                Title = workers.ContainsKey(guild) && !workers[guild].IsCompleted ? "Exporting..." : "Paused",
+                Footer = new EmbedFooterBuilder() { Text = "use pause or resume Commands to manage the export!" },
+                Fields = fields
+            }.WithCurrentTimestamp();
+
+            if (actionRequired)
+            {
+                embed.Title = "Action Required!";
+                embed.Color = Color.DarkRed;
+                embed.Description = $"Head to <#{_settings[guild].PNavChannel}> and select the right Location!";
+            }
+
+            if (progress.ContainsKey(guild))
+            {
+                try
+                {
+                    progress[guild].ModifyAsync((x) =>
+                    {
+                        x.Embed = embed.WithTimestamp((DateTimeOffset)progress[guild].Embeds.First().Timestamp).Build();
+                    }, options);
+                }
+                catch (Exception e)
+                {
+                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(UpdateProgress), $"Editing of Progress Message failed in Guild {guild}: {e.Message}", e));
+                }
+            }
+            else
+            {
+                progress[guild] = channel.SendMessageAsync(embed: embed.Build()).Result;
+                progress[guild].PinAsync();
             }
             return Task.CompletedTask;
         }

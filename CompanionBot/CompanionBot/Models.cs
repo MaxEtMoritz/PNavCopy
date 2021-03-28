@@ -20,6 +20,6 @@ namespace CompanionBot
         public string oldName;
         public string guid;
         ///<remarks>expected Keys: type, name, latitude, longitude, ex_eligible</remarks>
-        public Dictionary<string, string> edits; // TODO restructure EditData in Userscript to match this definition!
+        public Dictionary<string, string> edits;
     }
 }
