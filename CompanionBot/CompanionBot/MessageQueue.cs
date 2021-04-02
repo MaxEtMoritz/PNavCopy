@@ -16,7 +16,7 @@ namespace CompanionBot
     {
         private readonly DiscordSocketClient _client;
         private readonly Logger _logger;
-        private static InteractivityService _inter;
+        private readonly InteractivityService _inter;
         private readonly string prefix;
         private readonly Dictionary<ulong, CancellationTokenSource> tokens = new Dictionary<ulong, CancellationTokenSource>();
         private readonly Dictionary<ulong, Queue<string>> createQueues = new Dictionary<ulong, Queue<string>>();
@@ -24,11 +24,10 @@ namespace CompanionBot
         private readonly Dictionary<ulong, Task> workers = new Dictionary<ulong, Task>();
         private readonly Dictionary<ulong, IUserMessage> progress = new Dictionary<ulong, IUserMessage>();
         private readonly GuildSettings _settings;
-        RequestOptions options;
-        RequestOptions typingOptions;
+        private readonly RequestOptions options;
+        private readonly RequestOptions typingOptions;
         private TimeSpan averageCreateTime = TimeSpan.FromSeconds(1);
         private TimeSpan averageEditTime = TimeSpan.FromSeconds(2);
-        // TODO Implement Time Guessing (through all Guilds) and display this Info in Progress Embed!
 
         public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings, IConfiguration config)
         {
@@ -41,11 +40,6 @@ namespace CompanionBot
             options.RetryMode = RetryMode.RetryRatelimit;
             typingOptions = RequestOptions.Default;
             typingOptions.RetryMode = RetryMode.AlwaysFail;
-            defaultEmbed.Title = "Exporting...";
-            defaultEmbed.Description = "This is still to do:";
-            defaultEmbed.Fields.Add(new EmbedFieldBuilder() { Name = "Creations", Value = 0, IsInline = true });
-            defaultEmbed.Fields.Add(new EmbedFieldBuilder() { Name = "Edits", Value = 0, IsInline = true });
-            defaultEmbed.Footer = new EmbedFooterBuilder() { Text = "use pause or resume Commands to manage the export!" };
         }
 
         public Task EnqueueCreate(ICommandContext context, List<string> commands)
@@ -63,39 +57,7 @@ namespace CompanionBot
                 createQueues.Add(context.Guild.Id, new Queue<string>(commands));
             }
 
-            if (progress.ContainsKey(context.Guild.Id))
-            {
-                try
-                {
-                    progress[context.Guild.Id].ModifyAsync((x) =>
-                    {
-                        EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
-                        embed.Fields.Find((x) => x.Name == "Creations").Value = createQueues[context.Guild.Id].Count;
-                        x.Embed = embed.Build();
-                    }, options);
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueCreate), $"Error while editing progress message in Guild {context.Guild.Id}: {e.Message}", e));
-                }
-            }
-            else
-            {
-                var embed = defaultEmbed.WithCurrentTimestamp();
-                embed.Fields[0].Value = createQueues[context.Guild.Id].Count;
-                embed.Fields[1].Value = editQueues.ContainsKey(context.Guild.Id) ? editQueues[context.Guild.Id].Count : 0;
-                embed.Footer.Text = $"use {_settings[context.Guild.Id].Prefix}pause or {_settings[context.Guild.Id].Prefix}resume to manage the export!";
-                IUserMessage msg = context.Channel.SendMessageAsync(embed: embed.Build()).Result;
-                try
-                {
-                    msg.PinAsync(options);
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueCreate), $"Error pinning progress message in Guild {context.Guild.Id}: {e.Message}", e));
-                }
-                progress[context.Guild.Id] = msg;
-            }
+            UpdateProgress(context.Guild.Id, context.Channel);
 
             if (!workers.ContainsKey(context.Guild.Id) || (workers[context.Guild.Id].IsCompleted && !workers[context.Guild.Id].IsCompleted))
             {
@@ -121,39 +83,7 @@ namespace CompanionBot
                 editQueues.Add(context.Guild.Id, new Queue<EditData>(edits));
             }
 
-            if (progress.ContainsKey(context.Guild.Id))
-            {
-                try
-                {
-                    progress[context.Guild.Id].ModifyAsync((x) =>
-                    {
-                        EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
-                        embed.Fields.Find((x) => x.Name == "Edits").Value = editQueues[context.Guild.Id].Count;
-                        x.Embed = embed.Build();
-                    }, options);
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueEdit), $"Error while editing progress message in Guild {context.Guild.Id}: {e.Message}", e));
-                }
-            }
-            else
-            {
-                var embed = defaultEmbed.WithCurrentTimestamp();
-                embed.Fields[0].Value = createQueues.ContainsKey(context.Guild.Id) ? createQueues[context.Guild.Id].Count : 0;
-                embed.Fields[1].Value = editQueues[context.Guild.Id].Count;
-                embed.Footer.Text = $"use {_settings[context.Guild.Id].Prefix}pause or {_settings[context.Guild.Id].Prefix}resume to manage the export!";
-                IUserMessage msg = context.Channel.SendMessageAsync(embed: embed.Build()).Result;
-                try
-                {
-                    msg.PinAsync(options);
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(EnqueueEdit), $"Error pinning progress message in Guild {context.Guild.Id}: {e.Message}", e));
-                }
-                progress[context.Guild.Id] = msg;
-            }
+            UpdateProgress(context.Guild.Id, context.Channel);
 
             if (!workers.ContainsKey(context.Guild.Id) || (workers[context.Guild.Id].IsCompleted && !workers[context.Guild.Id].IsCanceled))
             {
@@ -171,23 +101,7 @@ namespace CompanionBot
                 if (tokens.TryGetValue(context.Guild.Id, out CancellationTokenSource token))
                 {
                     token.Cancel(); // Disposing is done in the Task itself when it is canceled or completed.
-                    if (progress.ContainsKey(context.Guild.Id))
-                    {
-                        IUserMessage message = progress[context.Guild.Id];
-                        try
-                        {
-                            message.ModifyAsync((x) =>
-                            {
-                                EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
-                                embed.Title = "Paused";
-                                x.Embed = embed.Build();
-                            }, options);
-                        }
-                        catch (Exception e)
-                        {
-                            _logger.Log(new LogMessage(LogSeverity.Error, nameof(Pause), $"Error modifying progress message in Guild {context.Guild.Id}: {e.Message}", e));
-                        }
-                    }
+                    UpdateProgress(context.Guild.Id, context.Channel);
                     context.Channel.SendMessageAsync("Successfully paused!");
                 }
                 else
@@ -208,27 +122,19 @@ namespace CompanionBot
         {
             if (!workers.ContainsKey(context.Guild.Id) || workers[context.Guild.Id].IsCompleted)
             {
-                if (progress.ContainsKey(context.Guild.Id))
-                {
-                    IUserMessage message = progress[context.Guild.Id];
-                    message.ModifyAsync((x) =>
-                    {
-                        EmbedBuilder embed = progress[context.Guild.Id].Embeds.First().ToEmbedBuilder();
-                        embed.Title = "Exporting...";
-                        x.Embed = embed.Build();
-                    }, options);
-                }
                 if (createQueues.ContainsKey(context.Guild.Id) && createQueues[context.Guild.Id].Any())
                 {
                     CancellationTokenSource source = new CancellationTokenSource();
                     tokens[context.Guild.Id] = source;
                     workers[context.Guild.Id] = Work(context.Guild.Id, context.Channel, source.Token);
+                    UpdateProgress(context.Guild.Id, context.Channel);
                 }
                 else if (editQueues.ContainsKey(context.Guild.Id) && editQueues[context.Guild.Id].Any())
                 {
                     CancellationTokenSource source = new CancellationTokenSource();
                     tokens[context.Guild.Id] = source;
                     workers[context.Guild.Id] = Edit(context.Guild.Id, context.Channel, source.Token);
+                    UpdateProgress(context.Guild.Id, context.Channel);
                 }
                 else
                 {
@@ -246,25 +152,31 @@ namespace CompanionBot
 
         private Task UpdateProgress(ulong guild, IMessageChannel channel, bool actionRequired = false)
         {
-            List<EmbedFieldBuilder> fields = new List<EmbedFieldBuilder>();
-            fields.Add(new EmbedFieldBuilder()
-            {
-                Name = "Creations",
-                Value = createQueues.ContainsKey(guild) ? createQueues[guild].Count : 0,
-                IsInline = true
-            });
-            fields.Add(new EmbedFieldBuilder()
-            {
-                Name = "Edits",
-                Value = editQueues.ContainsKey(guild) ? editQueues[guild].Count : 0,
-                IsInline = true
-            });
             EmbedBuilder embed = new EmbedBuilder()
             {
                 Description = "This is still to do:",
-                Title = workers.ContainsKey(guild) && !workers[guild].IsCompleted ? "Exporting..." : "Paused",
+                Title = workers.ContainsKey(guild) && !workers[guild].IsCompleted && tokens.ContainsKey(guild) && !tokens[guild].IsCancellationRequested ? "Exporting..." : "Paused",
                 Footer = new EmbedFooterBuilder() { Text = "use pause or resume Commands to manage the export!" },
-                Fields = fields
+                Fields = new List<EmbedFieldBuilder>
+                {
+                    new EmbedFieldBuilder()
+                    {
+                        Name = "Creations",
+                        Value = createQueues.ContainsKey(guild) ? createQueues[guild].Count : 0,
+                        IsInline = true
+                    },
+                    new EmbedFieldBuilder()
+                    {
+                        Name = "Edits",
+                        Value = editQueues.ContainsKey(guild) ? editQueues[guild].Count : 0,
+                        IsInline = true
+                    },
+                    new EmbedFieldBuilder()
+                    {
+                        Name = "Time Remaining",
+                        Value = Math.Ceiling((((createQueues.ContainsKey(guild) ? createQueues[guild].Count : 0) * averageCreateTime) + ((editQueues.ContainsKey(guild) ? editQueues[guild].Count : 0) * averageEditTime)).TotalSeconds) + "s"
+                    }
+                }
             }.WithCurrentTimestamp();
 
             if (actionRequired)
@@ -274,7 +186,19 @@ namespace CompanionBot
                 embed.Description = $"Head to <#{_settings[guild].PNavChannel}> and select the right Location!";
             }
 
-            if (progress.ContainsKey(guild))
+            if (progress.ContainsKey(guild) && (!createQueues.ContainsKey(guild) || createQueues[guild].Count == 0) && (!editQueues.ContainsKey(guild) || editQueues[guild].Count == 0))
+            {
+                try
+                {
+                    progress[guild].DeleteAsync(options);
+                    progress.Remove(guild);
+                }
+                catch (Exception e)
+                {
+                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(UpdateProgress), $"Deleting Progress Message failed in Guild {guild}: {e.Message}", e));
+                }
+            }
+            else if (progress.ContainsKey(guild))
             {
                 try
                 {
@@ -298,11 +222,6 @@ namespace CompanionBot
 
         private async Task Work(ulong guildId, IMessageChannel invokedChannel, CancellationToken token)
         {
-            IUserMessage message = null;
-            if (progress.ContainsKey(guildId))
-            {
-                message = progress[guildId];
-            }
 
             if (createQueues.TryGetValue(guildId, out Queue<string> queue))
             {
@@ -317,6 +236,7 @@ namespace CompanionBot
                         await invokedChannel.SendMessageAsync($"There was a problem with the mod-channel! try to run `{_settings[guildId].Prefix}set mod-channel` and then `{_settings[guildId].Prefix}resume` to try again!");
                         return;
                     }
+                    DateTime start;
 
                     while (queue.Count > 0)
                     {
@@ -327,6 +247,7 @@ namespace CompanionBot
                             s.Dispose();
                             token.ThrowIfCancellationRequested();
                         }
+                        start = DateTime.UtcNow;
                         string current = queue.Dequeue();
                         IDisposable typing = null;
                         try
@@ -363,22 +284,15 @@ namespace CompanionBot
                             }
                             await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Work), $"PokeNav did not respond within 10 seconds in Guild {guildId}."));
                         }
-                        if (message != null && queue.Count % 5 == 0) // do not edit every time because of rate limits
+                        if (queue.Count % 5 == 0) // do not edit every time because of rate limits
                         {
-                            try
-                            {
-                                await message.ModifyAsync((x) =>
-                                {
-                                    EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                                    embed.Fields.Find((x) => x.Name == "Creations").Value = queue.Count;
-                                    x.Embed = embed.Build();
-                                }, options);
-                            }
-                            catch (Exception e)
-                            {
-                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                            }
+                            await UpdateProgress(guildId, channel);
                         }
+                        averageCreateTime = averageCreateTime * 0.9 + (DateTime.UtcNow - start) * (1 - 0.9); // TODO: does this work like intended?
+                    }
+                    if (editQueues.ContainsKey(guildId) && editQueues[guildId].Any())
+                    {
+                        workers[guildId] = Edit(guildId, invokedChannel, token); // proceed with edits after creation is complete if there are any.
                     }
                 }
                 else
@@ -391,74 +305,20 @@ namespace CompanionBot
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
                     }
-                    if (message != null)
-                    {
-                        try
-                        {
-                            await message.ModifyAsync((x) =>
-                            {
-                                EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                                embed.Title = "Paused";
-                                x.Embed = embed.Build();
-                            }, options);
-                        }
-                        catch (Exception e)
-                        {
-                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                        }
-                    }
+                    tokens[guildId]?.Cancel(); // To set IsCancellationRequested to make it paused instead of Exporting
+                    await UpdateProgress(guildId, invokedChannel);
                     await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Work), $"Execution failed in Guild {guildId}: Mod-Channel was not set!"));
                 }
             }
 
-            if (editQueues.ContainsKey(guildId) && editQueues[guildId].Any())
-            {
-                if (message != null)
-                {
-                    try
-                    {
-                        await message.ModifyAsync((x) =>
-                        {
-                            EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                            embed.Fields.Find((x) => x.Name == "Creations").Value = queue.Count;
-                            x.Embed = embed.Build();
-                        }, options);
-                    }
-                    catch (Exception e)
-                    {
-                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                    }
-                }
-                workers[guildId] = Edit(guildId, invokedChannel, token); // proceed with edits after creation is complete if there are any.
-            }
-            else
-            {
-                workers.Remove(guildId);
-                tokens.Remove(guildId, out CancellationTokenSource source);
-                if (message != null)
-                {
-                    try
-                    {
-                        await message.DeleteAsync(options);
-                    }
-                    catch (Exception e)
-                    {
-                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while deleting progress message in Guild {guildId}: {e.Message}", e));
-                    }
-                    progress.Remove(guildId);
-                }
-                source.Dispose();
-            }
+            workers.Remove(guildId);
+            tokens.Remove(guildId, out CancellationTokenSource source);
+            source.Dispose();
+            await UpdateProgress(guildId, invokedChannel);
         }
 
         private async Task Edit(ulong guildId, IMessageChannel invokedChannel, CancellationToken token)
         {
-            IUserMessage message = null;
-            if (progress.ContainsKey(guildId))
-            {
-                message = progress[guildId];
-            }
-
             if (editQueues.TryGetValue(guildId, out var queue))
             {
                 if (_settings[guildId].PNavChannel != null)
@@ -478,6 +338,7 @@ namespace CompanionBot
                         }
                         return;
                     }
+                    DateTime start;
                     while (queue.Count > 0)
                     {
                         if (token.IsCancellationRequested)
@@ -487,6 +348,7 @@ namespace CompanionBot
                             s.Dispose();
                             token.ThrowIfCancellationRequested();
                         }
+                        start = DateTime.UtcNow;
                         EditData current = queue.Dequeue();
                         string type = current.oldType == "pokestop" ? "stop" : current.oldType;
                         Task t = Task.CompletedTask;
@@ -523,7 +385,7 @@ namespace CompanionBot
                                 for (int i = 0; i < embed.Fields.Length; i++)
                                 {
                                     var field = embed.Fields[i];
-                                    string name = field.Name.Substring(3);
+                                    string name = field.Name[3..];
                                     if (current.oldName == name && onlyOneExactMatch == null)
                                         onlyOneExactMatch = i;
                                     else if (current.oldName == name && onlyOneExactMatch != null)
@@ -551,25 +413,7 @@ namespace CompanionBot
                                 else
                                 {
                                     // edit progress message to show that user action is required!
-                                    if (message != null)
-                                    {
-                                        try
-                                        {
-                                            await message.ModifyAsync((x) =>
-                                            {
-                                                EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                                                embed.Title = "Action Required!";
-                                                embed.Color = Color.DarkRed;
-                                                embed.Description = $"head to <#{channel.Id}> and select the right PoI to edit!";
-                                                embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
-                                                x.Embed = embed.Build();
-                                            }, options);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                                        }
-                                    }
+                                    await UpdateProgress(guildId, invokedChannel, true);
 
                                     string prompt = $"@here please select the right location! If you are not sure, let it time out!\nThe following info is available:";
                                     prompt += $"\n\tName: {current.oldName}";
@@ -589,7 +433,7 @@ namespace CompanionBot
                                     }
                                     //https://stackoverflow.com/a/12858633 answer by user dtb on StackOverflow
                                     SemaphoreSlim reactSignal = new SemaphoreSlim(0, 1);
-                                    Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task> reactHandler = delegate (Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channl, SocketReaction reaction)
+                                    Task reactHandler(Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channl, SocketReaction reaction)
                                     {
                                         bool validEmote = new Regex($"[1-{embed.Fields.Length}]\u20e3").IsMatch(reaction.Emote.Name);
                                         if (channl.Id == channel.Id && result.Value.Id == reaction.MessageId && reaction.User.Value.Id != 428187007965986826 && validEmote)
@@ -605,7 +449,7 @@ namespace CompanionBot
                                             }
                                         }
                                         return Task.CompletedTask;
-                                    };
+                                    }
                                     _client.ReactionAdded += reactHandler;
                                     if (!await reactSignal.WaitAsync(result.Value.Timestamp.AddSeconds(58) - DateTime.Now)) // that should wait a bit shorter than PokeNav is waiting!
                                     {
@@ -621,52 +465,16 @@ namespace CompanionBot
                                         }
                                         _client.ReactionAdded -= reactHandler;
                                         reactSignal.Dispose();
-                                        if (message != null)
-                                        {
-                                            try
-                                            {
-                                                await message.ModifyAsync((x) =>
-                                                {
-                                                    EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                                                    embed.Title = "Exporting...";
-                                                    embed.Color = null;
-                                                    embed.Description = $"This is still to do:";
-                                                    embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
-                                                    x.Embed = embed.Build();
-                                                }, options);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                                            }
-                                        }
+                                        await UpdateProgress(guildId, invokedChannel);
                                         continue;
                                     }
                                     _client.ReactionAdded -= reactHandler;
-                                    if (message != null)
-                                    {
-                                        try
-                                        {
-                                            await message.ModifyAsync((x) =>
-                                            {
-                                                EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                                                embed.Title = "Exporting...";
-                                                embed.Color = null;
-                                                embed.Description = $"This is still to do:";
-                                                embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
-                                                x.Embed = embed.Build();
-                                            }, options);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                                        }
-                                    }
+                                    await UpdateProgress(guildId, invokedChannel);
                                 }
 
                                 //https://stackoverflow.com/a/12858633 answer by user dtb on StackOverflow
                                 SemaphoreSlim signal = new SemaphoreSlim(0, 1);
-                                Func<SocketMessage, Task> handler = delegate (SocketMessage msg)
+                                Task handler(SocketMessage msg)
                                 {
                                     if (msg.Channel == channel && msg.Author.Id == 428187007965986826 && msg.Embeds.Count == 1 && string.IsNullOrEmpty(msg.Content))
                                     {
@@ -674,9 +482,8 @@ namespace CompanionBot
                                         signal.Release();
                                     }
                                     return Task.CompletedTask;
-                                };
+                                }
                                 _client.MessageReceived += handler;
-                                //_client.MessageReceived += delegate (SocketMessage msg) { Console.WriteLine("Sie haben Post! um " + DateTime.Now); return Task.CompletedTask; };
                                 // wait for 10 seconds for the message to get sent
                                 if (!await signal.WaitAsync(10000))
                                 {
@@ -697,7 +504,7 @@ namespace CompanionBot
                                 _client.MessageReceived -= handler;
                             }
                             string text = embed.Footer.Value.Text.Split('\u25AB')[2];
-                            if (!uint.TryParse(text.Substring(2), out uint id))
+                            if (!uint.TryParse(text[2..], out uint id))
                             {
                                 try
                                 {
@@ -758,22 +565,15 @@ namespace CompanionBot
                             }
                             await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"PokeNav did not respond in guild {guildId}!"));
                         }
-                        if (message != null && queue.Count % 5 == 0) // do not edit every time
+                        if (queue.Count % 5 == 0) // do not edit every time
                         {
-                            try
-                            {
-                                await message.ModifyAsync((x) =>
-                                {
-                                    EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                                    embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
-                                    x.Embed = embed.Build();
-                                }, options);
-                            }
-                            catch (Exception e)
-                            {
-                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                            }
+                            await UpdateProgress(guildId, invokedChannel);
                         }
+                        averageEditTime = averageEditTime * 0.9 + (DateTime.UtcNow - start) * (1 - 0.9); // TODO: Does this work like intended?
+                    }
+                    if (createQueues.ContainsKey(guildId) && createQueues[guildId].Any())
+                    {
+                        workers[guildId] = Work(guildId, invokedChannel, token); // proceed with creation after edits are complete if there is anything to create.
                     }
                 }
                 else
@@ -786,64 +586,16 @@ namespace CompanionBot
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
                     }
-                    if (message != null)
-                    {
-                        try
-                        {
-                            await message.ModifyAsync((x) =>
-                            {
-                                EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                                embed.Title = "Paused";
-                                x.Embed = embed.Build();
-                            }, options);
-                        }
-                        catch (Exception e)
-                        {
-                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                        }
-                    }
+                    tokens[guildId]?.Cancel(); // Sets IsCancellationRequested to make the Progress Message modify to Paused.
+                    await UpdateProgress(guildId, invokedChannel);
                     await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"Execution failed in Guild {guildId}: Mod-Channel was not set!"));
                 }
             }
 
-            if (createQueues.ContainsKey(guildId) && createQueues[guildId].Any())
-            {
-                if (message != null)
-                {
-                    try
-                    {
-                        await message.ModifyAsync((x) =>
-                        {
-                            EmbedBuilder embed = message.Embeds.First().ToEmbedBuilder();
-                            embed.Fields.Find((x) => x.Name == "Edits").Value = queue.Count;
-                            x.Embed = embed.Build();
-                        }, options);
-                    }
-                    catch (Exception e)
-                    {
-                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while editing progress message in Guild {guildId}: {e.Message}", e));
-                    }
-                }
-                workers[guildId] = Work(guildId, invokedChannel, token); // proceed with creation after edits are complete if there is anything to create.
-            }
-            else
-            {
-                workers.Remove(guildId);
-                if (message != null)
-                {
-                    try
-                    {
-                        await message.DeleteAsync(options);
-                    }
-                    catch (Exception e)
-                    {
-                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while deleting progress message in Guild {guildId}: {e.Message}", e));
-                    }
-                }
-                progress.Remove(guildId);
-                tokens.Remove(guildId, out CancellationTokenSource source);
-                source.Dispose();
-            }
+            workers.Remove(guildId);
+            tokens.Remove(guildId, out CancellationTokenSource source);
+            source.Dispose();
+            await UpdateProgress(guildId, invokedChannel);
         }
     }
 }

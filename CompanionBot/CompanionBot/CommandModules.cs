@@ -59,8 +59,8 @@ namespace CompanionBot
             _logger = logger;
         }
 
-        [Command("createmultiple"), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm"), RequireAttachedJson]
-        public async Task CreatePoIAsync()
+        [Command("createmultiple", RunMode = RunMode.Async), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm"), RequireAttachedJson]
+        public async Task CreatePoIAsync() // Async because download could take time
         {
             string dataString = "";
             using (var client = new WebClient())
@@ -90,19 +90,20 @@ namespace CompanionBot
         }
 
         [Command("pause"), Alias("p", "stop"), Summary("Pauses the Bulk Export. To start again, run the `resume` Command.")]
-        public Task PauseCM()
+        public Task Pause()
         {
-            return _queue.Pause(Context);
+            _queue.Pause(Context); // Pausing can take time so this would block the gateway too long if the Pause Task is returned.
+            return Task.CompletedTask;
         }
 
         [Command("resume"), Alias("r", "restart"), Summary("Resume the Bulk Export.")]
-        public Task ResumeCM()
+        public Task Resume()
         {
             return _queue.Resume(Context);
         }
 
-        [Command("edit"), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook(Group = "g"), RequireOwner(Group = "g"), RequireAttachedJson]
-        public async Task Edit()
+        [Command("edit", RunMode = RunMode.Async), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook(Group = "g"), RequireOwner(Group = "g"), RequireAttachedJson]
+        public async Task Edit() // Async because Download can take time...
         {
             string dataString = "";
             using (var client = new WebClient())
