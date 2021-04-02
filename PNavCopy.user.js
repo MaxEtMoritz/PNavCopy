@@ -6,7 +6,7 @@
 // @category       Misc
 // @downloadURL    https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js
 // @author         MaxEtMoritz
-// @version        1.7.1
+// @version        1.7.2
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info to clipboard or send it to Discord in the format the PokeNav Discord bot needs.
 // @include        http*://intel.ingress.com/*
@@ -1359,7 +1359,7 @@ function wrapper (plugin_info) {
    * @param {string} type the location type of the given data
    */
   function botExport (data, type) {
-    // TODO adapt to Bot Changes!
+
     /** @type {portalData[]} */
     var exportdata = [...data];
     exportdata.forEach((element) => {
