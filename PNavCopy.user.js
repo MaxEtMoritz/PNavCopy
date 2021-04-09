@@ -1005,10 +1005,8 @@ function wrapper (plugin_info) {
     for (const [
       key,
       value
-    ] of Object.entries(poi)) {
-      if (key !== 'oldName' && key !== 'oldType' && key !== 'guid') {
-        $('#pNavChangesMade', dialog).append(`<li>${key} => ${value}</li>`);
-      }
+    ] of Object.entries(poi.edits)) {
+      $('#pNavChangesMade', dialog).append(`<li>${key} => ${value}</li>`);
     }
     $('#pNavPoiId', dialog).val('');
     $('#pNavModCommand', dialog).css('color', 'darkgray');
@@ -1146,14 +1144,14 @@ function wrapper (plugin_info) {
   /**
    * Edit Data that lists what edits should be made.
    * @typedef {object} editData
-   * @property {string} oldType
+   * @property {string} oldType - expected stop or gym
    * @property {string} oldName
    * @property {string} guid
    * @property {object} edits
    * @property {string} [edits.latitude]
    * @property {string} [edits.longitude]
    * @property {string} [edits.name]
-   * @property {string} [edits.type]
+   * @property {string} [edits.type] - expected pokestop, gym or none
    * @property {number} [edits.ex_eligible]
    */
 
@@ -1231,30 +1229,24 @@ function wrapper (plugin_info) {
    * @return {pogoToolsData[] | null} returns the data to export or null if Pogo Tools Data was not found.
    */
   function gatherExportData (type) {
+
+    /** @type {pogoToolsData[]}*/
     var pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
-    const modified = checkForModifications();
-    const exportBlacklist = [];
-    modified.forEach(function (modification) {
-      if (modification.edits.type && modification.edits.type === type) {
-        exportBlacklist.push(modification.guid);
-      }
-    });
     if (pogoData[`${type}s`]) {
       pogoData = Object.values(pogoData[`${type}s`]);
       // console.log(pogoData);
-      const doneGuids = Object.keys(pNavData[type]);
+      const doneGuids = (Object.keys(pNavData.pokestop).concat(Object.keys(pNavData.gym)));
       const distanceNotCheckable =
         typeof window.plugin.pnav.settings.lat === 'undefined' ||
         typeof window.plugin.pnav.settings.lng === 'undefined' ||
         typeof window.plugin.pnav.settings.radius === 'undefined';
 
       /** @type {pogoToolsData[]} */
-      var exportData = pogoData.filter(function (/** @type {pogoToolsData}*/object) {
+      var exportData = pogoData.filter(function (object) {
         return (
-          (!doneGuids || !doneGuids.includes(object.guid)) &&
+          !doneGuids.includes(object.guid) &&
           (distanceNotCheckable ||
-            checkDistance(object.lat, object.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius) &&
-          !exportBlacklist.includes(object.guid)
+            checkDistance(object.lat, object.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius)
         );
       });
       return exportData;
