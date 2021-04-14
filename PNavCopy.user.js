@@ -202,6 +202,7 @@ function wrapper (plugin_info) {
       pokeNavSettingsText: 'PokeNav Settings',
       pokeNavSettingsTitle: 'Configure PokeNav',
       portalHighlighterName: 'PokeNav State',
+      requestAddressDescription: 'Request Address',
       useBotText: 'Use Companion Bot',
       useBotTitle: 'Tick this if you have invited the Companion Bot to your Server. This enables a faster bulk export. More Info on GitHub!'
     },
@@ -339,6 +340,7 @@ function wrapper (plugin_info) {
       pokeNavSettingsText: 'PokeNav-Einstellungen',
       pokeNavSettingsTitle: 'Konfigurieren Sie PokeNav',
       portalHighlighterName: 'PokeNav-Status',
+      requestAddressDescription: 'Adresse abfragen',
       useBotText: 'Bot verwenden',
       useBotTitle: 'Setzen Sie den Haken, wenn Sie den Assistenz-Bot auf Ihren Server hinzugefügt haben. Dadurch kann der Massen-Export beschleunigt werden. Mehr Infos dazu auf GitHub!'
     }
@@ -877,6 +879,7 @@ function wrapper (plugin_info) {
     }
     if (changeList && changeList.length > 0) {
       // console.log(changeList);
+      var i = 0;
       const send = Boolean(window.plugin.pnav.settings.webhookUrl);
       const html = `
         <label>${getString('Modification')}</label><label id=pNavModNrCur>1</label><label>${getString('of')}</label><label id="pNavModNrMax"></label>
@@ -884,6 +887,8 @@ function wrapper (plugin_info) {
           ${getString('pNavOldPoiNameDescription')}
         </h3>
         <h3 id="pNavOldPoiName"></h3>
+        <a id="address">${getString('requestAddressDescription')}</a>
+        <br>
         <label>${getString('pNavChangesMadeDescription')}</label>
         <ul id="pNavChangesMade"></ul>
         <label>
@@ -920,7 +925,6 @@ function wrapper (plugin_info) {
           }
         }
       });
-      var i = 0;
       var poi = changeList[i];
       $('#pNavPoiInfo', modDialog).on('click', function () {
         if (window.plugin.pnav.settings.webhookUrl) {
@@ -966,6 +970,17 @@ function wrapper (plugin_info) {
     } else {
       alert(getString('alertNoModifications'));
     }
+    $('#address').click(() => {
+      if ($('#address').text() === getString('requestAddressDescription')) {
+        $.ajax(`https://nominatim.openstreetmap.org/reverse?lat=${changeList[i].lat}&lon=${changeList[i].lng}&format=json&addressdetails=0`, {
+          success: (data) => {
+            if (data && data.display_name) {
+              $('#address').text(data.display_name);
+            }
+          }
+        });
+      }
+    });
   };
 
   /**
@@ -1002,6 +1017,7 @@ function wrapper (plugin_info) {
     $('#pNavOldPoiName', dialog).text(poi.oldName);
     $('#pNavModNrCur', dialog).text(i + 1);
     $('#pNavChangesMade', dialog).empty();
+    $('#address').text(getString('requestAddressDescription'));
     for (const [
       key,
       value
@@ -1089,6 +1105,8 @@ function wrapper (plugin_info) {
           detectedChanges.oldName = stop.name;
           detectedChanges.oldType = 'stop';
           detectedChanges.guid = stop.guid;
+          detectedChanges.lat = originalData.lat;
+          detectedChanges.lng = originalData.lng;
           changeList.push(detectedChanges);
         }
       });
@@ -1129,6 +1147,8 @@ function wrapper (plugin_info) {
           detectedChanges.oldName = gym.name;
           detectedChanges.oldType = 'gym';
           detectedChanges.guid = gym.guid;
+          detectedChanges.lat = originalData.lat;
+          detectedChanges.lng = originalData.lng;
           changeList.push(detectedChanges);
         }
       });
@@ -1147,6 +1167,8 @@ function wrapper (plugin_info) {
    * @property {string} oldType - expected stop or gym
    * @property {string} oldName
    * @property {string} guid
+   * @property {string} lat //TODO adapt the Bot!
+   * @property {string} lng
    * @property {object} edits
    * @property {string} [edits.latitude]
    * @property {string} [edits.longitude]
@@ -1217,6 +1239,8 @@ function wrapper (plugin_info) {
       changes.oldName = savedData.name;
       changes.oldType = savedData.type === 'pokestop' ? 'stop' : savedData.type;
       changes.guid = savedData.guid;
+      changes.lat = savedData.lat;
+      changes.lng = savedData.lng;
       return changes;
     } else {
       return null;
