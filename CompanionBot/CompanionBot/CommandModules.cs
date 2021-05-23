@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -53,31 +53,28 @@ namespace CompanionBot
     {
         private readonly MessageQueue _queue;
         private readonly Logger _logger;
-        public PoIManagement(MessageQueue queue, Logger logger)
+        private readonly HttpClient _client;
+        public PoIManagement(MessageQueue queue, Logger logger, HttpClient webClient)
         {
             _queue = queue;
             _logger = logger;
+            _client = webClient;
         }
 
         [Command("createmultiple", RunMode = RunMode.Async), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm"), RequireAttachedJson]
         public async Task CreatePoIAsync() // Async because download could take time
         {
             string dataString = "";
-            using (var client = new WebClient())
+            try
             {
-                client.Encoding = Encoding.UTF8;
-                try
-                {
-                    dataString = await client.DownloadStringTaskAsync(Context.Message.Attachments.First().Url);
-                }
-                catch (WebException e)
-                {
-                    dataString = "[]";
-                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(CreatePoIAsync), $"Download of attached File failed: {e.Response}", e));
-                    await ReplyAsync($"Download of Attached File Failed: {e.Response}");
-                }
+                dataString = await _client.GetStringAsync(Context.Message.Attachments.First().Url);
             }
-
+            catch (HttpRequestException e)
+            {
+                dataString = "[]";
+                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(CreatePoIAsync), $"Download of attached File failed: {e.Message}", e));
+                await ReplyAsync($"Download of Attached File Failed: {e.Message}");
+            }
             // Command Exception thrown!
             PortalData[] data = JsonConvert.DeserializeObject<PortalData[]>(dataString);
 
@@ -106,19 +103,15 @@ namespace CompanionBot
         public async Task Edit() // Async because Download can take time...
         {
             string dataString = "";
-            using (var client = new WebClient())
+            try
             {
-                client.Encoding = Encoding.UTF8;
-                try
-                {
-                    dataString = await client.DownloadStringTaskAsync(Context.Message.Attachments.First().Url);
-                }
-                catch (WebException e)
-                {
-                    dataString = "[]";
-                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Download of attached File failed: {e.Response}", e));
-                    await ReplyAsync($"Download of Attached File Failed: {e.Response}");
-                }
+                dataString = await _client.GetStringAsync(Context.Message.Attachments.First().Url);
+            }
+            catch (HttpRequestException e)
+            {
+                dataString = "[]";
+                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Download of attached File failed: {e.Message}", e));
+                await ReplyAsync($"Download of Attached File Failed: {e.Message}");
             }
 
             // Command Exception Thrown!

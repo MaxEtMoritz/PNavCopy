@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ namespace CompanionBot
         private readonly DiscordSocketClient _client;
         private readonly Logger _logger;
         private readonly InteractivityService _inter;
+        private readonly HttpClient _webClient;
         private readonly string prefix;
         private readonly Dictionary<ulong, CancellationTokenSource> tokens = new Dictionary<ulong, CancellationTokenSource>();
         private readonly Dictionary<ulong, Queue<string>> createQueues = new Dictionary<ulong, Queue<string>>();
@@ -28,13 +30,16 @@ namespace CompanionBot
         private readonly RequestOptions typingOptions;
         private TimeSpan averageCreateTime = TimeSpan.FromSeconds(1);
         private TimeSpan averageEditTime = TimeSpan.FromSeconds(2);
+        private DateTime lastNominatimCall = DateTime.UtcNow - TimeSpan.FromMinutes(1);
+        private readonly Mutex nominatimLock = new Mutex();
 
-        public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings, IConfiguration config)
+        public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings, IConfiguration config, HttpClient webClient)
         {
             _client = client;
             _inter = interactive;
             _logger = logger;
             _settings = settings;
+            _webClient = webClient;
             prefix = $"<@{config["pokeNavId"]}> ";
             options = RequestOptions.Default;
             options.RetryMode = RetryMode.RetryRatelimit;
@@ -212,7 +217,7 @@ namespace CompanionBot
                     _logger.Log(new LogMessage(LogSeverity.Error, nameof(UpdateProgress), $"Editing of Progress Message failed in Guild {guild}: {e.Message}", e));
                 }
             }
-            else
+            else if ((createQueues.ContainsKey(guild) && createQueues[guild].Count > 0) || (editQueues.ContainsKey(guild) && editQueues[guild].Count > 0))
             {
                 progress[guild] = channel.SendMessageAsync(embed: embed.Build()).Result;
                 progress[guild].PinAsync();
@@ -380,63 +385,56 @@ namespace CompanionBot
                             else if (embed.Title == "Select Location")
                             {
                                 // handle the Location Select Dialog or skip this edit!
+                                int i;
 
-                                int? onlyOneExactMatch = null;
-                                for (int i = 0; i < embed.Fields.Length; i++)
+                                for (i = 0; i < embed.Fields.Length; i++)
                                 {
-                                    var field = embed.Fields[i];
-                                    string name = field.Name[3..];
-                                    if (current.oldName == name && onlyOneExactMatch == null)
-                                        onlyOneExactMatch = i;
-                                    else if (current.oldName == name && onlyOneExactMatch != null)
+                                    string test = embed.Fields[i].Value;
+                                    test = test.Substring(test.LastIndexOf("destination=") + 12, test.Length - (test.LastIndexOf("destination=") + 13)); // filter out Coordinates for Google Maps Link
+                                    string[] coords = test.Split("%2C+"); // split into north and east Coordinate
+                                    if (current.lat == coords[0] && current.lng == coords[1])
                                     {
-                                        onlyOneExactMatch = null;
+                                        // found the right one! i will be used to select it!
                                         break;
                                     }
                                 }
 
-                                if (onlyOneExactMatch != null)
+                                //https://stackoverflow.com/a/12858633 answer by user dtb on StackOverflow
+                                SemaphoreSlim signal = new SemaphoreSlim(0, 1);
+                                Task handler(SocketMessage msg)
                                 {
-                                    // assume this is the right one!
-                                    var field = embed.Fields[(int)onlyOneExactMatch];
-                                    Emoji reaction = new Emoji(field.Name.Substring(0, 2));
+                                    if (signal.CurrentCount == 0 && msg.Channel == channel && msg.Author.Id == 428187007965986826 && msg.Embeds.Count == 1 && string.IsNullOrEmpty(msg.Content)
+                                        && msg.Embeds.First().Fields.Any((field) => { return field.Name == "coordinates"; })
+                                        && msg.Embeds.First().Fields.Any((field) => { return field.Name == "near"; }))
+                                    {
+                                        embed = msg.Embeds.First();
+                                        signal.Release();
+                                    }
+                                    return Task.CompletedTask;
+                                }
+                                _client.MessageReceived += handler;
 
+                                if (i < embed.Fields.Length)
+                                {
+                                    // something was found obviously!
+                                    Emoji reaction = new Emoji(embed.Fields[i].Name.Substring(0, 2));
                                     try
                                     {
                                         await result.Value.AddReactionAsync(reaction, options);
                                     }
                                     catch (Exception e)
                                     {
-                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while selecting right location in Guild {guildId}: {e.Message}", e));
+                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error adding Reaction in Guild {guildId}: {e.Message}", e));
                                     }
                                 }
                                 else
                                 {
-                                    // edit progress message to show that user action is required!
-                                    await UpdateProgress(guildId, invokedChannel, true);
-
-                                    string prompt = $"@here please select the right location! If you are not sure, let it time out!\nThe following info is available:";
-                                    prompt += $"\n\tName: {current.oldName}";
-                                    prompt += $"\n\tType: {current.oldType}";
-                                    prompt += "\n\tEdits:";
-                                    foreach (var pair in current.edits)
-                                    {
-                                        prompt += $"\n\t\t{pair.Key} => {pair.Value}";
-                                    }
-                                    try
-                                    {
-                                        await channel.SendMessageAsync(prompt, options: options);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending selection prompt in Guild {guildId}: {e.Message}", e));
-                                    }
                                     //https://stackoverflow.com/a/12858633 answer by user dtb on StackOverflow
                                     SemaphoreSlim reactSignal = new SemaphoreSlim(0, 1);
                                     Task reactHandler(Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channl, SocketReaction reaction)
                                     {
                                         bool validEmote = new Regex($"[1-{embed.Fields.Length}]\u20e3").IsMatch(reaction.Emote.Name);
-                                        if (channl.Id == channel.Id && result.Value.Id == reaction.MessageId && reaction.User.Value.Id != 428187007965986826 && validEmote)
+                                        if (reactSignal.CurrentCount == 0 && channl.Id == channel.Id && result.Value.Id == reaction.MessageId && reaction.User.Value.Id != 428187007965986826 && validEmote)
                                         {
                                             reactSignal.Release();
                                             try
@@ -451,7 +449,65 @@ namespace CompanionBot
                                         return Task.CompletedTask;
                                     }
                                     _client.ReactionAdded += reactHandler;
-                                    if (!await reactSignal.WaitAsync(result.Value.Timestamp.AddSeconds(58) - DateTime.Now)) // that should wait a bit shorter than PokeNav is waiting!
+
+                                    // edit progress message to show that user action is required!
+                                    await UpdateProgress(guildId, invokedChannel, true);
+                                    string addressJson;
+                                    nominatimLock.WaitOne();
+                                    TimeSpan timeToWait = DateTime.UtcNow - lastNominatimCall;
+                                    if (timeToWait < TimeSpan.FromSeconds(1))
+                                    {
+                                        await Task.Delay(TimeSpan.FromSeconds(1) - timeToWait); // wait until Nominatim API can be called again
+                                    }
+                                    try
+                                    {
+                                        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"https://nominatim.openstreetmap.org/reverse?lat={current.lat}&lon={current.lng}&format=json&addressdetails=0&accept-language={_client.GetGuild(guildId)?.PreferredLocale}");
+                                        request.Headers.UserAgent.Clear();
+                                        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("IITCPokenavCompanion", null));
+                                        var temp = await _webClient.SendAsync(request);
+                                        addressJson = await temp.Content.ReadAsStringAsync();
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        addressJson = "{\"error\":\"Error getting Address!\"}";
+                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Address Request failed in Guild {guildId}: {e.Message}", e));
+                                    }
+                                    finally
+                                    {
+                                        lastNominatimCall = DateTime.UtcNow;
+                                        nominatimLock.ReleaseMutex();
+                                    }
+                                    AddressResponse response;
+                                    try
+                                    {
+                                        response = Newtonsoft.Json.JsonConvert.DeserializeObject<AddressResponse>(addressJson);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error Converting Address Response JSON in Guild {guildId}: {e.Message}", e));
+                                        response = new AddressResponse() { error = "Error getting Address!" };
+                                    }
+
+                                    string prompt = $"@here please select the right location! If you are not sure, let it time out!\nThe following info is available:";
+                                    EmbedBuilder infoEmbed = new EmbedBuilder().WithCurrentTimestamp();
+                                    infoEmbed.AddField("Name:", current.oldName, true);
+                                    infoEmbed.AddField("Type:", current.oldType, true);
+                                    infoEmbed.AddField("Address:", $"[{(string.IsNullOrEmpty(response.display_name) ? response.error : response.display_name)}](https://www.google.com/maps/search/?api=1&query={current.lat}%2c%20{current.lng})", true);
+                                    string edits = "";
+                                    foreach (var pair in current.edits)
+                                    {
+                                        edits += $"\n{pair.Key} => {pair.Value}";
+                                    }
+                                    infoEmbed.AddField("Edits:", edits);
+                                    try
+                                    {
+                                        await channel.SendMessageAsync(prompt, embed: infoEmbed.Build(), options: options);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending selection prompt in Guild {guildId}: {e.Message}", e));
+                                    }
+                                    if (!await reactSignal.WaitAsync(result.Value.Timestamp.AddSeconds(60) - DateTime.Now)) // that should wait a bit shorter than PokeNav is waiting!
                                     {
                                         // No one reacted!
                                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Timeout while waiting for User Reaction in Guild {guildId}."));
@@ -465,25 +521,12 @@ namespace CompanionBot
                                         }
                                         _client.ReactionAdded -= reactHandler;
                                         reactSignal.Dispose();
-                                        await UpdateProgress(guildId, invokedChannel);
                                         continue;
                                     }
                                     _client.ReactionAdded -= reactHandler;
                                     await UpdateProgress(guildId, invokedChannel);
                                 }
 
-                                //https://stackoverflow.com/a/12858633 answer by user dtb on StackOverflow
-                                SemaphoreSlim signal = new SemaphoreSlim(0, 1);
-                                Task handler(SocketMessage msg)
-                                {
-                                    if (msg.Channel == channel && msg.Author.Id == 428187007965986826 && msg.Embeds.Count == 1 && string.IsNullOrEmpty(msg.Content))
-                                    {
-                                        embed = msg.Embeds.First();
-                                        signal.Release();
-                                    }
-                                    return Task.CompletedTask;
-                                }
-                                _client.MessageReceived += handler;
                                 // wait for 10 seconds for the message to get sent
                                 if (!await signal.WaitAsync(10000))
                                 {

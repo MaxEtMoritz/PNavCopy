@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace CompanionBot
@@ -37,6 +38,7 @@ namespace CompanionBot
                 .AddSingleton<CommandService>()
                 .AddSingleton<GuildSettings>()
                 .AddSingleton<Logger>()
+                .AddSingleton(new HttpClient() {Timeout=TimeSpan.FromSeconds(10)})
                 .BuildServiceProvider();
 
             _client = _services.GetRequiredService<DiscordSocketClient>();

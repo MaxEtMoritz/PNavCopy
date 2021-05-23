@@ -19,7 +19,16 @@ namespace CompanionBot
         public string oldType;
         public string oldName;
         public string guid;
+        public string lat;
+        public string lng;
         ///<remarks>expected Keys: type, name, latitude, longitude, ex_eligible</remarks>
         public Dictionary<string, string> edits;
+    }
+
+    public struct AddressResponse
+    {
+        public string display_name;
+        public string error;
+        // additional properties don't matter right now, i don't need them.
     }
 }
