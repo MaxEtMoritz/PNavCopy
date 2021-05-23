@@ -12,9 +12,7 @@ To use this IITC Plugin, you need
 
 
 ## Installation
-To install the Plugin, click the Button below:
-
-<a download href="https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js" style="background:darkgray;border:1px solid black;border-radius:1em;padding:0.1em 5em;font-weight:bold;color:black;">Install Userscript</a>
+To install the Plugin, click **[here](https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js)**.
 
 You should be asked if you want to install an external Plugin. Confirm the Installation and you are done!
 
