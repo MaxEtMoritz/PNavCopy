@@ -1073,40 +1073,40 @@ function wrapper (plugin_info) {
 
         /** @type {editData}*/
         let detectedChanges = {edits: {}};
-        let originalData;
+        let newData;
         if (!keysStops.includes(stop.guid)) {
           if (keysGyms.includes(stop.guid)) {
             detectedChanges.edits.type = 'gym';
-            originalData = pogoGyms[stop.guid];
-            if (originalData.isEx) {
+            newData = pogoGyms[stop.guid];
+            if (newData.isEx) {
               detectedChanges.edits.ex_eligible = 1;
             }
           } else {
             detectedChanges.edits.type = 'none';
           }
         } else {
-          originalData = pogoStops[stop.guid];
+          newData = pogoStops[stop.guid];
         }
         // compare data
-        if (originalData) {
-          if (originalData.name !== stop.name) {
-            detectedChanges.edits.name = originalData.name;
+        if (newData) {
+          if (newData.name !== stop.name) {
+            detectedChanges.edits.name = newData.name;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
-          if (originalData.lat != stop.lat) {
-            detectedChanges.edits.latitude = originalData.lat;
+          if (newData.lat != stop.lat) {
+            detectedChanges.edits.latitude = newData.lat;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
-          if (originalData.lng != stop.lng) {
-            detectedChanges.edits.longitude = originalData.lng;
+          if (newData.lng != stop.lng) {
+            detectedChanges.edits.longitude = newData.lng;
           }
         }
         if (Object.keys(detectedChanges.edits).length > 0) {
           detectedChanges.oldName = stop.name;
           detectedChanges.oldType = 'stop';
           detectedChanges.guid = stop.guid;
-          detectedChanges.lat = originalData.lat;
-          detectedChanges.lng = originalData.lng;
+          detectedChanges.lat = stop.lat;
+          detectedChanges.lng = stop.lng;
           changeList.push(detectedChanges);
         }
       });
@@ -1114,32 +1114,32 @@ function wrapper (plugin_info) {
 
         /** @type {editData}*/
         let detectedChanges = {edits: {}};
-        let originalData;
+        let newData;
         if (!keysGyms.includes(gym.guid)) {
           if (keysStops.includes(gym.guid)) {
             detectedChanges.edits.type = 'pokestop';
-            originalData = pogoStops[gym.guid];
+            newData = pogoStops[gym.guid];
           } else {
             detectedChanges.edits.type = 'none';
           }
         } else {
-          originalData = pogoGyms[gym.guid];
+          newData = pogoGyms[gym.guid];
         }
         // compare data
-        if (originalData) {
-          if (originalData.name !== gym.name) {
-            detectedChanges.edits.name = originalData.name;
+        if (newData) {
+          if (newData.name !== gym.name) {
+            detectedChanges.edits.name = newData.name;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
-          if (originalData.lat != gym.lat) {
-            detectedChanges.edits.latitude = originalData.lat;
+          if (newData.lat != gym.lat) {
+            detectedChanges.edits.latitude = newData.lat;
           }
           // not eqeqeq because sometimes the lat and lng were numbers for me, but most of the time they were strings in Pogo Tools. Maybe there's a bug with that...
-          if (originalData.lng != gym.lng) {
-            detectedChanges.edits.longitude = originalData.lng;
+          if (newData.lng != gym.lng) {
+            detectedChanges.edits.longitude = newData.lng;
           }
-          if (originalData.isEx !== gym.isEx) {
-            const newEx = originalData.isEx ? originalData.isEx : false;
+          if (newData.isEx !== gym.isEx) {
+            const newEx = newData.isEx ? newData.isEx : false;
             detectedChanges.edits.ex_eligible = newEx ? 1 : 0;
           }
         }
@@ -1147,8 +1147,8 @@ function wrapper (plugin_info) {
           detectedChanges.oldName = gym.name;
           detectedChanges.oldType = 'gym';
           detectedChanges.guid = gym.guid;
-          detectedChanges.lat = originalData.lat;
-          detectedChanges.lng = originalData.lng;
+          detectedChanges.lat = gym.lat;
+          detectedChanges.lng = gym.lng;
           changeList.push(detectedChanges);
         }
       });
@@ -1167,7 +1167,7 @@ function wrapper (plugin_info) {
    * @property {string} oldType - expected stop or gym
    * @property {string} oldName
    * @property {string} guid
-   * @property {string} lat //TODO adapt the Bot!
+   * @property {string} lat
    * @property {string} lng
    * @property {object} edits
    * @property {string} [edits.latitude]
