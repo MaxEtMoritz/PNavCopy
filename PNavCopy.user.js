@@ -415,7 +415,7 @@ function wrapper (plugin_info) {
       console.error('import data has more or less top-level nodes or different ones than "pokestop" and "gym".');
       return false;
     } else {
-      var validGuid = new RegExp('^[0-9|a-f]{32}\\.16$');
+      var validGuid = new RegExp('^[0-9|a-f]{32}\\.1[126]$'); // TODO: What are valid Guid endings? seen .11, .12 and .16 so far. but are there more and what are the rules?
       var allValid = true;
       Object.keys(data.pokestop).forEach(function (guid) {
         if (allValid) {
@@ -424,7 +424,7 @@ function wrapper (plugin_info) {
             console.error(`the guid ${guid} is not a valid guid!`);
           }
           var entry = data.pokestop[guid];
-          if (Object.keys(entry).length != 4 || !entry.guid || entry.guid != guid || typeof entry.lat !== 'string' || typeof entry.lng !== 'string' || typeof entry.name !== 'string') {
+          if (Object.keys(entry).length < 4 || !entry.guid || entry.guid != guid || typeof entry.lat === 'undefined' || typeof entry.lng === 'undefined' || typeof entry.name === 'undefined') {
             allValid = false;
             console.error(`the following pokestop has invalid data: ${JSON.stringify(entry)}`);
           }
@@ -438,15 +438,9 @@ function wrapper (plugin_info) {
               console.error(`the guid ${guid} is not a valid guid!`);
             }
             var entry = data.gym[guid];
-            if (Object.keys(entry).length == 4 && (!entry.guid || entry.guid != guid || typeof entry.lat !== 'string' || typeof entry.lng !== 'string' || typeof entry.name !== 'string')) {
+            if (Object.keys(entry).length < 4 || !entry.guid || entry.guid != guid || typeof entry.lat === 'undefined' || typeof entry.lng === 'undefined' || typeof entry.name === 'undefined' || (entry.isEx && typeof entry.isEx !== 'boolean')) {
               allValid = false;
               console.error(`the following gym has invalid data: ${JSON.stringify(entry)}`);
-            } else if (Object.keys(entry).length == 5 && (!entry.guid || typeof entry.isEx !== 'boolean' || entry.guid != guid || typeof entry.lat !== 'string' || typeof entry.lng !== 'string' || typeof entry.name !== 'string')) {
-              allValid = false;
-              console.error(`the following gym has invalid data: ${JSON.stringify(entry)}`);
-            } else if (Object.keys(entry).length < 4 || Object.keys(entry).length > 5) {
-              allValid = false;
-              console.error(`the following gym has too much or too few properties: ${JSON.stringify(entry)}`);
             }
           }
         });
