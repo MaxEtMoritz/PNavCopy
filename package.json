@@ -5,7 +5,7 @@
   "main": ".eslintrc.js",
   "dependencies": {},
   "devDependencies": {
-    "eslint": "^7.23.0"
+    "eslint": "^7.27.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
