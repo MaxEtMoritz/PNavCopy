@@ -9,7 +9,8 @@
 // @version        1.7.3
 // @namespace      https://github.com/MaxEtMoritz/PNavCopy
 // @description    Copy portal info to clipboard or send it to Discord in the format the PokeNav Discord bot needs.
-// @include        http*://intel.ingress.com/*
+// @include        http://intel.ingress.com/*
+// @include        https://intel.ingress.com/*
 // @grant          none
 // ==/UserScript==
 
@@ -35,6 +36,8 @@
  */
 
 function wrapper (plugin_info) {
+  'use strict';
+
   // ensure plugin framework is there, even if iitc is not yet loaded
   if (typeof window.plugin !== 'function') window.plugin = function () { };
 
@@ -46,7 +49,7 @@ function wrapper (plugin_info) {
   /* eslint-disable no-undefined */
   window.plugin.pnav.settings = {
     webhookUrl: undefined,
-    name: window.PLAYER.nickname,
+    name: window.PLAYER ? window.PLAYER.nickname : '', // if not yet logged in to Intel, window.PLAYER is undefined.
     radius: undefined,
     lat: undefined,
     lng: undefined,
@@ -54,8 +57,8 @@ function wrapper (plugin_info) {
     useBot: false
   };
   /* eslint-enable no-undefined */
-  var selectedGuid = null;
-  var pNavData = {
+  let selectedGuid = null;
+  let pNavData = {
     pokestop: {},
     gym: {}
   };
@@ -65,7 +68,7 @@ function wrapper (plugin_info) {
   const pNavId = 428187007965986826n;
   const companionId = 806533005626572813n;
 
-  var lCommBounds;
+  let lCommBounds;
   const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
 
   const strings = {
@@ -87,9 +90,11 @@ function wrapper (plugin_info) {
       btnEraseHistoryTextSuccess: 'Deleted!',
       btnEraseHistoryTitle: 'Delete all collected Export History.',
       btnExportText: 'Export Data',
-      btnExportTitle: 'This will open a dialog where you can copy the PokeNav data to Clipboard.',
+      btnExportTitle: 'This will download a file containing all data exported to PokeNav.',
+      btnImExportText: 'Import / Export data',
+      btnImExportTitle: 'Opens a dialog where you can export the current data or import again.',
       btnImportText: 'Import Data',
-      btnImportTitle: 'Import the exported data',
+      btnImportTitle: 'Import the exported data. ATTENTION: This will override the current data!',
       btnSkipText: 'Skip one',
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.',
@@ -98,13 +103,10 @@ function wrapper (plugin_info) {
       exportProgressBarDescription: 'Progress:',
       exportStateTextExporting: 'Exporting...',
       exportStateTextReady: 'Export Ready!',
-      exportTextFieldDescription: 'Please copy this text and save it in a text file!',
       exportTimeRemainingDescription: 'Time remaining: ',
-      importDialogButtonText: ['#importDialogTitle'],
-      importDialogButtonTitle: 'Importing will override whatever data you currently have!',
-      importDialogTitle: 'Import',
+      imExportDialogTitle: 'Import / Export',
       importInputText: 'Paste the data you exported in this text field!',
-      importInvalidFormat: 'The text you pasted has an invalid format! Make sure that it is the right text and that it is complete!',
+      importInvalidFormat: 'The Import has an invalid format! Make sure that you selected the right file!',
       lblErrorCnText: 'Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!',
       lblErrorRdText: 'Invalid Radius! Please check if it is a valid Number!',
       lblErrorWHText: 'Invalid URL! Please delete or correct it!',
@@ -224,9 +226,11 @@ function wrapper (plugin_info) {
       btnEraseHistoryTextSuccess: 'Gelöscht!',
       btnEraseHistoryTitle: 'Lösche die gesamte bisher gesammelte Export-Historie.',
       btnExportText: 'Exportiere Daten',
-      btnExportTitle: 'Dies öffnet einen Dialog, in dem sie die PokeNav-Daten kopieren können.',
+      btnExportTitle: 'Leitet das Herunterladen einer Datei mit allen nach PokeNav exportierten Daten ein.',
+      btnImExportText: 'Importiere / Exportiere Daten',
+      btnImExportTitle: 'Öffnet einen Dialog um die aktuellen Daten zu exportieren oder Daten wieder zu importieren.',
       btnImportText: 'Importiere Daten',
-      btnImportTitle: 'Importiere exportierte Daten',
+      btnImportTitle: 'Importiere exportierte Daten. ACHTUNG: Dies wird die aktuellen Daten überschreiben!',
       btnSkipText: 'Änderung überspringen',
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Speichert den Fortschritt lokal und beendet den Export. Starten Sie zum Fortsetzen des Exports diesen in den Einstellungen neu.',
@@ -235,13 +239,10 @@ function wrapper (plugin_info) {
       exportProgressBarDescription: 'Fortschritt:',
       exportStateTextExporting: 'Exportiere...',
       exportStateTextReady: 'Export Abgeschlossen!',
-      exportTextFieldDescription: 'Bitte kopieren Sie diesen Text und speichern Sie ihn in einer Textdatei!',
       exportTimeRemainingDescription: 'Verbleibende Zeit: ',
-      importDialogButtonText: 'Importieren',
-      importDialogButtonTitle: 'Importieren wird alle momentan gesammelten Daten überschreiben!',
-      importDialogTitle: 'Import',
+      imExportDialogTitle: 'Import / Export',
       importInputText: 'Fügen Sie die exportierten Daten in dieses Textfeld ein.',
-      importInvalidFormat: 'Der eingefügte Text hat ein ungültiges Format. Stellen Sie sicher, dass Sie den richtigen Text vollständig eingefügt haben!',
+      importInvalidFormat: 'Die importierten Daten haben ein ungültiges Format! Stellen Sie sicher, dass Sie die richtige Datei ausgewählt haben!',
       lblErrorCnText: 'Ungültiges Koordinaten-Format! Bitte geben Sie sie wie Folgt ein: 00.0...00, 0.0...00!',
       lblErrorRdText: 'Ungüliger Radius! Bitte überprüfen Sie, ob Sie eine gültige Zahl eingegeben haben!',
       lblErrorWHText: 'Ungültige URL! Bitte löschen oder korrigieren Sie sie!',
@@ -361,14 +362,14 @@ function wrapper (plugin_info) {
 
   function getString (id, options) {
     if (window.plugin.pnav.settings.language && strings[window.plugin.pnav.settings.language] && (strings[window.plugin.pnav.settings.language])[id]) {
-      var string = (strings[window.plugin.pnav.settings.language])[id];
+      let string = (strings[window.plugin.pnav.settings.language])[id];
       if (!(typeof string === 'string')) {
         return parseNestedString(string, options);
       } else {
         return string;
       }
     } else if (strings.en && strings.en[id]) {
-      var string = strings.en[id];
+      let string = strings.en[id];
       if (!(typeof string === 'string')) {
         return parseNestedString(string, options);
       } else {
@@ -394,7 +395,7 @@ function wrapper (plugin_info) {
       return newString;
     } else if (typeof object === 'object' && Object.keys(object).length > 0) {
       const optionName = Object.keys(object)[0];
-      var decision = object[optionName];
+      let decision = object[optionName];
       if (options && Object.keys(options).includes(optionName) && Object.keys(decision).includes(String(options[optionName]))) {
         const optionValue = String(options[optionName]);
         return parseNestedString(decision[optionValue]);
@@ -415,15 +416,15 @@ function wrapper (plugin_info) {
       console.error('import data has more or less top-level nodes or different ones than "pokestop" and "gym".');
       return false;
     } else {
-      var validGuid = new RegExp('^[0-9|a-f]{32}\\.1[126]$'); // TODO: What are valid Guid endings? seen .11, .12 and .16 so far. but are there more and what are the rules?
-      var allValid = true;
+      let validGuid = new RegExp('^[0-9|a-f]{32}\\.1[126]$'); // TODO: What are valid Guid endings? seen .11, .12 and .16 so far. but are there more and what are the rules?
+      let allValid = true;
       Object.keys(data.pokestop).forEach(function (guid) {
         if (allValid) {
           allValid = validGuid.test(guid);
           if (!allValid) {
             console.error(`the guid ${guid} is not a valid guid!`);
           }
-          var entry = data.pokestop[guid];
+          let entry = data.pokestop[guid];
           if (Object.keys(entry).length < 4 || !entry.guid || entry.guid != guid || typeof entry.lat === 'undefined' || typeof entry.lng === 'undefined' || typeof entry.name === 'undefined') {
             allValid = false;
             console.error(`the following pokestop has invalid data: ${JSON.stringify(entry)}`);
@@ -437,7 +438,7 @@ function wrapper (plugin_info) {
             if (!allValid) {
               console.error(`the guid ${guid} is not a valid guid!`);
             }
-            var entry = data.gym[guid];
+            let entry = data.gym[guid];
             if (Object.keys(entry).length < 4 || !entry.guid || entry.guid != guid || typeof entry.lat === 'undefined' || typeof entry.lng === 'undefined' || typeof entry.name === 'undefined' || (entry.isEx && typeof entry.isEx !== 'boolean')) {
               allValid = false;
               console.error(`the following gym has invalid data: ${JSON.stringify(entry)}`);
@@ -452,7 +453,7 @@ function wrapper (plugin_info) {
   // Highlighter that will highlight Portals according to the data that was submitted to PokeNav. PokeStops in blue, Gyms in red, Ex Gyms maybe with a yellow circle, Not yet submitted portals in gray.
   window.plugin.pnav.highlight = function (data) {
     const guid = data.portal.options.guid;
-    var color, fillColor;
+    let color, fillColor;
     if (pNavData.pokestop[guid]) {
       color = '#00d8ff';
     } else if (pNavData.gym[guid]) {
@@ -463,7 +464,7 @@ function wrapper (plugin_info) {
     } else {
       color = '#808080';
     }
-    var params = window.getMarkerStyleOptions({team: window.TEAM_NONE,
+    let params = window.getMarkerStyleOptions({team: window.TEAM_NONE,
       level: 0});
     params.color = color;
     params.fillColor = fillColor;
@@ -471,19 +472,19 @@ function wrapper (plugin_info) {
   };
 
   window.plugin.pnav.copy = function () {
-    var input = $('#copyInput');
+    let input = $('#copyInput');
     if (window.selectedPortal) {
-      var portal = window.portals[selectedGuid];
+      let portal = window.portals[selectedGuid];
       // escaping Backslashes and Hyphens in Portal Names
       /** @type {string} */
-      var name = portal.options.data.title
+      let name = portal.options.data.title
         .replaceAll('"', '\\"');
-      var latLng = portal.getLatLng();
-      var lat = latLng.lat;
-      var lng = latLng.lng;
-      var opt = ' ';
-      var type = 'none';
-      var isEx;
+      let latLng = portal.getLatLng();
+      let lat = latLng.lat;
+      let lng = latLng.lng;
+      let opt = ' ';
+      let type = 'none';
+      let isEx;
 
       /** @type {string} */
       const prefix = `<@${pNavId}> `;
@@ -517,7 +518,7 @@ function wrapper (plugin_info) {
       ) {
         alert(getString('alertOutsideArea'));
       } else {
-        var changes = checkForSingleModification({
+        let changes = checkForSingleModification({
           type,
           guid: selectedGuid,
           name,
@@ -566,7 +567,7 @@ function wrapper (plugin_info) {
           if (pogoData[`${type}s`] && ((pogoData[`${type}s`])[selectedGuid])) {
             (pNavData[type])[selectedGuid] = (pogoData[`${type}s`])[selectedGuid];
           } else {
-            var newObject = {
+            let newObject = {
               'guid': String(selectedGuid),
               'name': String(portal.options.data.title),
               'lat': String(lat),
@@ -587,57 +588,81 @@ function wrapper (plugin_info) {
     }
   };
 
-  window.plugin.pnav.exportData = function () {
-    const dialog = window.dialog({id: 'exportDialog',
+  window.plugin.pnav.imExport = function () {
+    let date = new Date();
+    let html = `<a href="data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(pNavData, null, 2))}" \
+    download="IITCPokenavExport-${window.plugin.pnav.settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json" \
+    title="${getString('btnExportTitle')}" class="Button">${getString('btnExportText')}</a>
+    <hr>`;
+
+    if (File && FileReader && Blob) {
+      html += `<form id="importForm">
+      <input type="file" id="importFile" name="import" accept="application/json"><br>
+      <input type="submit" value="${getString('btnImportText')}" title="${getString('btnImportTitle')}" class="Button">
+      </form>`;
+    } else {
+      html += `<textarea id="importInput" style="width:100%; height:auto" placeholder="${getString('importInputText')}"></textarea>
+      <button type="Button" class="Button" id="importDialogButton" title="${getString('btnImportTitle')}">${getString('btnImportText')}</button>`;
+    }
+    const dialog = window.dialog({id: 'imExportDialog',
       width: 'auto',
       height: 'auto',
-      title: getString('exportDialogTitle'),
-      html: `<label>${getString('exportTextFieldDescription')}</label><br>
-            <textarea id="exportTextField" style="width:100%;height:auto;max-width:576px;min-width:100%"></textarea>`});
-    $('#exportTextField', dialog).append(JSON.stringify(pNavData, null, 2));
-    const field = $('#exportTextField', dialog)[0];
-    field.focus();
-    field.setSelectionRange(0, field.length);
-    field.select();
-  };
-
-  window.plugin.pnav.importData = function () {
-    const dialog = window.dialog({id: 'importDialog',
-      width: 'auto',
-      heigth: 'auto',
-      title: getString('importDialogTitle'),
-      html: `<textarea id="importInput" style="width:100%; height:auto" placeholder="${getString('importInputText')}"/>`,
-      buttons: {
-        OK: {
-          text: getString('importDialogButtonText'),
-          title: getString('importDialogButtonTitle'),
-          click () {
-            try {
-              var data = JSON.parse($('#importInput', dialog).val());
-            } catch (e) {
-              alert(getString('importInvalidFormat'));
-              console.error('Parsing of import JSON Data failed.');
-            }
+      title: getString('imExportDialogTitle'),
+      html});
+    if (File && FileReader && Blob) {
+      $('#importForm', dialog).submit(function (/** @type {Event}*/ e) {
+        e.preventDefault();
+        console.debug('form submitted!');
+        if ($('#importFile', dialog).prop('files').length == 1) {
+          let fr = new FileReader();
+          fr.onload = function () {
+            console.debug('file text loaded!');
+            const data = JSON.parse(fr.result);
             if (isImportInputValid(data)) {
               pNavData = data;
               saveToLocalStorage();
+              dialog.dialog('close');
               // re-validate the highlighter if it is active.
               // eslint-disable-next-line no-underscore-dangle
               if (window._current_highlighter === getString('portalHighlighterName')) {
                 window.changePortalHighlights(getString('portalHighlighterName'));
               }
-              dialog.dialog('close');
             } else {
               alert(getString('importInvalidFormat'));
             }
-          }
+          };
+          fr.readAsText($('#importFile', dialog).prop('files')[0]);
         }
-      }});
+      });
+    } else {
+      $('#importDialogButton', dialog).click(function () {
+        let data;
+        try {
+          data = JSON.parse($('#importInput', dialog).val());
+        } catch (e) {
+          alert(getString('importInvalidFormat'));
+          console.error(`Parsing of import JSON Data failed: ${e.message}`);
+          return;
+        }
+        if (isImportInputValid(data)) {
+          pNavData = data;
+          saveToLocalStorage();
+          // re-validate the highlighter if it is active.
+          // eslint-disable-next-line no-underscore-dangle
+          if (window._current_highlighter === getString('portalHighlighterName')) {
+            window.changePortalHighlights(getString('portalHighlighterName'));
+          }
+          dialog.dialog('close');
+        } else {
+          alert(getString('importInvalidFormat'));
+        }
+      });
+    }
   };
 
   window.plugin.pnav.showSettings = function () {
-    var validURL = '^https?://discord(app)?.com/api/webhooks/[0-9]*/.*';
-    var html = `
+    let validURL = '^https?://discord(app)?.com/api/webhooks/[0-9]*/.*';
+    let html = `
         <p>
           <label>
             ${getString('pnavLanguageDescription')}
@@ -686,20 +711,8 @@ function wrapper (plugin_info) {
           }, 1000);
           return false;
         ">${getString('btnEraseHistoryTextDefault')}</button></p>
-        <p><aside>
-          <button type="Button" id="btnExport" title="${getString('btnExportTitle')}" onclick="
-          window.plugin.pnav.exportData();
-          $(this).css('color','green');
-          $(this).css('border','1px solid green')
-          $(this).text('${getString('btnExportTextSuccess')}');
-          setTimeout(function () {
-            if($('#btnExport').length > 0){
-              $('#btnExport').css('color', '');
-              $('#btnExport').css('border', '');
-              $('#btnExport').text('${getString('btnExportText')}');
-            }
-          }, 1000);return false;" style="width:49%">${getString('btnExportText')}</button>
-          <button type="Button" id="btnImport" title="${getString('btnImportTitle')}" onclick="window.plugin.pnav.importData(); return false;" style="width:49%">${getString('btnImportText')}</button></aside>
+        <p>
+          <button type="Button" id="btnImExport" style="width:100%" title="${getString('btnImExportTitle')}" onclick="window.plugin.pnav.imExport();return false;">${getString('btnImExportText')}</button>
         </p>
         `;
     if (window.plugin.pogo && window.plugin.pnav.settings.webhookUrl) {
@@ -724,7 +737,7 @@ function wrapper (plugin_info) {
       buttons: {
         OK () {
           let allOK = true;
-          var settings = {...window.plugin.pnav.settings};
+          let settings = {...window.plugin.pnav.settings};
           if (
             !$('#pnavhookurl').val() ||
             new RegExp(validURL).test($('#pnavhookurl').val())
@@ -807,7 +820,7 @@ function wrapper (plugin_info) {
               window.plugin.pnav.settings = settings;
               lCommBounds.clearLayers();
               if (settings.lat && settings.lng && settings.radius) {
-                var circle = L.circle(L.latLng([
+                let circle = L.circle(L.latLng([
                   settings.lat,
                   settings.lng
                 ]), {radius: settings.radius * 1000,
@@ -827,7 +840,7 @@ function wrapper (plugin_info) {
     });
     // unfocus all input fields to prevent the explanation tooltips to pop up
     $('input', container).blur();
-    var languageDropdown = $('#pnavLanguage', container);
+    let languageDropdown = $('#pnavLanguage', container);
     Object.keys(strings).forEach(function (key) {
       languageDropdown.append(`<option value="${key}">${key}</option>`);
     });
@@ -873,7 +886,7 @@ function wrapper (plugin_info) {
     }
     if (changeList && changeList.length > 0) {
       // console.log(changeList);
-      var i = 0;
+      let i = 0;
       const send = Boolean(window.plugin.pnav.settings.webhookUrl);
       const html = `
         <label>${getString('Modification')}</label><label id=pNavModNrCur>1</label><label>${getString('of')}</label><label id="pNavModNrMax"></label>
@@ -919,7 +932,7 @@ function wrapper (plugin_info) {
           }
         }
       });
-      var poi = changeList[i];
+      let poi = changeList[i];
       $('#pNavPoiInfo', modDialog).on('click', function () {
         if (window.plugin.pnav.settings.webhookUrl) {
           sendMessage(`<@${pNavId}> ${poi.oldType}-info ${poi.oldName}`);
@@ -959,22 +972,22 @@ function wrapper (plugin_info) {
           }
         }
       });
+      $('#address').click(() => {
+        if ($('#address').text() === getString('requestAddressDescription')) {
+          $.ajax(`https://nominatim.openstreetmap.org/reverse?lat=${changeList[i].lat}&lon=${changeList[i].lng}&format=json&addressdetails=0`, {
+            success: (data) => {
+              if (data && data.display_name) {
+                $('#address').text(data.display_name);
+              }
+            }
+          });
+        }
+      });
       $('#pNavModNrMax', modDialog).text(changeList.length);
       updateUI(modDialog, poi, i);
     } else {
       alert(getString('alertNoModifications'));
     }
-    $('#address').click(() => {
-      if ($('#address').text() === getString('requestAddressDescription')) {
-        $.ajax(`https://nominatim.openstreetmap.org/reverse?lat=${changeList[i].lat}&lon=${changeList[i].lng}&format=json&addressdetails=0`, {
-          success: (data) => {
-            if (data && data.display_name) {
-              $('#address').text(data.display_name);
-            }
-          }
-        });
-      }
-    });
   };
 
   /**
@@ -1061,7 +1074,7 @@ function wrapper (plugin_info) {
     const keysStops = Object.keys(pogoStops);
     const pogoGyms = pogoData && pogoData.gyms ? pogoData.gyms : {};
     const keysGyms = Object.keys(pogoGyms);
-    var changeList = [];
+    let changeList = [];
     if (pogoData) {
       Object.values(pNavData.pokestop).forEach(function (stop) {
 
@@ -1204,7 +1217,7 @@ function wrapper (plugin_info) {
     let changes = {};
 
     /** @type {portalData} */
-    var savedData;
+    let savedData;
     if (pNavData.pokestop[currentData.guid]) {
       savedData = pNavData.pokestop[currentData.guid];
       savedData.type = 'pokestop';
@@ -1249,7 +1262,7 @@ function wrapper (plugin_info) {
   function gatherExportData (type) {
 
     /** @type {pogoToolsData[]}*/
-    var pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
+    let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     if (pogoData[`${type}s`]) {
       pogoData = Object.values(pogoData[`${type}s`]);
       // console.log(pogoData);
@@ -1260,7 +1273,7 @@ function wrapper (plugin_info) {
         typeof window.plugin.pnav.settings.radius === 'undefined';
 
       /** @type {pogoToolsData[]} */
-      var exportData = pogoData.filter(function (object) {
+      let exportData = pogoData.filter(function (object) {
         return (
           !doneGuids.includes(object.guid) &&
           (distanceNotCheckable ||
@@ -1277,7 +1290,7 @@ function wrapper (plugin_info) {
    */
   window.plugin.pnav.bulkExport = function (type) {
     if (!window.plugin.pnav.timer) {
-      var data = gatherExportData(type);
+      let data = gatherExportData(type);
       if (!data) {
         alert(getString('alertProblemPogoTools'));
         return;
@@ -1286,7 +1299,7 @@ function wrapper (plugin_info) {
         botExport(data, type); // jump to BotExport immediately before opening the dialog, this is not needed!
         return;
       }
-      var i = 0;
+      let i = 0;
       window.onbeforeunload = function () {
         saveState(data, type, i);
         return null;
@@ -1305,7 +1318,7 @@ function wrapper (plugin_info) {
         }
       }, wait);
 
-      var dialog = window.dialog({
+      let dialog = window.dialog({
         id: 'bulkExportProgress',
         html: `
               <h3 id="exportState">${getString('exportStateTextExporting')}</h3>
@@ -1371,12 +1384,12 @@ function wrapper (plugin_info) {
   function botExport (data, type) {
 
     /** @type {portalData[]} */
-    var exportdata = [...data];
+    let exportdata = [...data];
     exportdata.forEach((element) => {
       element.type = type; // convert pogoToolsData to portalData
     });
-    var formData = new FormData();
-    var date = new Date();
+    let formData = new FormData();
+    let date = new Date();
     formData.append('content', `<@${companionId}> cm`);
     formData.append('username', window.plugin.pnav.settings.name);
     formData.append('file', new Blob([JSON.stringify(exportdata, null, 2)], {type: 'application/json'}), `creations-${window.plugin.pnav.settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`);
@@ -1412,7 +1425,7 @@ function wrapper (plugin_info) {
     if (i % 10 == 0) {
       saveState(data, type, i); // sometimes save the state in case someone exits IITC Mobile without using the Back Button
     }
-    var entry = data[i];
+    let entry = data[i];
     let lat = entry.lat;
     let lng = entry.lng;
     // escaping Hyphens in Portal Names
@@ -1421,13 +1434,13 @@ function wrapper (plugin_info) {
     let prefix = `<@${pNavId}> `;
     let ex = Boolean(entry.isEx);
     let options = ex ? ' "ex_eligible: 1"' : '';
-    var content = `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`;
+    let content = `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`;
     const params = {
       username: window.plugin.pnav.settings.name,
       avatar_url: '',
       content
     };
-    var success = await fetch(window.plugin.pnav.settings.webhookUrl, {
+    let success = await fetch(window.plugin.pnav.settings.webhookUrl, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(params)
@@ -1466,8 +1479,8 @@ function wrapper (plugin_info) {
       console.log('nothing to export!');
       return;
     }
-    var data = new FormData();
-    var date = new Date();
+    let data = new FormData();
+    let date = new Date();
     data.append('content', `<@${companionId}> e`);
     data.append('username', window.plugin.pnav.settings.name);
     data.append('file', new Blob([JSON.stringify(changes, null, 2)], {type: 'application/json'}), `edits-${window.plugin.pnav.settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`);
@@ -1531,18 +1544,18 @@ function wrapper (plugin_info) {
    */
   function checkDistance (lat1, lon1, lat2, lon2) {
     const R = 6371;
-    var x1 = lat2 - lat1;
-    var dLat = (x1 * Math.PI) / 180;
-    var x2 = lon2 - lon1;
-    var dLon = (x2 * Math.PI) / 180;
-    var a =
+    let x1 = lat2 - lat1;
+    let dLat = (x1 * Math.PI) / 180;
+    let x2 = lon2 - lon1;
+    let dLon = (x2 * Math.PI) / 180;
+    let a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    var d = R * c;
+    let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    let d = R * c;
     return d;
   }
 
@@ -1551,7 +1564,7 @@ function wrapper (plugin_info) {
    * @return {bool} - returns if copying was successful
    */
   function copyfieldvalue (id) {
-    var field = document.getElementById(id);
+    let field = document.getElementById(id);
     field.focus();
     field.setSelectionRange(0, field.value.length);
     field.select();
@@ -1559,7 +1572,7 @@ function wrapper (plugin_info) {
   }
 
   function copySelectionText () {
-    var copysuccess;
+    let copysuccess;
     try {
       copysuccess = document.execCommand('copy');
     } catch (e) {
@@ -1570,7 +1583,7 @@ function wrapper (plugin_info) {
 
   // source: Oscar Zanota on Dev.to (https://dev.to/oskarcodes/send-automated-discord-messages-through-webhooks-using-javascript-1p01)
   function sendMessage (msg) {
-    var params = {
+    let params = {
       username: window.plugin.pnav.settings.name,
       avatar_url: '',
       content: msg
@@ -1608,7 +1621,18 @@ function wrapper (plugin_info) {
     });
   }
 
-  var setup = function () {
+  let setup = function () {
+    $('head').append(`<style>
+      .Button {
+        border: 1px solid #FFCE00;
+        padding: 2px;
+        background-color: rgba(8, 48, 78, 0.9);
+        min-width: 40px;
+        color: #FFCE00;
+        text-decoration: none!important;
+        cursor: default;
+      }
+    </style>`);
     if (localStorage['plugin-pnav-settings']) {
       window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
     }
@@ -1629,7 +1653,7 @@ function wrapper (plugin_info) {
     const send = Boolean(window.plugin.pnav.settings.webhookUrl);
     lCommBounds = new L.LayerGroup();
     if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
-      var commCircle = L.circle(L.latLng([
+      let commCircle = L.circle(L.latLng([
         window.plugin.pnav.settings.lat,
         window.plugin.pnav.settings.lng
       ]), {radius: window.plugin.pnav.settings.radius * 1000,
@@ -1640,8 +1664,8 @@ function wrapper (plugin_info) {
     }
     window.addLayerGroup(getString('lCommBoundsName'), lCommBounds);
     window.addPortalHighlighter(getString('portalHighlighterName'), window.plugin.pnav.highlight);
-    var isLinksDisplayed = window.isLayerGroupDisplayed('Links', false);
-    var isFieldsDisplayed = window.isLayerGroupDisplayed('Fields', false);
+    let isLinksDisplayed = window.isLayerGroupDisplayed('Links', false);
+    let isFieldsDisplayed = window.isLayerGroupDisplayed('Fields', false);
     $('#portal_highlight_select').on('change', function () {
       // eslint-disable-next-line no-underscore-dangle
       if (window._current_highlighter === getString('portalHighlighterName')) {
@@ -1679,7 +1703,7 @@ function wrapper (plugin_info) {
 
     window.addHook('portalSelected', function (data) {
       console.log(data);
-      var guid = data.selectedPortalGuid;
+      let guid = data.selectedPortalGuid;
       selectedGuid = guid;
       if (!window.plugin.pogo) {
         setTimeout(function () {
@@ -1741,8 +1765,8 @@ function wrapper (plugin_info) {
  * wrapper end
  * inject code into site context
  */
-var script = document.createElement('script');
-var info = {};
+let script = document.createElement('script');
+let info = {};
 if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) {
   info.script = {
     version: GM_info.script.version,

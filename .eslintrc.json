@@ -200,7 +200,7 @@
         "no-useless-constructor": "error",
         "no-useless-rename": "error",
         "no-useless-return": "error",
-        "no-var": "off",
+        "no-var": "warn",
         "no-void": "error",
         "no-warning-comments": "off",
         "no-whitespace-before-property": "error",
@@ -276,7 +276,7 @@
         "spaced-comment": "error",
         "strict": [
             "error",
-            "never"
+            "safe"
         ],
         "switch-colon-spacing": "error",
         "symbol-description": "error",
