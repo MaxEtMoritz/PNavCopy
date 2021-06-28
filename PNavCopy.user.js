@@ -627,7 +627,7 @@ function wrapper (plugin_info) {
     if ($('#importBtn').length > 0) {
       $('#importBtn').click(() => {
         if (typeof L.FileListLoader !== 'undefined') {
-          L.FileListLoader.loadFiles({accept: 'application/json'}).on('load', (e) => {
+          L.FileListLoader.loadFiles({accept: 'text/json'}).on('load', (e) => { // application/json did somehow not work for me on my smartphone...
             let data = JSON.parse(e.reader.result);
             if (isImportInputValid(data)) {
               pNavData = data;
