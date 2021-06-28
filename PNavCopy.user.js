@@ -589,13 +589,18 @@ function wrapper (plugin_info) {
   };
 
   window.plugin.pnav.imExport = function () {
-    let date = new Date();
-    let html = `<a href="data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(pNavData, null, 2))}" \
-    download="IITCPokenavExport-${window.plugin.pnav.settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json" \
-    title="${getString('btnExportTitle')}" class="Button">${getString('btnExportText')}</a>
-    <hr>`;
 
-    if (File && FileReader && Blob) {
+    /*
+     * Methods to upload / download files inspired by PoGoTools Plugin by AlfonsoML on GitLab:
+     * https://gitlab.com/AlfonsoML/pogo-s2/-/blob/master/s2check.user.js
+     */
+
+    let date = new Date();
+    let html = `<button type="Button" id="exportBtn" title="${getString('btnExportTitle')}">${getString('btnExportText')}</button>
+    <hr>`;
+    if (typeof L.FileListLoader !== 'undefined' || typeof window.requestFile !== 'undefined') {
+      html += `<button id="importBtn" type="Button" title="${getString('btnImportTitle')}">${getString('btnImportText')}</button>`;
+    } else if (File && FileReader && Blob) {
       html += `<form id="importForm">
       <input type="file" id="importFile" name="import" accept="application/json"><br>
       <input type="submit" value="${getString('btnImportText')}" title="${getString('btnImportTitle')}" class="Button">
@@ -609,7 +614,53 @@ function wrapper (plugin_info) {
       height: 'auto',
       title: getString('imExportDialogTitle'),
       html});
-    if (File && FileReader && Blob) {
+
+    $('#exportBtn').click(() => {
+      if (typeof window.saveFile !== 'undefined') {
+        window.saveFile(JSON.stringify(pNavData, null, 2), `IITCPokenavExport-${window.plugin.pnav.settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json`, 'application/json');
+      } else if (typeof window.android !== 'undefined' && window.android.saveFile) {
+        window.android.saveFile(`IITCPokenavExport-${window.plugin.pnav.settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json`, 'application/json', JSON.stringify(pNavData));
+      } else {
+        alert('Export is not supoported on this device / IITC Version.'); // TODO implement it or externalize the string!
+      }
+    });
+    if ($('#importBtn').length > 0) {
+      $('#importBtn').click(() => {
+        if (typeof L.FileListLoader !== 'undefined') {
+          L.FileListLoader.loadFiles({accept: 'application/json'}).on('load', (e) => {
+            let data = JSON.parse(e.reader.result);
+            if (isImportInputValid(data)) {
+              pNavData = data;
+              saveToLocalStorage();
+              dialog.dialog('close');
+              // re-validate the highlighter if it is active.
+              // eslint-disable-next-line no-underscore-dangle
+              if (window._current_highlighter === getString('portalHighlighterName')) {
+                window.changePortalHighlights(getString('portalHighlighterName'));
+              }
+            } else {
+              alert(getString('importInvalidFormat'));
+            }
+          });
+        } else if (typeof window.requestFile !== 'undefined') {
+          window.requestFile((name, content) => {
+            let data = JSON.parse(content);
+            if (isImportInputValid(data)) {
+              pNavData = data;
+              saveToLocalStorage();
+              dialog.dialog('close');
+              // re-validate the highlighter if it is active.
+              // eslint-disable-next-line no-underscore-dangle
+              if (window._current_highlighter === getString('portalHighlighterName')) {
+                window.changePortalHighlights(getString('portalHighlighterName'));
+              }
+            } else {
+              alert(getString('importInvalidFormat'));
+            }
+          });
+        }
+      });
+    } else if (File && FileReader && Blob) {
       $('#importForm', dialog).submit(function (/** @type {Event}*/ e) {
         e.preventDefault();
         console.debug('form submitted!');
