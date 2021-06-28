@@ -1802,6 +1802,8 @@ function wrapper (plugin_info) {
     });
   };
 
+  /* eslint-disable no-var*/
+
   // PLUGIN END //////////////////////////////////////////////////////////
 
   // add the script info data to the function as a property
@@ -1816,8 +1818,8 @@ function wrapper (plugin_info) {
  * wrapper end
  * inject code into site context
  */
-let script = document.createElement('script');
-let info = {};
+var script = document.createElement('script');
+var info = {};
 if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) {
   info.script = {
     version: GM_info.script.version,
