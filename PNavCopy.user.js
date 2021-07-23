@@ -74,6 +74,7 @@ function wrapper (plugin_info) {
   const strings = {
     en: {
       alertAlreadyExported: 'This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.',
+      alertExportCopied: 'File download is not supported on this device / IITC version. Thus the data was copied to clipboard. Please save it as a .json file!',
       alertExportRunning: 'Settings not saved because Export was running. Pause the Export and then try again!',
       alertLanguageAfterReload: 'The new language settings will be fully in effect after a page reload.',
       alertNoModifications: 'No modifications detected!',
@@ -210,6 +211,7 @@ function wrapper (plugin_info) {
     },
     de: {
       alertAlreadyExported: 'Dieser POI wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuche, den Export-Status in den Einstellungen zurückzusetzen.',
+      alertExportCopied: 'Dateidownload auf diesem Gerät / dieser IITC-Version nicht unterstützt. Deshalb wurden die Daten in die Zwischenablage kopiert. Bitte als .json-Datei speichern!',
       alertExportRunning: 'Die Einstellungen wurden nicht gespeichert, da der Daten-Export läuft. Pausiere den Export und versuche es noch mal!',
       alertLanguageAfterReload: 'Die neuen Spracheinstellungen werden vollständig erst nach erneutem Laden der Seite wirksam!',
       alertNoModifications: 'Keine Änderungen gefunden!',
@@ -349,7 +351,6 @@ function wrapper (plugin_info) {
 
   function detectLanguage () {
     let lang = navigator.language;
-    console.log(lang);
     lang = lang.split('-')[0].toLowerCase();
     if (Object.keys(strings).includes(lang)) {
       return lang;
@@ -475,109 +476,104 @@ function wrapper (plugin_info) {
     let input = $('#copyInput');
     if (window.selectedPortal) {
       let portal = window.portals[selectedGuid];
-      // escaping Backslashes and Hyphens in Portal Names
-      /** @type {string} */
-      let name = portal.options.data.title
-        .replaceAll('"', '\\"');
-      let latLng = portal.getLatLng();
-      let lat = latLng.lat;
-      let lng = latLng.lng;
-      let opt = ' ';
-      let type = 'none';
-      let isEx;
 
       /** @type {string} */
       const prefix = `<@${pNavId}> `;
-      if (window.plugin.pogo) {
-        if ($('.pogoStop span').css('background-position') == '100% 0%') {
-          type = 'pokestop';
-        } else if ($('.pogoGym span').css('background-position') == '100% 0%') {
-          type = 'gym';
-          if ($('#PogoGymEx').prop('checked') == true) {
-            opt += '"ex_eligible: 1"';
-            isEx = true;
-          }
+
+      /** @type {portalData} */
+      let data;
+
+      if (window.plugin.pogo && localStorage['plugin-pogo']) {
+        let toolData = JSON.parse(localStorage['plugin-pogo']);
+        if (toolData.pokestops && toolData.pokestops[selectedGuid]) {
+          data = toolData.pokestops[selectedGuid];
+          data.type = 'pokestop';
+        } else if (toolData.gyms && toolData.gyms[selectedGuid]) {
+          data = toolData.gyms[selectedGuid];
+          data.type = 'gym';
+        } else {
+          data = {
+            name: portal.options.data.title,
+            lat: portal.getLatLng().lat,
+            lng: portal.getLatLng().lng,
+            guid: portal.options.guid,
+            type: 'none'
+          };
         }
       } else {
-        if (document.getElementById('PNavEx').checked) {
-          type = 'gym';
-          opt += '"ex_eligible: 1"';
-          isEx = true;
-        } else if (document.getElementById('PNavGym').checked) {
-          type = 'gym';
-        } else if (document.getElementById('PNavStop').checked) {
-          type = 'pokestop';
+        data = {
+          name: portal.options.data.title,
+          lat: portal.getLatLng().lat,
+          lng: portal.getLatLng().lng,
+          guid: portal.options.guid
+        };
+
+        switch ($('input[name=type]:checked').val()) {
+        case 'pokestop':
+          data.type = 'pokestop';
+          data.isEx = false;
+          break;
+        case 'gym':
+          data.type = 'gym';
+          data.isEx = false;
+          break;
+        case 'ex':
+          data.type = 'gym';
+          data.isEx = true;
+          break;
+        case 'none':
+          data.type = 'none';
+          break;
+        default:
+          break;
         }
       }
+
       if (
         typeof window.plugin.pnav.settings.lat !== 'undefined' &&
         typeof window.plugin.pnav.settings.lng !== 'undefined' &&
         typeof window.plugin.pnav.settings.radius !== 'undefined' &&
-        checkDistance(lat, lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
+        checkDistance(data.lat, data.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
         window.plugin.pnav.settings.radius
       ) {
         alert(getString('alertOutsideArea'));
       } else {
-        let changes = checkForSingleModification({
-          type,
-          guid: selectedGuid,
-          name,
-          isEx,
-          lat,
-          lng
-        });
+        let changes = checkForSingleModification(data);
         if (changes) {
           window.plugin.pnav.bulkModify([changes]);
-        } else if (
-          type !== 'none' && (pNavData[type])[selectedGuid]
-        ) {
-          alert(getString('alertAlreadyExported'));
-          input.show();
-          input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
-          copyfieldvalue('copyInput');
-          input.hide();
-        } else if (type !== 'none') {
-          if (window.plugin.pnav.settings.webhookUrl) {
+        } else if (data.type !== 'none') {
+          if (pNavData[data.type][selectedGuid]) {
+            alert(getString('alertAlreadyExported'));
+            input.show();
+            input.val(`${prefix}create poi ${data.type} «${data.name}» ${data.lat} ${data.lng}${data.isEx ? ' "ex_eligible: 1"' : ''}`);
+            copyfieldvalue('copyInput');
+            input.hide();
+          } else if (window.plugin.pnav.settings.webhookUrl) {
             if (window.plugin.pnav.settings.useBot) {
+              let formData = new FormData();
+              formData.append('content', `<@${companionId}> cm`);
+              formData.append('username', window.plugin.pnav.settings.name);
+              formData.append('file', new Blob([JSON.stringify(data)], {type: 'application/json'}), `creation.json`);
               $.ajax({
                 method: 'POST',
                 url: window.plugin.pnav.settings.webhookUrl,
                 contentType: 'application/json',
                 processData: false,
-                data: JSON.stringify({
-                  username: window.plugin.pnav.settings.name,
-                  avatar_url: '',
-                  content: `<@${companionId}> cm [${type === 'pokestop' ? 0 : 1},${name},${lat},${lng}${isEx ? ',1' : ''}]`
-                }),
+                data: formData,
                 error (jgXHR, textStatus, errorThrown) {
                   console.error(`${textStatus} - ${errorThrown}`);
                 }
               });
             } else {
-              sendMessage(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+              sendMessage(`${prefix}create poi ${data.type} «${data.name}» ${data.lat} ${data.lng}${data.isEx ? ' "ex_eligible: 1"' : ''}`);
             }
-            console.log('sent!');
           } else {
             input.show();
-            input.val(`${prefix}create poi ${type} "${name}" ${lat} ${lng}${opt}`);
+            input.val(`${prefix}create poi ${data.type} «${data.name}» ${data.lat} ${data.lng}${data.isEx ? ' "ex_eligible: 1"' : ''}`);
             copyfieldvalue('copyInput');
             input.hide();
           }
-          let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
-          if (pogoData[`${type}s`] && ((pogoData[`${type}s`])[selectedGuid])) {
-            (pNavData[type])[selectedGuid] = (pogoData[`${type}s`])[selectedGuid];
-          } else {
-            let newObject = {
-              'guid': String(selectedGuid),
-              'name': String(portal.options.data.title),
-              'lat': String(lat),
-              'lng': String(lng)
-            };
-            if ($('#PNavEx').prop('checked')) {
-              newObject.isEx = true;
-            }
-            (pNavData[type])[selectedGuid] = newObject;
-          }
+          pNavData[data.type][selectedGuid] = data;
           saveToLocalStorage();
         }
       }
@@ -615,17 +611,24 @@ function wrapper (plugin_info) {
       title: getString('imExportDialogTitle'),
       html});
 
-    $('#exportBtn').click(() => {
+    $('#exportBtn').on('click', () => {
       if (typeof window.saveFile !== 'undefined') {
         window.saveFile(JSON.stringify(pNavData, null, 2), `IITCPokenavExport-${window.plugin.pnav.settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json`, 'application/json');
       } else if (typeof window.android !== 'undefined' && window.android.saveFile) {
         window.android.saveFile(`IITCPokenavExport-${window.plugin.pnav.settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json`, 'application/json', JSON.stringify(pNavData));
       } else {
-        alert('Export is not supoported on this device / IITC Version.'); // TODO implement it or externalize the string!
+        // Idea taken from https://stackoverflow.com/a/50230647 by User KeshavDulal
+        const tmpTextarea = document.createElement('textarea');
+        tmpTextarea.innerHTML = JSON.stringify(pNavData, null, 2);
+        document.body.appendChild(tmpTextarea);
+        tmpTextarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tmpTextarea);
+        alert(getString('alertExportCopied'));
       }
     });
     if ($('#importBtn').length > 0) {
-      $('#importBtn').click(() => {
+      $('#importBtn').on('click', () => {
         if (typeof L.FileListLoader !== 'undefined') {
           L.FileListLoader.loadFiles({accept: 'text/json'}).on('load', (e) => { // application/json did somehow not work for me on my smartphone...
             let data = JSON.parse(e.reader.result);
@@ -661,7 +664,7 @@ function wrapper (plugin_info) {
         }
       });
     } else if (File && FileReader && Blob) {
-      $('#importForm', dialog).submit(function (/** @type {Event}*/ e) {
+      $('#importForm', dialog).on('submit', function (e) {
         e.preventDefault();
         console.debug('form submitted!');
         if ($('#importFile', dialog).prop('files').length == 1) {
@@ -686,7 +689,7 @@ function wrapper (plugin_info) {
         }
       });
     } else {
-      $('#importDialogButton', dialog).click(function () {
+      $('#importDialogButton', dialog).on('click', function () {
         let data;
         try {
           data = JSON.parse($('#importInput', dialog).val());
@@ -890,7 +893,7 @@ function wrapper (plugin_info) {
       }
     });
     // unfocus all input fields to prevent the explanation tooltips to pop up
-    $('input', container).blur();
+    $('input', container).trigger('blur');
     let languageDropdown = $('#pnavLanguage', container);
     Object.keys(strings).forEach(function (key) {
       languageDropdown.append(`<option value="${key}">${key}</option>`);
@@ -922,7 +925,6 @@ function wrapper (plugin_info) {
    */
   function saveState (data, type, index) {
     const addToDone = data.slice(0, index);
-    // console.log(addToDone);
     addToDone.forEach(function (object) {
       (pNavData[type])[object.guid] = object;
     });
@@ -936,7 +938,6 @@ function wrapper (plugin_info) {
       return;
     }
     if (changeList && changeList.length > 0) {
-      // console.log(changeList);
       let i = 0;
       const send = Boolean(window.plugin.pnav.settings.webhookUrl);
       const html = `
@@ -996,7 +997,6 @@ function wrapper (plugin_info) {
         }
       });
       $('#pNavPoiId', modDialog).on('input', function (e) {
-        // console.log(e);
         const valid = e.target.validity.valid;
         const value = e.target.valueAsNumber;
         if (valid && value && value > 0) {
@@ -1023,16 +1023,15 @@ function wrapper (plugin_info) {
           }
         }
       });
-      $('#address').click(() => {
-        if ($('#address').text() === getString('requestAddressDescription')) {
-          $.ajax(`https://nominatim.openstreetmap.org/reverse?lat=${changeList[i].lat}&lon=${changeList[i].lng}&format=json&addressdetails=0`, {
-            success: (data) => {
-              if (data && data.display_name) {
-                $('#address').text(data.display_name);
-              }
+      $('#address').on('click', () => {
+        $.ajax(`https://nominatim.openstreetmap.org/reverse?lat=${changeList[i].lat}&lon=${changeList[i].lng}&format=json&addressdetails=0`, {
+          success: (data) => {
+            if (data && data.display_name) {
+              $('#address').after(data.display_name);
+              $('#address').remove();
             }
-          });
-        }
+          }
+        });
       });
       $('#pNavModNrMax', modDialog).text(changeList.length);
       updateUI(modDialog, poi, i);
@@ -1121,7 +1120,6 @@ function wrapper (plugin_info) {
   function checkForModifications () {
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     const pogoStops = (pogoData && pogoData.pokestops) ? pogoData.pokestops : {};
-    // console.log(pogoStops);
     const keysStops = Object.keys(pogoStops);
     const pogoGyms = pogoData && pogoData.gyms ? pogoData.gyms : {};
     const keysGyms = Object.keys(pogoGyms);
@@ -1265,7 +1263,7 @@ function wrapper (plugin_info) {
   function checkForSingleModification (currentData) {
 
     /** @type {editData} */
-    let changes = {};
+    let changes = {edits: {}};
 
     /** @type {portalData} */
     let savedData;
@@ -1293,7 +1291,7 @@ function wrapper (plugin_info) {
     if (currentData.isEx !== savedData.isEx) {
       changes.edits.ex_eligible = currentData.isEx ? 1 : 0;
     }
-    if (Object.keys(changes).length > 0) {
+    if (Object.keys(changes.edits).length > 0) {
       changes.oldName = savedData.name;
       changes.oldType = savedData.type === 'pokestop' ? 'stop' : savedData.type;
       changes.guid = savedData.guid;
@@ -1316,7 +1314,6 @@ function wrapper (plugin_info) {
     let pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
     if (pogoData[`${type}s`]) {
       pogoData = Object.values(pogoData[`${type}s`]);
-      // console.log(pogoData);
       const doneGuids = (Object.keys(pNavData.pokestop).concat(Object.keys(pNavData.gym)));
       const distanceNotCheckable =
         typeof window.plugin.pnav.settings.lat === 'undefined' ||
@@ -1423,7 +1420,7 @@ function wrapper (plugin_info) {
         updateExportDialog(thisDialog, 0, 0, 0);
       }
     } else {
-      console.log('Bulk Export already running!');
+      console.error('Bulk Export already running!');
     }
   };
 
@@ -1480,12 +1477,11 @@ function wrapper (plugin_info) {
     let lat = entry.lat;
     let lng = entry.lng;
     // escaping Hyphens in Portal Names
-    let name = entry.name
-      .replaceAll('"', '\\"');
+    let name = entry.name;
     let prefix = `<@${pNavId}> `;
     let ex = Boolean(entry.isEx);
     let options = ex ? ' "ex_eligible: 1"' : '';
-    let content = `${prefix}create poi ${type} "${name}" ${lat} ${lng}${options}`;
+    let content = `${prefix}create poi ${type} «${name}» ${lat} ${lng}${options}`;
     const params = {
       username: window.plugin.pnav.settings.name,
       avatar_url: '',
@@ -1562,7 +1558,6 @@ function wrapper (plugin_info) {
    * @param {number} time remaining time
    */
   function updateExportDialog (dialog, cur, max, time) {
-    console.log(dialog);
     if ($('#exportProgressBar', dialog)) {
       $('#exportProgressBar', dialog).val(cur);
     }
@@ -1647,10 +1642,8 @@ function wrapper (plugin_info) {
   function waitForPogoButtons (mutationList, invokingObserver) {
     mutationList.forEach(function (mutation) {
       if (mutation.type === 'childList' && mutation.addedNodes) {
-        // console.log(mutation.addedNodes);
         mutation.addedNodes.forEach((node) => {
           if (node.className == 'PogoButtons') {
-            // console.log('there is PogoButtons!');
             $(node).after(`
              <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">${getString('PogoButtonsText', {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>
              `);
@@ -1753,7 +1746,6 @@ function wrapper (plugin_info) {
     });
 
     window.addHook('portalSelected', function (data) {
-      console.log(data);
       let guid = data.selectedPortalGuid;
       selectedGuid = guid;
       if (!window.plugin.pogo) {
@@ -1765,7 +1757,7 @@ function wrapper (plugin_info) {
               ${getString('PNavNoneDescription')}
             </label>
             <Label>
-              <input type="radio" name="type" value="stop" id="PNavStop"/>
+              <input type="radio" name="type" value="pokestop" id="PNavStop"/>
               ${getString('PNavStopDescription')}
             </label>
             <Label>
