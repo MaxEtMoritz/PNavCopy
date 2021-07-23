@@ -1639,6 +1639,62 @@ function wrapper (plugin_info) {
     request.send(JSON.stringify(params), false);
   }
 
+  function modifyPortalDetails (data) {
+    const detailsObserver = new MutationObserver(waitForPogoButtons);
+    const statusObserver = new MutationObserver(waitForPogoStatus);
+    const send = Boolean(window.plugin.pnav.settings.webhookUrl);
+    console.log(data);
+    let guid = data.guid;
+    selectedGuid = guid;
+    if (!window.plugin.pogo) {
+      window.removeHook('portalDetailsUpdated', modifyPortalDetails);
+      console.debug('removed');
+      setTimeout(function () {
+        $('#portaldetails').append(`
+        <div id="PNav" style="color:#fff">
+          <Label>
+            <input type="radio" checked name="type" value="none" id="PNavNone"/>
+            ${getString('PNavNoneDescription')}
+          </label>
+          <Label>
+            <input type="radio" name="type" value="pokestop" id="PNavStop"/>
+            ${getString('PNavStopDescription')}
+          </label>
+          <Label>
+            <input type="radio" name="type" value="gym" id="PNavGym"/>
+            ${getString('PNavGymDescription')}
+          </label>
+          <Label>
+            <input type="radio" name="type" value="ex" id="PNavEx"/>
+            ${getString('PNavExDescription')}
+          </label>
+          <a style="${window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''}" title="${getString('PogoButtonsTitle', {send})}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">
+            ${getString('PogoButtonsText', {send})}
+          </a>
+        </div>
+      `);
+        if (pNavData.pokestop[selectedGuid]) {
+          $('#PNavStop').prop('checked', true);
+        } else if (pNavData.gym[selectedGuid]) {
+          if (pNavData.gym[selectedGuid].isEx) {
+            $('#PNavEx').prop('checked', true);
+          } else {
+            $('#PNavGym').prop('checked', true);
+          }
+        }
+        window.addHook('portalDetailsUpdated', modifyPortalDetails);
+        console.debug('readded');
+      }, 0);
+    } else {
+      // wait for the Pogo Buttons to get added
+      detailsObserver.observe($('#portaldetails')[0], {'childList': true});
+      // if running on mobile, also wait for the Buttons in Status bar to get added and add it there.
+      if (window.isSmartphone()) {
+        statusObserver.observe($('.PogoStatus')[0], {'childList': true});
+      }
+    }
+  }
+
   function waitForPogoButtons (mutationList, invokingObserver) {
     mutationList.forEach(function (mutation) {
       if (mutation.type === 'childList' && mutation.addedNodes) {
@@ -1692,9 +1748,6 @@ function wrapper (plugin_info) {
     }
     $('#toolbox').append(`<a title="${getString('pokeNavSettingsTitle')}" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">${getString('pokeNavSettingsText')}</a>`);
     $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
-    const detailsObserver = new MutationObserver(waitForPogoButtons);
-    const statusObserver = new MutationObserver(waitForPogoStatus);
-    const send = Boolean(window.plugin.pnav.settings.webhookUrl);
     lCommBounds = new L.LayerGroup();
     if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
       let commCircle = L.circle(L.latLng([
@@ -1744,54 +1797,7 @@ function wrapper (plugin_info) {
         isFieldsDisplayed = false;
       }
     });
-
-    window.addHook('portalSelected', function (data) {
-      let guid = data.selectedPortalGuid;
-      selectedGuid = guid;
-      if (!window.plugin.pogo) {
-        setTimeout(function () {
-          $('#portaldetails').append(`
-          <div id="PNav" style="color:#fff">
-            <Label>
-              <input type="radio" checked name="type" value="none" id="PNavNone"/>
-              ${getString('PNavNoneDescription')}
-            </label>
-            <Label>
-              <input type="radio" name="type" value="pokestop" id="PNavStop"/>
-              ${getString('PNavStopDescription')}
-            </label>
-            <Label>
-              <input type="radio" name="type" value="gym" id="PNavGym"/>
-              ${getString('PNavGymDescription')}
-            </label>
-            <Label>
-              <input type="radio" name="type" value="ex" id="PNavEx"/>
-              ${getString('PNavExDescription')}
-            </label>
-            <a style="${window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''}" title="${getString('PogoButtonsTitle', {send})}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">
-              ${getString('PogoButtonsText', {send})}
-            </a>
-          </div>
-        `);
-          if (pNavData.pokestop[selectedGuid]) {
-            $('#PNavStop').prop('checked', true);
-          } else if (pNavData.gym[selectedGuid]) {
-            if (pNavData.gym[selectedGuid].isEx) {
-              $('#PNavEx').prop('checked', true);
-            } else {
-              $('#PNavGym').prop('checked', true);
-            }
-          }
-        }, 0);
-      } else {
-        // wait for the Pogo Buttons to get added
-        detailsObserver.observe($('#portaldetails')[0], {'childList': true});
-        // if running on mobile, also wait for the Buttons in Status bar to get added and add it there.
-        if (window.isSmartphone()) {
-          statusObserver.observe($('.PogoStatus')[0], {'childList': true});
-        }
-      }
-    });
+    window.addHook('portalDetailsUpdated', modifyPortalDetails);
   };
 
   /* eslint-disable no-var*/
