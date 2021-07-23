@@ -511,11 +511,9 @@ function wrapper (plugin_info) {
         switch ($('input[name=type]:checked').val()) {
         case 'pokestop':
           data.type = 'pokestop';
-          data.isEx = false;
           break;
         case 'gym':
           data.type = 'gym';
-          data.isEx = false;
           break;
         case 'ex':
           data.type = 'gym';
@@ -1194,7 +1192,7 @@ function wrapper (plugin_info) {
           if (newData.lng != gym.lng) {
             detectedChanges.edits.longitude = newData.lng;
           }
-          if (newData.isEx !== gym.isEx) {
+          if (Boolean(newData.isEx) !== Boolean(gym.isEx)) { // that treats undefined as false, otherwise undefined and false would be unequal, even with != instead of !==.
             const newEx = newData.isEx ? newData.isEx : false;
             detectedChanges.edits.ex_eligible = newEx ? 1 : 0;
           }
@@ -1288,7 +1286,7 @@ function wrapper (plugin_info) {
     if (currentData.name != savedData.name) {
       changes.edits.name = currentData.name;
     }
-    if (currentData.isEx !== savedData.isEx) {
+    if (Boolean(currentData.isEx) !== Boolean(savedData.isEx)) { // to cope with undefined == false etc.
       changes.edits.ex_eligible = currentData.isEx ? 1 : 0;
     }
     if (Object.keys(changes.edits).length > 0) {
@@ -1648,7 +1646,6 @@ function wrapper (plugin_info) {
     selectedGuid = guid;
     if (!window.plugin.pogo) {
       window.removeHook('portalDetailsUpdated', modifyPortalDetails);
-      console.debug('removed');
       setTimeout(function () {
         $('#portaldetails').append(`
         <div id="PNav" style="color:#fff">
@@ -1683,7 +1680,6 @@ function wrapper (plugin_info) {
           }
         }
         window.addHook('portalDetailsUpdated', modifyPortalDetails);
-        console.debug('readded');
       }, 0);
     } else {
       // wait for the Pogo Buttons to get added
