@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Text;
 
@@ -10,89 +10,99 @@ namespace CompanionBot
     public class GuildSettings
     {
         private readonly Logger logger;
-        private static readonly string path = @"guildSettings.json";
-        private Dictionary<ulong, Settings> settings;
+        private const string path = @"guildSettings.json";
+        private ConcurrentDictionary<ulong, Settings> settings;
 
         public GuildSettings(Logger log)
         {
             logger = log;
         }
 
-        public Settings this[ulong server]
+        internal Settings this[ulong server]
         {
             get
             {
-                if (settings == null)
+                if(settings == null)
                 {
-                    if (File.Exists(path))
-                    {
-                        string data;
-                        try
-                        {
-                            data = File.ReadAllText(path);
-                        }
-                        catch (Exception e)
-                        {
-                            logger.Log(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Unable to read Settings File: {e.GetType().Name} - {e.Message}", e));
-                            return Settings.Default;
-                        }
+                    LoadSettings();
+                }
 
-                        try
-                        {
-                            settings = JsonConvert.DeserializeObject<Dictionary<ulong, Settings>>(data);
-                        }
-                        catch (Exception e)
-                        {
-                            logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Invalid Settings File (JSON parsing failed)! Exception: {e.GetType().Name} - {e.Message}", e));
-                            settings = new Dictionary<ulong, Settings>();
-                            return Settings.Default;
-                        }
-
-                        if (settings.ContainsKey(server))
-                        {
-                            return settings[server];
-                        }
-                        else
-                        {
-                            return Settings.Default;
-                        }
-                    }
-                    else
-                    {
-                        settings = new Dictionary<ulong, Settings>();
-                        return Settings.Default;
-                    }
+                if (settings.TryGetValue(server, out Settings prefs))
+                {
+                    return prefs;
                 }
                 else
                 {
-                    if (settings.ContainsKey(server))
-                    {
-                        return settings[server];
-                    }
-                    else
-                    {
-                        return Settings.Default;
-                    }
+                    return Settings.Default;
                 }
             }
             set
             {
                 settings[server] = value;
+                SaveSettings();
+            }
+        }
 
-                string data = JsonConvert.SerializeObject(settings, Formatting.Indented);
+        private void LoadSettings()
+        {
+            if (File.Exists(path))
+            {
+                string data;
                 try
                 {
-                    File.WriteAllText(path, data);
+                    data = File.ReadAllText(path);
+                }catch(Exception e)
+                {
+                    logger.Log(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Unable to read Settings File: {e.GetType().Name} - {e.Message}.\n" +
+                        "If there are present settings, they will be overridden!", e));
+                    data = "{}";
+                }
+                try
+                {
+                    settings = JsonConvert.DeserializeObject<ConcurrentDictionary<ulong, Settings>>(data);
                 }
                 catch (Exception e)
                 {
-                    logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Unable to write Settings file, the Settings will get lost when the Bot is stopped: {e.GetType().Name} - {e.Message}", e));
+                    logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Invalid Settings File (JSON parsing failed)! Exception: {e.GetType().Name} - {e.Message}.\n" +
+                        "If there are present settings, they will be overridden!", e));
+                    settings = new ConcurrentDictionary<ulong, Settings>();
                 }
+            }
+        }
+
+        private void SaveSettings()
+        {
+            string data = JsonConvert.SerializeObject(settings, Formatting.Indented);
+            try
+            {
+                File.WriteAllText(path, data);
+            }
+            catch (Exception e)
+            {
+                logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Unable to write Settings file, the Settings will get lost when the Bot is stopped: {e.GetType().Name} - {e.Message}", e));
+            }
+        }
+
+        internal void DeleteSettings(ulong guildId)
+        {
+            if(settings == null)
+            {
+                LoadSettings();
+            }
+
+            if (settings.TryRemove(guildId, out Settings prefs))
+            {
+                logger.Log(new LogMessage(LogSeverity.Info, nameof(DeleteSettings), $"Settings for Guild {guildId} removed."));
+                SaveSettings();
+            }
+            else
+            {
+                logger.Log(new LogMessage(LogSeverity.Warning, nameof(DeleteSettings), $"There were no settings stored for Guild {guildId}!"));
             }
         }
     }
 
-    public struct Settings
+    internal struct Settings
     {
         public char Prefix { get; set; }
         public ulong? PNavChannel { get; set; }

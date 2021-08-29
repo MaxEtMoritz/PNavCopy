@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CompanionBot
 {
-    class RequireWebhookAttribute : PreconditionAttribute
+    internal class RequireWebhookAttribute : PreconditionAttribute
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
@@ -23,7 +24,7 @@ namespace CompanionBot
         }
     }
 
-    class RequireAttachedJsonAttribute : PreconditionAttribute
+    internal class RequireAttachedJsonAttribute : PreconditionAttribute
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {

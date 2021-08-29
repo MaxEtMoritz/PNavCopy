@@ -43,6 +43,7 @@ namespace CompanionBot
 
             _client = _services.GetRequiredService<DiscordSocketClient>();
             _client.Log += _services.GetRequiredService<Logger>().Log;
+            _client.LeftGuild += GuildLeft;
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
@@ -53,6 +54,14 @@ namespace CompanionBot
 
             // Block this task until the program is closed.
             await Task.Delay(-1);
+        }
+
+        private Task GuildLeft(SocketGuild guild)
+        {
+            Logger logger = _services.GetRequiredService<Logger>();
+            logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"The Bot was removed from Guild {guild.Name} ({guild.Id})."));
+            _services.GetRequiredService<GuildSettings>().DeleteSettings(guild.Id);
+            return Task.CompletedTask;
         }
     }
 }

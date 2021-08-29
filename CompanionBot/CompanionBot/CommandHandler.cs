@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CompanionBot
 {
-    public class CommandHandler
+    internal class CommandHandler
     {
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
@@ -50,10 +50,11 @@ namespace CompanionBot
             // Create a number to track where the prefix ends and the command begins
             int argPos = 0;
 
-            // Determine if the message is a command based on the prefix and make sure no bots trigger commands
-            if (!(message.HasCharPrefix(_settings[(message.Channel as IGuildChannel).Guild.Id].Prefix, ref argPos) ||
-                message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
-                (message.Author.IsBot && !message.Author.IsWebhook))
+            // Determine if the message is a command based on the prefix or a mention inside of a guild and make sure no bots trigger commands
+            if (!(message.Channel is IGuildChannel) ||
+                (message.Author.IsBot && !message.Author.IsWebhook) ||
+                !(message.HasCharPrefix(_settings[(message.Channel as IGuildChannel).Guild.Id].Prefix, ref argPos) ||
+                message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
                 return;
 
             // Create a WebSocket-based command context based on the message
@@ -69,29 +70,33 @@ namespace CompanionBot
 
         private async Task OnCommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
         {
+            ChannelPermissions perms = (context.Guild as SocketGuild).GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
             // if an Error occurred, send the Reason for the Error in the Channel where the Command was executed.
             if (!string.IsNullOrEmpty(result?.ErrorReason))
             {
-                await context.Channel.SendMessageAsync("Error: " + result.ErrorReason);
-                await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Id}: {result.ErrorReason}"));
+                if (perms.SendMessages)
+                    await context.Channel.SendMessageAsync("Error: " + result.ErrorReason);
+                await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
             }
             else if (!result.IsSuccess)
             {
                 if (result.Error.HasValue)
                 {
-                    await context.Channel.SendMessageAsync("Error: " + result.Error.Value.ToString());
-                    await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Id}: {result.Error.Value}"));
+                    if (perms.SendMessages)
+                        await context.Channel.SendMessageAsync("Error: " + result.Error.Value.ToString());
+                    await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.Error.Value}"));
                 }
                 else
                 {
-                    await context.Channel.SendMessageAsync("Error: Unknown Error while Executing this Command!");
-                    await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Unknown Command error in guild {context.Guild.Id}!"));
+                    if (perms.SendMessages)
+                        await context.Channel.SendMessageAsync("Error: Unknown Error while Executing this Command!");
+                    await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Unknown Command error in guild {context.Guild.Name} ({context.Guild.Id})!"));
                 }
             }
             else
             {
                 // Log Command Execution
-                await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command executed successfully in guild {context.Guild.Id}"));
+                await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command executed in guild {context.Guild.Name} ({context.Guild.Id})"));
             }
         }
     }
