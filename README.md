@@ -33,8 +33,8 @@ If you use the [Pogo tools plugin by AlfonsoML](https://gitlab.com/AlfonsoML/pog
 
 If you use the Plugin, you also have the option to upload all gathered Data at once.
 
-## Original Source
-The Plugin is based on a plugin included in a [Fork of the original IITC Mobile App](https://gitlab.com/ruslan.levitskiy/iitc-mobile) ([direct link to the Plugin](https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/blob/master/app/src/main/assets/plugins/portal-link-copier.user.js)).
+## Original Source / Dependencies
+Credits for the original source and licenses of dependencies can be found [here](/dependency-credits.md).
 
 ## Note
 The Plugin is not the very best code style and the code may not be very "error-friendly" because i am in no way an expert in JavaScript at the moment, but the important thing for me was to get it work, and it does exacly that, nothing more :wink:
