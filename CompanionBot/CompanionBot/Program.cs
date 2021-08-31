@@ -31,7 +31,7 @@ namespace CompanionBot
 
             _services = new ServiceCollection()
                 .AddSingleton(_config)
-                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig() { MessageCacheSize = 50 }))
                 .AddSingleton<InteractivityService>()
                 .AddSingleton<MessageQueue>()
                 .AddSingleton<CommandHandler>()

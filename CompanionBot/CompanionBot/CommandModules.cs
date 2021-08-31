@@ -159,10 +159,7 @@ namespace CompanionBot
             if (perms.SendMessages)
             {
                 var T = ReplyAsync($"{prefix}show mod-channel");
-                var result = await _interactive.NextMessageAsync((message) =>
-                {
-                    return message.Author.Id == 428187007965986826 && message.Channel.Id == Context.Channel.Id && message.MentionedChannels.Count == 1;
-                }, null, TimeSpan.FromSeconds(10));
+                var result = await _interactive.NextMessageAsync((message) => message.Author.Id == 428187007965986826 && message.Channel.Id == Context.Channel.Id && message.MentionedChannels.Count == 1, null, TimeSpan.FromSeconds(10));
                 await T;
                 if (result.IsSuccess)
                 {
@@ -174,14 +171,15 @@ namespace CompanionBot
                     await _logger.Log(new LogMessage(LogSeverity.Info, nameof(SetModChannel), $"PokeNav Mod Channel set to #{channel.Name} ({channel.Id}) for Guild {Context.Guild.Name} ({Context.Guild.Id})."));
                     ChannelPermissions modPerms = Context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(channel);
                     if (!modPerms.SendMessages || !modPerms.ViewChannel || !modPerms.AddReactions)
-                    {
-                        await ReplyAsync($":warning: Attention! :warning: The bot is missing permissions in the PokeNav mod channel:\n\tView Channel: {(modPerms.ViewChannel ? ":white_check_mark:" : ":x:")}\n\tSend Messages: {(modPerms.SendMessages ? ":white_check_mark:" : ":x:")}\n\tAdd Reactions (Recommended but optional): {(modPerms.AddReactions ? ":white_check_mark:" : ":x:")}\nMake sure to grant the necessary permissions to the bot for <#{channel.Id}>.");
-                    }
+                        await ReplyAsync(":warning: Attention! :warning: The bot is missing permissions in the PokeNav mod channel:" +
+                            $"\n\tView Channel: {(modPerms.ViewChannel ? ":white_check_mark:" : ":x:")}" +
+                            $"\n\tSend Messages: {(modPerms.SendMessages ? ":white_check_mark:" : ":x:")}" +
+                            $"\n\tAdd Reactions (Recommended but optional): {(modPerms.AddReactions ? ":white_check_mark:" : ":x:")}" +
+                            $"\n\tView Message History (for ambiguous edits): {(modPerms.ReadMessageHistory ? ":white_check_mark:" : "x")}" +
+                            $"\nMake sure to grant the necessary permissions to the bot for <#{channel.Id}>.");
                 }
                 else
-                {
                     await ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure PokeNav is able to respond in the Channel where you execute the command!");
-                }
             }
         }
 
