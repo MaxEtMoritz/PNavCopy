@@ -944,8 +944,10 @@ function wrapper (plugin_info) {
           ${getString('pNavOldPoiNameDescription')}
         </h3>
         <h3 id="pNavOldPoiName"></h3>
-        <a id="address">${getString('requestAddressDescription')}</a>
-        <br>
+        <p>
+          <a id="address">${getString('requestAddressDescription')}</a>
+          <span id="addressdetails" hidden></span>
+        </p>
         <label>${getString('pNavChangesMadeDescription')}</label>
         <ul id="pNavChangesMade"></ul>
         <label>
@@ -953,13 +955,15 @@ function wrapper (plugin_info) {
           <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="1"/>
         </label>
         <br>
-        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${getString('pNavPoiInfoTitle', {send})}">
+        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${getString('pNavPoiInfoTitle', {send})}" style="margin-top:5px">
           ${getString('pNavPoiInfoText', {send})}
         </button>
-        <button type="Button" class="ui-button" id="pNavModCommand" title="${getString('pNavModCommandTitleDisabled', {send})}" style="color:darkgray;cursor:default;text-decoration:none">
+        <button type="Button" class="ui-button" id="pNavModCommand" title="${getString('pNavModCommandTitleDisabled', {send})}" style="margin-top:5px;color:darkgray;text-decoration:none">
           ${getString('pNavModCommandText', {send})}
         </button>
       `;
+
+      /** @type{JQuery<HTMLElement>}*/
       const modDialog = window.dialog({
         id: 'pNavmodDialog',
         title: getString('pNavmodDialogTitle'),
@@ -998,11 +1002,10 @@ function wrapper (plugin_info) {
         const valid = e.target.validity.valid;
         const value = e.target.valueAsNumber;
         if (valid && value && value > 0) {
-          $('#pNavModCommand', modDialog).prop('style', '');
+          $('#pNavModCommand', modDialog).prop('style', 'margin-top:5px');
           $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleEnabled', {send}));
         } else {
           $('#pNavModCommand', modDialog).css('color', 'darkgray');
-          $('#pNavModCommand', modDialog).css('cursor', 'default');
           $('#pNavModCommand', modDialog).css('text-decoration', 'none');
           $('#pNavModCommand', modDialog).css('border', '1px solid darkgray');
           $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleDisabled', {send}));
@@ -1025,12 +1028,15 @@ function wrapper (plugin_info) {
         $.ajax(`https://nominatim.openstreetmap.org/reverse?lat=${changeList[i].lat}&lon=${changeList[i].lng}&format=json&addressdetails=0`, {
           success: (data) => {
             if (data && data.display_name) {
-              $('#address').after(data.display_name);
-              $('#address').remove();
+              $('#addressdetails').text(data.display_name);
+              $('#address').prop('hidden', true);
+              $('#addressdetails').prop('hidden', false);
             }
           }
         });
       });
+      console.log(modDialog);
+      modDialog.css('width', `${modDialog[0].offsetWidth}px`);
       $('#pNavModNrMax', modDialog).text(changeList.length);
       updateUI(modDialog, poi, i);
     } else {
@@ -1072,7 +1078,9 @@ function wrapper (plugin_info) {
     $('#pNavOldPoiName', dialog).text(poi.oldName);
     $('#pNavModNrCur', dialog).text(i + 1);
     $('#pNavChangesMade', dialog).empty();
-    $('#address').text(getString('requestAddressDescription'));
+    $('#addressdetails').text('')
+      .prop('hidden', true);
+    $('#address').prop('hidden', false);
     for (const [
       key,
       value
