@@ -172,12 +172,12 @@ namespace CompanionBot
                     await ReplyAsync($"Moderation Channel successfully set to <#{channel.Id}>");
                     await _logger.Log(new LogMessage(LogSeverity.Info, nameof(SetModChannel), $"PokeNav Mod Channel set to #{channel.Name} ({channel.Id}) for Guild {Context.Guild.Name} ({Context.Guild.Id})."));
                     ChannelPermissions modPerms = Context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(channel);
-                    if (!modPerms.SendMessages || !modPerms.ViewChannel || !modPerms.AddReactions)
+                    if (!modPerms.SendMessages || !modPerms.ViewChannel || !modPerms.AddReactions || !modPerms.ReadMessageHistory)
                         await ReplyAsync(":warning: Attention! :warning: The bot is missing permissions in the PokeNav mod channel:" +
                             $"\n\tView Channel: {(modPerms.ViewChannel ? ":white_check_mark:" : ":x:")}" +
                             $"\n\tSend Messages: {(modPerms.SendMessages ? ":white_check_mark:" : ":x:")}" +
                             $"\n\tAdd Reactions (Recommended but optional): {(modPerms.AddReactions ? ":white_check_mark:" : ":x:")}" +
-                            $"\n\tView Message History (for ambiguous edits): {(modPerms.ReadMessageHistory ? ":white_check_mark:" : "x")}" +
+                            $"\n\tView Message History (for ambiguous edits): {(modPerms.ReadMessageHistory ? ":white_check_mark:" : ":x:")}" +
                             $"\nMake sure to grant the necessary permissions to the bot for <#{channel.Id}>.");
                 }
                 else

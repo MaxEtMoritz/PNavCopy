@@ -22,7 +22,7 @@ namespace CompanionBot
         {
             get
             {
-                if(settings == null)
+                if (settings == null)
                 {
                     LoadSettings();
                 }
@@ -51,7 +51,8 @@ namespace CompanionBot
                 try
                 {
                     data = File.ReadAllText(path);
-                }catch(Exception e)
+                }
+                catch (Exception e)
                 {
                     logger.Log(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Unable to read Settings File: {e.GetType().Name} - {e.Message}.\n" +
                         "If there are present settings, they will be overridden!", e));
@@ -67,6 +68,10 @@ namespace CompanionBot
                         "If there are present settings, they will be overridden!", e));
                     settings = new ConcurrentDictionary<ulong, Settings>();
                 }
+            }
+            else
+            {
+                settings = new ConcurrentDictionary<ulong, Settings>();
             }
         }
 
@@ -85,7 +90,7 @@ namespace CompanionBot
 
         internal void DeleteSettings(ulong guildId)
         {
-            if(settings == null)
+            if (settings == null)
             {
                 LoadSettings();
             }
