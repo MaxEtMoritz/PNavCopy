@@ -1,14 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Platforms>AnyCPU;arm</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|arm'">
+    <PlatformTarget>arm</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="Program.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -27,7 +29,7 @@
     <Reference Include="Discord.Addons.CommandsExtension">
       <!--This is a NuGet Package also (https://www.nuget.org/packages/Discord.Addons.CommandsExtension), but the author did not update it on NuGet-->
       <!--so i cloned the Code from https://github.com/Charly6596/Discord.Addons.CommandsExtension, adapt this path if needed!-->
-      <HintPath>..\..\..\Discord.Addons.CommandsExtension\bin\Debug\netstandard2.0\Discord.Addons.CommandsExtension.dll</HintPath>
+      <HintPath>..\..\..\Discord.Addons.CommandsExtension\bin\Release\netstandard2.0\Discord.Addons.CommandsExtension.dll</HintPath>
     </Reference>
   </ItemGroup>
 
@@ -40,7 +42,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <ProjectExtensions><VisualStudio><UserProperties config_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>
