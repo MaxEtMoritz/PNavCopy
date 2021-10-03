@@ -141,11 +141,13 @@ namespace CompanionBot
         private readonly InteractivityService _interactive;
         private readonly DiscordSocketClient _client;
         private readonly Logger _logger;
+        private readonly IConfiguration _config;
         private readonly string prefix;
         public ConfigurationModule(GuildSettings settings, InteractivityService inter, IConfiguration config, DiscordSocketClient client, Logger logger)
         {
             _settings = settings;
             _interactive = inter;
+            _config = config;
             prefix = $"<@{config["pokeNavId"]}> ";
             _client = client;
             _logger = logger;
@@ -159,7 +161,7 @@ namespace CompanionBot
             if (perms.SendMessages)
             {
                 var T = ReplyAsync($"{prefix}show mod-channel");
-                var result = await _interactive.NextMessageAsync((message) => message.Author.Id == 428187007965986826 && message.Channel.Id == Context.Channel.Id && message.MentionedChannels.Count == 1, null, TimeSpan.FromSeconds(10));
+                var result = await _interactive.NextMessageAsync((message) => message.Author.Id == ulong.Parse(_config["pokeNavId"]) && message.Channel.Id == Context.Channel.Id && message.MentionedChannels.Count == 1, null, TimeSpan.FromSeconds(10));
                 await T;
                 if (result.IsSuccess)
                 {

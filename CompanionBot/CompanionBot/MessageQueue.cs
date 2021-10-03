@@ -13,7 +13,7 @@ using Discord.WebSocket;
 using Interactivity;
 using Microsoft.Extensions.Configuration;
 using ComposableAsync;
-using RateLimiter; // TODO: Include License in appropriate location!
+using RateLimiter;
 
 namespace CompanionBot
 {
@@ -32,6 +32,7 @@ namespace CompanionBot
         private readonly GuildSettings _settings;
         private readonly RequestOptions options;
         private readonly RequestOptions typingOptions;
+        private readonly IConfiguration _config;
         private TimeSpan averageCreateTime = TimeSpan.FromSeconds(1);
         private TimeSpan averageEditTime = TimeSpan.FromSeconds(2);
 
@@ -41,6 +42,7 @@ namespace CompanionBot
             _inter = interactive;
             _logger = logger;
             _settings = settings;
+            _config = config;
             prefix = $"<@{config["pokeNavId"]}> ";
             options = RequestOptions.Default;
             options.RetryMode = RetryMode.RetryRatelimit;
@@ -311,7 +313,7 @@ namespace CompanionBot
                             continue;
                         }
                         // wait for PokeNav to respond...
-                        var Result = await _inter.NextMessageAsync(x => x.Author.Id == 428187007965986826 && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error"), null, TimeSpan.FromSeconds(10));
+                        var Result = await _inter.NextMessageAsync(x => x.Author.Id == ulong.Parse(_config["pokeNavId"]) && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error"), null, TimeSpan.FromSeconds(10));
                         await t;
                         if (typing != null)
                             typing.Dispose();
@@ -412,7 +414,7 @@ namespace CompanionBot
                             await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending PoI Info Command in Guild {guildId}: {e.Message}", e));
                             continue;
                         }
-                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.oldName, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error" || msg.Embeds.First().Title == "Select Location"), timeout: TimeSpan.FromSeconds(10));
+                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.oldName, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error" || msg.Embeds.First().Title == "Select Location"), timeout: TimeSpan.FromSeconds(10));
                         await t;
                         if (result.IsSuccess)
                         {
@@ -452,7 +454,7 @@ namespace CompanionBot
                                     SemaphoreSlim signal = new SemaphoreSlim(0, 1);
                                     Task handler(SocketMessage msg)
                                     {
-                                        if (signal.CurrentCount == 0 && msg.Channel == channel && msg.Author.Id == 428187007965986826 && msg.Embeds.Count == 1 && string.IsNullOrEmpty(msg.Content)
+                                        if (signal.CurrentCount == 0 && msg.Channel == channel && msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Embeds.Count == 1 && string.IsNullOrEmpty(msg.Content)
                                             && msg.Embeds.First().Fields.Any((field) => { return field.Name == "coordinates"; })
                                             && msg.Embeds.First().Fields.Any((field) => { return field.Name == "near"; }))
                                         {
@@ -564,7 +566,7 @@ namespace CompanionBot
                                         });
                                         Regex validEmote = new Regex($"[1-{embed.Fields.Length}]\u20e3");
                                         var reactResult = await _inter.NextReactionAsync((SocketReaction r) =>
-                                        r.MessageId == result.Value.Id && r.User.Value.Id != 428187007965986826 && validEmote.IsMatch(r.Emote.Name),
+                                        r.MessageId == result.Value.Id && r.User.Value.Id != ulong.Parse(_config["pokeNavId"]) && validEmote.IsMatch(r.Emote.Name),
                                         runOnGateway: false,
                                         timeout: TimeSpan.FromMinutes(1));
                                         Console.WriteLine("Success!");
@@ -652,7 +654,7 @@ namespace CompanionBot
                             {
                                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending edit message in Guild {guildId}: {e.Message}", e));
                             }
-                            result = await _inter.NextMessageAsync((msg) => msg.Author.Id == 428187007965986826 && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1, timeout: TimeSpan.FromSeconds(10));
+                            result = await _inter.NextMessageAsync((msg) => msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1, timeout: TimeSpan.FromSeconds(10));
                             await t;
                             if (!result.IsSuccess)
                             {
