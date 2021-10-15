@@ -53,10 +53,10 @@ The Companion Bot is a helper Bot that recieves a JSON file from the WebHook con
 
 After the Export, the Bot does its Work automatically without the need to keep IITC open so long.
 
-__Note:__ The Companion Bot is still under construction and i don't know yet where to host it. If you want to try it, open an Issue. Eventually i will make it go Online then and share the Invite Link.
+__Note:__ The Companion Bot is still under construction, but if you want to test it, leave a comment on [this issue](https://github.com/MaxEtMoritz/PNavCopy/issues/10). Please let me know the nickname you have set for the [PokeNav Discord server](https://discord.gg/h3UP37y3zk) (you can change it temporarily if you like). I will DM you then. You will need to invite me to the server you want to try the bot on and give me "manage server" permission (the bot is set to private so only i can add it to servers). When i added the bot, i can leave your server again if you like.
 
 ## How to contribute?
 You can contribute by...
 - translating this Plugin into your native language. A guide on how to translate can be found [here](/Translating.md).
-- contributing Code to the plugin. Please fork this repository and open a pull request. I will then take a look at it and if i consider it good, i'll merge it into the test branch and later on into main if everything is working.
+- contributing Code to the plugin or the bot. Please fork this repository and open a pull request. I will then take a look at it and if i consider it good, i'll merge it into the test branch and later on into main if everything is working.
 - reporting Bugs and other issues.
