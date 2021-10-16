@@ -43,16 +43,11 @@ namespace CompanionBot
         [Command("my-settings"), Alias("ms"), Summary("Shows your current Settings."), RequireBotPermission(ChannelPermission.SendMessages)]
         public Task ShowSettings()
         {
-            ChannelPermissions? perms = Context.Guild.GetUser(_client.CurrentUser.Id)?.GetPermissions(Context.Channel as IGuildChannel);
-            if (!perms.HasValue || perms.Value.SendMessages)
-            {
-                string response = "Your current Settings are:";
-                Settings settings = _settings[Context.Guild.Id];
-                response += $"\nPrefix:\t{settings.Prefix}";
-                response += $"\nPokeNav Mod-Channel:\t{(settings.PNavChannel != null ? "<#" + settings.PNavChannel + ">" : "none")}";
-                return ReplyAsync(response);
-            }
-            return Task.FromException(new Exception("Unable to send messages in the Channel!"));
+            string response = "Your current Settings are:";
+            Settings settings = _settings[Context.Guild.Id];
+            response += $"\nPrefix:\t{settings.Prefix}";
+            response += $"\nPokeNav Mod-Channel:\t{(settings.PNavChannel != null ? "<#" + settings.PNavChannel + ">" : "none")}";
+            return ReplyAsync(response);
         }
     }
 
@@ -87,8 +82,17 @@ namespace CompanionBot
                 if (perms.SendMessages)
                     await ReplyAsync($"Download of Attached File Failed: {e.Message}");
             }
-            // Command Exception thrown!
-            PortalData[] data = JsonConvert.DeserializeObject<PortalData[]>(dataString);
+            PortalData[] data;
+            try
+            {
+                data = JsonConvert.DeserializeObject<PortalData[]>(dataString);
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync($"Error while parsing file: {e.Message}");
+                await _logger.Log(new LogMessage(LogSeverity.Error, "createmultiple", $"JSON Parsing failed in guild {Context.Guild.Name} ({Context.Guild.Id}): {e.Message}", e));
+                return;
+            }
 
             List<string> commands = new List<string>();
             foreach (PortalData current in data)
@@ -128,8 +132,17 @@ namespace CompanionBot
                     await ReplyAsync($"Download of Attached File Failed: {e.Message}");
             }
 
-            // Command Exception Thrown!
-            List<EditData> data = JsonConvert.DeserializeObject<List<EditData>>(dataString);
+            List<EditData> data;
+            try
+            {
+                data = JsonConvert.DeserializeObject<List<EditData>>(dataString);
+            }
+            catch(Exception e)
+            {
+                await ReplyAsync($"Error while parsing file: {e.Message}");
+                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"JSON Parsing failed in guild {Context.Guild.Name} ({Context.Guild.Id}): {e.Message}", e));
+                return;
+            }
             await _queue.EnqueueEdit(Context, data, perms);
         }
     }
