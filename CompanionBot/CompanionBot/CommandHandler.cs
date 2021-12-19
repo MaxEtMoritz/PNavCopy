@@ -76,7 +76,7 @@ namespace CompanionBot
                 ChannelPermissions perms = (context.Guild as SocketGuild).GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
                 if (perms.SendMessages)
                     await context.Channel.SendMessageAsync("Error: " + result.ErrorReason);
-                await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
+                await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
             }
             else if (!result.IsSuccess)
             {
@@ -85,7 +85,7 @@ namespace CompanionBot
                 {
                     if (perms.SendMessages)
                         await context.Channel.SendMessageAsync("Error: " + result.Error.Value.ToString());
-                    await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.Error.Value}"));
+                    await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.Error.Value}"));
                 }
                 else
                 {
