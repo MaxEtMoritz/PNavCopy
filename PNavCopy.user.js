@@ -68,9 +68,11 @@ function wrapper (plugin_info) {
   const pNavId = 428187007965986826n;
   const companionId = 806533005626572813n;
 
+  /** @type {L.LayerGroup} */
   let lCommBounds;
   const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
 
+  // #region strings
   const strings = {
     en: {
       alertAlreadyExported: 'This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.',
@@ -348,6 +350,7 @@ function wrapper (plugin_info) {
       useBotTitle: 'Setzen Sie den Haken, wenn Sie den Assistenz-Bot auf Ihren Server hinzugefügt haben. Dadurch kann der Massen-Export beschleunigt werden. Mehr Infos dazu auf GitHub!'
     }
   };
+  // #endregion
 
   function detectLanguage () {
     let lang = navigator.language;
@@ -417,7 +420,7 @@ function wrapper (plugin_info) {
       console.error('import data has more or less top-level nodes or different ones than "pokestop" and "gym".');
       return false;
     } else {
-      let validGuid = new RegExp('^[0-9|a-f]{32}\\.1[126]$'); // TODO: What are valid Guid endings? seen .11, .12 and .16 so far. but are there more and what are the rules?
+      let validGuid = /^[0-9|a-f]{32}\.1[126]$/; // TODO: What are valid Guid endings? seen .11, .12 and .16 so far. but are there more and what are the rules?
       let allValid = true;
       Object.keys(data.pokestop).forEach(function (guid) {
         if (allValid) {
@@ -713,7 +716,7 @@ function wrapper (plugin_info) {
   };
 
   window.plugin.pnav.showSettings = function () {
-    let validURL = '^https?://discord(app)?.com/api/webhooks/[0-9]*/.*';
+    let validURL = '^https?://discord(app)?.com/api/webhooks/[0-9]{1,20}/[0-9a-f]*';
     let html = `
         <p>
           <label>
@@ -810,7 +813,7 @@ function wrapper (plugin_info) {
               $('#lblErrorRd').remove();
             }
           } else if (
-            new RegExp('^\\d+(\\.\\d+)?$').test($('#pnavRadius').val()) &&
+            (/^\d+(\.\d+)?$/).test($('#pnavRadius').val()) &&
             !Number.isNaN(parseFloat($('#pnavRadius').val()))
           ) {
             settings.radius = parseFloat($('#pnavRadius').val());
@@ -839,7 +842,7 @@ function wrapper (plugin_info) {
             if (
               !Number.isNaN(lat) &&
               !Number.isNaN(lng) &&
-              new RegExp('^-?\\d?\\d(\\.\\d+)?, -?1?\\d?\\d(\\.\\d+)?$').test($('#pnavCenter').val()) &&
+              (/^-?\d?\d(\.\d+)?, -?1?\d?\d(\.\d+)?$/).test($('#pnavCenter').val()) &&
               lat >= -90 &&
               lat <= 90 &&
               lng >= -180 &&
@@ -1012,7 +1015,7 @@ function wrapper (plugin_info) {
         }
       });
       $('#pNavModCommand', modDialog).on('click', function () {
-        if ($('#pNavPoiId', modDialog).val() && new RegExp('^\\d*$').test($('#pNavPoiId', modDialog).val())) {
+        if ($('#pNavPoiId', modDialog).val() && (/^\d*$/).test($('#pNavPoiId', modDialog).val())) {
           sendModCommand($('#pNavPoiId', modDialog).val(), poi);
           updateDone([poi]);
           i++;
@@ -1779,7 +1782,7 @@ function wrapper (plugin_info) {
           const layer = layers[id];
           if (layer.name === 'Links' || layer.name === 'Fields') {
             window.map.removeLayer(layer.layer);
-          } else if ((new RegExp('Level . Portals').test(layer.name) ||
+          } else if (((/Level . Portals/).test(layer.name) ||
                       layer.name === 'Resistance' ||
                       layer.name === 'Enlightened' ||
                       layer.name === 'Unclaimed/Placeholder Portals') &&
