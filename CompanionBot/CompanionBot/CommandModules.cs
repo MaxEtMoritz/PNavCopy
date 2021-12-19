@@ -19,12 +19,10 @@ namespace CompanionBot
     {
         private readonly CommandService _commands;
         private readonly GuildSettings _settings;
-        private readonly DiscordSocketClient _client;
-        public General(CommandService commands, GuildSettings settings, DiscordSocketClient client)
+        public General(CommandService commands, GuildSettings settings)
         {
             _commands = commands;
             _settings = settings;
-            _client = client;
         }
 
         /*[Command("repost"), Summary("Re-posts a message.")]
@@ -85,7 +83,7 @@ namespace CompanionBot
             PortalData[] data;
             try
             {
-                data = JsonConvert.DeserializeObject<PortalData[]>(dataString);
+                data = JsonConvert.DeserializeObject<PortalData[]>(dataString, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Error });
             }
             catch (Exception e)
             {
@@ -135,9 +133,9 @@ namespace CompanionBot
             List<EditData> data;
             try
             {
-                data = JsonConvert.DeserializeObject<List<EditData>>(dataString);
+                data = JsonConvert.DeserializeObject<List<EditData>>(dataString, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Error });
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 await ReplyAsync($"Error while parsing file: {e.Message}");
                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"JSON Parsing failed in guild {Context.Guild.Name} ({Context.Guild.Id}): {e.Message}", e));

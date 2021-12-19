@@ -4,9 +4,11 @@ using System.Text;
 
 namespace CompanionBot
 {
+    public enum PoiType { pokestop, gym};
+    public enum EditType { type, name, latitude, longitude, ex_eligible};
     public class PortalData
     {
-        public string type;
+        public PoiType type;
         public string guid;
         public string name;
         public string lat;
@@ -16,13 +18,12 @@ namespace CompanionBot
 
     public class EditData
     {
-        public string oldType;
+        public PoiType oldType;
         public string oldName;
         public string guid;
         public string lat;
         public string lng;
-        ///<remarks>expected Keys: type, name, latitude, longitude, ex_eligible</remarks>
-        public Dictionary<string, string> edits;
+        public Dictionary<EditType, string> edits;
     }
 
     public struct AddressResponse

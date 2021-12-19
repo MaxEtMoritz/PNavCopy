@@ -177,10 +177,62 @@ namespace CompanionBot
             return Task.CompletedTask;
         }
 
-        // TODO: When anything fails due to missing permissions but the saved perms said it should be okay, replace perms by calling this helper method!
-        private ChannelPermissions RefreshPerms(SocketGuildChannel channel)
+        private Task<bool> TryToSendMessage(IMessageChannel channel, ref ChannelPermissions perms, string text = null, Embed embed = null, RequestOptions options = null, ushort numTry = 0)
         {
-            return channel.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(channel);
+            if (perms.SendMessages && (embed != null && perms.EmbedLinks || embed == null) && numTry < 2)
+            {
+                try
+                {
+                    channel.SendMessageAsync(text, embed: embed, options: options).Wait();
+                }
+                catch (HttpException e)
+                {
+                    if (e.HttpCode == System.Net.HttpStatusCode.Forbidden || e.DiscordCode != null && e.DiscordCode == 50013) // Permissions Missing
+                    {
+                        _logger.Log(new LogMessage(LogSeverity.Info, nameof(TryToSendMessage), $"SendMessage Permission lost in channel #{channel.Name} (Guild {(channel as IGuildChannel)?.GuildId}), refreshing permissions...", e));
+                        perms = (channel as SocketGuildChannel).Guild.GetUser(_client.CurrentUser.Id).GetPermissions(channel as IGuildChannel);
+                        return TryToSendMessage(channel, ref perms, text, embed, options, ++numTry);
+                    }
+                    else
+                    {
+                        _logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Unexpected Exception while trying to send Message to Channel {channel.Id}.", e));
+                        return Task.FromResult(false);
+                    }
+                }
+                return Task.FromResult(true);
+            }
+            else
+            {
+                return Task.FromResult(false);
+            }
+        }
+
+        private Task<bool> TryToReact(SocketMessage message, Emoji reaction, ref ChannelPermissions perms, RequestOptions options = null, ushort numTry = 0)
+        {
+            if (numTry < 2 && perms.ReadMessageHistory && (perms.AddReactions || message.Reactions.ContainsKey(reaction)))
+            {
+                try
+                {
+                    message.AddReactionAsync(reaction, options).Wait();
+                }
+                catch (HttpException e)
+                {
+                    if (e.HttpCode == System.Net.HttpStatusCode.Forbidden || e.DiscordCode != null && e.DiscordCode == 50013)
+                    {
+                        _logger.Log(new LogMessage(LogSeverity.Info, nameof(TryToReact), $"Reaction related permission(s) lost in channel {message.Channel.Name}, refreshing perms...", e));
+                        perms = (message.Channel as SocketGuildChannel).Guild.GetUser(_client.CurrentUser.Id).GetPermissions(message.Channel as IGuildChannel);
+                        return TryToReact(message, reaction, ref perms, options, ++numTry);
+                    }
+                    else
+                    {
+                        _logger.Log(new LogMessage(LogSeverity.Error, nameof(TryToReact), $"Unexpected exception while adding reaction to message in channel {message.Channel.Name} ({message.Channel.Id}): {e.Message}", e));
+                        return Task.FromResult(false);
+                    }
+                }
+                return Task.FromResult(true);
+            }
+            else
+                return Task.FromResult(false);
         }
 
         private Task UpdateProgress(ulong guild, IMessageChannel channel, ChannelPermissions perms, bool actionRequired = false)
@@ -252,16 +304,31 @@ namespace CompanionBot
                 }
                 else if ((create && !createQueue.IsEmpty) || (edit && !editQueue.IsEmpty))
                 {
-                    message = channel.SendMessageAsync(embed: embed.Build()).Result;
+                    try
+                    {
+                        message = channel.SendMessageAsync(embed: embed.Build()).Result;
+                    }
+                    catch (HttpException e)
+                    {
+                        _logger.Log(new LogMessage(LogSeverity.Error, nameof(UpdateProgress), $"Error while sending Progress embed in guild {guild}: {e.Message}", e));
+                        message = null;
+                    }
                     if (perms.ManageMessages)
-                        message.PinAsync();
+                        try
+                        {
+                            message?.PinAsync().Wait();
+                        }
+                        catch (HttpException e)
+                        {
+                            _logger.Log(new LogMessage(LogSeverity.Error, nameof(UpdateProgress), $"Error pinning progress message in guild {guild}: {e.Message}", e));
+                        }
                     progress[guild] = message;
                 }
             }
             return Task.CompletedTask;
         }
 
-        private async Task Work(ulong guildId, IMessageChannel invokedChannel, CancellationToken token, ChannelPermissions invokingPerms, ChannelPermissions? modPerms = null)
+        private async Task Work(ulong guildId, IMessageChannel invokedChannel, CancellationToken token, ChannelPermissions invokingPerms)
         {
             if (_settings[guildId].PNavChannel.HasValue)
             {
@@ -271,17 +338,16 @@ namespace CompanionBot
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Mod-Channel was no Message Channel for Guild {guildId}!"));
                     if (invokingPerms.SendMessages)
-                        await invokedChannel.SendMessageAsync($"There was a problem with the mod-channel! try to run `{_settings[guildId].Prefix}set mod-channel` and then `{_settings[guildId].Prefix}resume` to try again!");
+                        await TryToSendMessage(invokedChannel, ref invokingPerms, $"There was a problem with the mod-channel. Try to run `{_settings[guildId].Prefix}set mod-channel` and then `{_settings[guildId].Prefix}resume` to try again!");
                     return;
                 }
 
-                if (!modPerms.HasValue)
-                    modPerms = _client.GetGuild(guildId).CurrentUser.GetPermissions(channel as IGuildChannel);
+                ChannelPermissions modPerms = _client.GetGuild(guildId).CurrentUser.GetPermissions(channel as IGuildChannel);
                 DateTime start;
-                if (modPerms.Value.SendMessages && createQueues.TryGetValue(guildId, out ConcurrentQueue<string> queue))
+                if (modPerms.SendMessages && createQueues.TryGetValue(guildId, out ConcurrentQueue<string> queue))
                 {
 
-                    while (queue.TryDequeue(out string current))
+                    while (modPerms.SendMessages && queue.TryDequeue(out string current))
                     {
                         if (token.IsCancellationRequested)
                         {
@@ -301,56 +367,47 @@ namespace CompanionBot
                         {
                             await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while entering typing state in Guild {guildId}: {e.Message}", e));
                         }
-                        Task t = Task.CompletedTask;
-                        try
+                        CancellationTokenSource ct = new CancellationTokenSource();
+                        // wait for PokeNav to respond...
+                        var nma = _inter.NextMessageAsync(x => x.Author.Id == ulong.Parse(_config["pokeNavId"]) && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error" || x.Content.StartsWith("Error:")), null, TimeSpan.FromSeconds(10), runOnGateway: false, cancellationToken: ct.Token);
+                        Task<bool> t = TryToSendMessage(channel, ref modPerms, $"{prefix}{current}", options: options);
+                        if (!await t)
                         {
-                            t = channel.SendMessageAsync($"{prefix}{current}", false, null, options);
-                        }
-                        catch (Exception e)
-                        {
-                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending Create Message in Guild {guildId}: {e.Message}", e));
+                            ct.Cancel();
+                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending Create Message in Guild {guildId}."));
                             queue.Enqueue(current); // FIXME: Possibly endless loop if there is a persistent error in sending the message! (can always be aborted with pause command though)
                             continue;
                         }
-                        // wait for PokeNav to respond...
-                        var Result = await _inter.NextMessageAsync(x => x.Author.Id == ulong.Parse(_config["pokeNavId"]) && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error"), null, TimeSpan.FromSeconds(10));
-                        await t;
+                        var Result = await nma;
+                        ct.Dispose();
                         if (typing != null)
                             typing.Dispose();
                         if (!Result.IsSuccess)
                         {
-                            try
+                            if (!await TryToSendMessage(channel, ref modPerms, $"PokeNav did not respond in time. Please try again by Hand!", options: options))
                             {
-                                await channel.SendMessageAsync($"PokeNav did not respond in time! Please try again by Hand!", false, null, options);
-                            }
-                            catch (Exception e)
-                            {
-                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending Error Message in Guild {guildId}: {e.Message}", e));
+                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending Error Message in Guild {guildId}."));
                             }
                             await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Work), $"PokeNav did not respond within 10 seconds in Guild {guildId}."));
                         }
                         if (queue.Count % 5 == 0) // do not edit every time because of rate limits
                         {
-                            await UpdateProgress(guildId, channel, modPerms.Value);
+                            await UpdateProgress(guildId, channel, modPerms);
                         }
                         averageCreateTime = averageCreateTime * 0.9 + (DateTime.UtcNow - start) * (1 - 0.9); // TODO: does this work like intended?
                     }
                     if (editQueues.TryGetValue(guildId, out ConcurrentQueue<EditData> edit) && !edit.IsEmpty)
                     {
-                        workers[guildId] = Edit(guildId, invokedChannel, token, invokingPerms, modPerms); // proceed with edits after creation is complete if there are any.
+                        workers[guildId] = Edit(guildId, invokedChannel, token, invokingPerms); // proceed with edits after creation is complete if there are any.
                     }
                 }
             }
             else
             {
                 if (invokingPerms.SendMessages)
-                    try
+                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"PokeNav Moderation Channel not set yet. Run `{_settings[guildId].Prefix}set mod-channel` to set it, then run `{_settings[guildId].Prefix}resume` to create the PoI!"))
                     {
-                        await invokedChannel.SendMessageAsync($"PokeNav Moderation Channel not set yet! Run `{_settings[guildId].Prefix}set mod-channel` to set it, then run `{_settings[guildId].Prefix}resume` to create the PoI!");
-                    }
-                    catch (Exception e)
-                    {
-                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
+                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending error message in Guild {guildId}."));
                     }
                 tokens[guildId]?.Cancel(); // To set IsCancellationRequested to make it paused instead of Exporting
                 await UpdateProgress(guildId, invokedChannel, invokingPerms);
@@ -364,7 +421,7 @@ namespace CompanionBot
             await UpdateProgress(guildId, invokedChannel, invokingPerms);
         }
 
-        private async Task Edit(ulong guildId, IMessageChannel invokedChannel, CancellationToken token, ChannelPermissions invokingPerms, ChannelPermissions? modPerms = null)
+        private async Task Edit(ulong guildId, IMessageChannel invokedChannel, CancellationToken token, ChannelPermissions invokingPerms)
         {
 
             if (_settings[guildId].PNavChannel != null)
@@ -375,23 +432,18 @@ namespace CompanionBot
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Mod-Channel was no Message Channel for Guild {guildId}!"));
                     if (invokingPerms.SendMessages)
-                        try
+                        if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"There was a problem with the mod-channel. Try to run `{_settings[guildId].Prefix}set mod-channel` and then `{_settings[guildId].Prefix}resume` to try again!"))
                         {
-                            await invokedChannel.SendMessageAsync($"There was a problem with the mod-channel! try to run `{_settings[guildId].Prefix}set mod-channel` and then `{_settings[guildId].Prefix}resume` to try again!");
-                        }
-                        catch (Exception e)
-                        {
-                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
+                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                         }
                     return;
                 }
 
-                if (!modPerms.HasValue)
-                    modPerms = _client.GetGuild(guildId).CurrentUser.GetPermissions(channel as IGuildChannel);
-                if (modPerms.Value.SendMessages && editQueues.TryGetValue(guildId, out var queue))
+                ChannelPermissions modPerms = _client.GetGuild(guildId).CurrentUser.GetPermissions(channel as IGuildChannel);
+                if (modPerms.SendMessages && editQueues.TryGetValue(guildId, out var queue))
                 {
                     DateTime start;
-                    while (queue.TryDequeue(out EditData current))
+                    while (modPerms.SendMessages && queue.TryDequeue(out EditData current))
                     {
                         if (token.IsCancellationRequested)
                         {
@@ -402,38 +454,40 @@ namespace CompanionBot
                             token.ThrowIfCancellationRequested();
                         }
                         start = DateTime.UtcNow;
-                        string type = current.oldType == "pokestop" ? "stop" : current.oldType;
-                        Task t = Task.CompletedTask;
-                        try
+                        string type = current.oldType == PoiType.pokestop ? "stop" : "gym";
+                        CancellationTokenSource ct = new CancellationTokenSource();
+                        var nma = _inter.NextMessageAsync((msg) => 
+                            msg.Author.Id == ulong.Parse(_config["pokeNavId"])
+                            && msg.Channel.Id == channel.Id
+                            && msg.Embeds.Count == 1
+                            && (msg.Embeds.First().Title.Equals(current.oldName, StringComparison.OrdinalIgnoreCase)
+                            || msg.Embeds.First().Title == "Error"
+                            || msg.Embeds.First().Title == "Select Location"),
+                        timeout: TimeSpan.FromSeconds(10),
+                        cancellationToken: ct.Token);
+                        Task<bool> t = TryToSendMessage(channel, ref modPerms, $"{prefix}{type}-info {current.oldName}");
+                        if (!await t)
                         {
-                            t = channel.SendMessageAsync($"{prefix}{type}-info {current.oldName}");
-                        }
-                        catch (Exception e)
-                        {
+                            ct.Cancel();
                             queue.Enqueue(current);
-                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending PoI Info Command in Guild {guildId}: {e.Message}", e));
+                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending PoI Info Command in Guild {guildId}."));
                             continue;
                         }
-                        var result = await _inter.NextMessageAsync((msg) => msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1 && (msg.Embeds.First().Title.Equals(current.oldName, StringComparison.OrdinalIgnoreCase) || msg.Embeds.First().Title == "Error" || msg.Embeds.First().Title == "Select Location"), timeout: TimeSpan.FromSeconds(10));
-                        await t;
+                        var result = await nma;
                         if (result.IsSuccess)
                         {
                             Embed embed = result.Value.Embeds.First();
                             if (embed.Title == "Error")
                             {
-                                try
+                                if (!await TryToSendMessage(channel, ref modPerms, "Edit Failed. PoI not found."))
                                 {
-                                    await channel.SendMessageAsync("Edit Failed! PoI not found!");
-                                }
-                                catch (Exception e)
-                                {
-                                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
+                                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                                 }
                                 continue;
                             }
                             else if (embed.Title == "Select Location")
                             {
-                                if (modPerms.Value.ReadMessageHistory)
+                                if (modPerms.ReadMessageHistory)
                                 {
                                     // handle the Location Select Dialog or skip this edit!
                                     int i;
@@ -445,7 +499,7 @@ namespace CompanionBot
                                         string[] coords = test.Split("%2C+"); // split into north and east Coordinate
                                         if (current.lat == coords[0] && current.lng == coords[1])
                                         {
-                                            // found the right one! i will be used to select it!
+                                            // found the right one! Variable "i" will be used to select it!
                                             break;
                                         }
                                     }
@@ -469,7 +523,7 @@ namespace CompanionBot
                                     {
                                         // something was found obviously!
                                         Emoji reaction = new Emoji(embed.Fields[i].Name.Substring(0, 2));
-                                        if (!modPerms.Value.AddReactions)
+                                        if (!modPerms.AddReactions)
                                             await _inter.NextReactionAsync((SocketReaction r) =>
                                             {
                                                 return r.MessageId == result.Value.Id && r.Emote.Name == reaction.Name;
@@ -485,16 +539,12 @@ namespace CompanionBot
                                                         _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error adding Reaction in Guild {guildId}: {e.Message}", e));
                                                     }
                                                 return Task.CompletedTask;
-                                            });
+                                            }, runOnGateway: false);
                                         else // we have the permission to add reactions, so add it immediately.
-                                            try
-                                            {
-                                                await result.Value.AddReactionAsync(reaction, options);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error adding Reaction in Guild {guildId}: {e.Message}", e));
-                                            }
+                                            if (!await TryToReact(result.Value, reaction, ref modPerms, options))
+                                        {
+
+                                        }
                                     }
                                     else
                                     {
@@ -527,10 +577,10 @@ namespace CompanionBot
                                                 response = new AddressResponse() { error = "Error getting Address!" };
                                             }
                                             string prompt = "Please select the right location! If you are not sure, let it time out!\nThe following info is available:";
-                                            if (modPerms.Value.MentionEveryone)
+                                            if (modPerms.MentionEveryone)
                                                 prompt = "@here " + prompt;
                                             EmbedBuilder infoEmbed = null;
-                                            if (modPerms.Value.EmbedLinks)
+                                            if (modPerms.EmbedLinks)
                                             {
                                                 infoEmbed = new EmbedBuilder().WithCurrentTimestamp();
                                                 infoEmbed.AddField("Name:", current.oldName, true);
@@ -554,13 +604,9 @@ namespace CompanionBot
                                                     prompt += $"\n\t\t{pair.Key} => {pair.Value}";
                                                 }
                                             }
-                                            try
+                                            if (!await TryToSendMessage(channel, ref modPerms, prompt, embed: infoEmbed?.Build(), options: options))
                                             {
-                                                await channel.SendMessageAsync(prompt, embed: infoEmbed?.Build(), options: options);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending selection prompt in Guild {guildId}: {e.Message}", e));
+                                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending selection prompt in Guild {guildId}."));
                                             }
                                             return Task.CompletedTask;
                                         });
@@ -569,18 +615,13 @@ namespace CompanionBot
                                         r.MessageId == result.Value.Id && r.User.Value.Id != ulong.Parse(_config["pokeNavId"]) && validEmote.IsMatch(r.Emote.Name),
                                         runOnGateway: false,
                                         timeout: TimeSpan.FromMinutes(1));
-                                        Console.WriteLine("Success!");
                                         if (!reactResult.IsSuccess)
                                         {
                                             // No one reacted!
                                             await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"Timeout while waiting for User Reaction in Guild {guildId}."));
-                                            try
+                                            if (!await TryToSendMessage(channel, ref modPerms, "No one reacted! Please try again manually!"))
                                             {
-                                                await channel.SendMessageAsync("No one reacted! Please try again manually!");
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending error message in Guild {guildId}: {e.Message}", e));
+                                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending error message in Guild {guildId}."));
                                             }
                                             continue;
                                         }
@@ -600,14 +641,10 @@ namespace CompanionBot
                                     if (!await signal.WaitAsync(10000))
                                     {
                                         // Timeout!
-                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Timeout while waiting for PokeNav to send the new Message in Guild {guildId}."));
-                                        try
+                                        await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"Timeout while waiting for PokeNav to send the new Message in Guild {guildId}."));
+                                        if (!await TryToSendMessage(channel, ref modPerms, "PokeNav did not update the select message within 10 seconds, please try again manually!"))
                                         {
-                                            await channel.SendMessageAsync("PokeNav did not update the select message within 10 seconds, please try again manually!");
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending error message in Guild {guildId}: {e.Message}", e));
+                                            await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending error message in Guild {guildId}."));
                                         }
                                         _client.MessageReceived -= handler;
                                         signal.Dispose();
@@ -617,69 +654,62 @@ namespace CompanionBot
                                 }
                                 else
                                 {
-                                    await channel.SendMessageAsync("Message History permission missing! Unable to handle location select dialog, edit skipped.");
+                                    await TryToSendMessage(channel, ref modPerms, "Message History permission missing! Unable to handle location select dialog, edit skipped.");
                                     continue;
                                 }
                             }
                             string text = embed.Footer.Value.Text.Split('\u25AB')[2];
                             if (!uint.TryParse(text[2..], out uint id))
                             {
-                                try
+                                if (!await TryToSendMessage(channel, ref modPerms, "Error: Parsing of Location ID failed!"))
                                 {
-                                    await channel.SendMessageAsync("Error: Parsing of Location ID failed!");
-                                }
-                                catch (Exception e)
-                                {
-                                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
+                                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                                 }
                                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Parsing of location Id failed in Guild {guildId}! Embed had the Footer {text}!"));
                                 continue;
                             }
                             string editString;
-                            if (current.edits.ContainsKey("type") && current.edits["type"] == "none")
+                            if (current.edits.ContainsKey(EditType.type) && current.edits[EditType.type] == "none")
                                 editString = $"{prefix}delete poi {id}";
                             else
                             {
                                 editString = $"{prefix}update poi {id}";
                                 foreach (var pair in current.edits)
                                 {
-                                    editString += $" \"{pair.Key}: {pair.Value}\"";
+                                    editString += $" \"{pair.Key}: {pair.Value}\""; //TODO: Is EditType properly converted to string?
                                 }
+                            }
+                            nma = _inter.NextMessageAsync((msg) => msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1, timeout: TimeSpan.FromSeconds(10), cancellationToken: ct.Token);
+                            ct = new CancellationTokenSource();
+                            t = TryToSendMessage(channel, ref modPerms, editString, options: options);
+                            if (!await t)
+                            {
+                                ct.Cancel();
+                                queue.Enqueue(current);
+                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending edit message in Guild {guildId}."));
+                                continue;
                             }
                             try
                             {
-                                t = channel.SendMessageAsync(editString, options: options);
+                                result = await nma;
                             }
-                            catch (Exception e)
-                            {
-                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending edit message in Guild {guildId}: {e.Message}", e));
-                            }
-                            result = await _inter.NextMessageAsync((msg) => msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1, timeout: TimeSpan.FromSeconds(10));
-                            await t;
+                            catch (TaskCanceledException) { } // nothing to do, already handled.
                             if (!result.IsSuccess)
                             {
                                 //no response in timeout!
-                                try
+                                if (!await TryToSendMessage(channel, ref modPerms, $"PokeNav did not respond in time! Please try again manually!"))
                                 {
-                                    await channel.SendMessageAsync($"PokeNav did not respond in time! Please try again manually!");
-                                }
-                                catch (Exception e)
-                                {
-                                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
+                                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                                 }
                                 await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"PokeNav did not respond in guild {guildId}!"));
                             }
                         }
                         else
                         {
-                            // no response in timeout!
-                            try
+                            //no response in timeout!
+                            if (!await TryToSendMessage(channel, ref modPerms, $"PokeNav did not respond in time! Please try again manually!"))
                             {
-                                await channel.SendMessageAsync($"PokeNav did not respond in time! Please try again manually!");
-                            }
-                            catch (Exception e)
-                            {
-                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
+                                await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                             }
                             await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"PokeNav did not respond in guild {guildId}!"));
                         }
@@ -691,20 +721,16 @@ namespace CompanionBot
                     }
                     if (createQueues.TryGetValue(guildId, out ConcurrentQueue<string> create) && !create.IsEmpty)
                     {
-                        workers[guildId] = Work(guildId, invokedChannel, token, invokingPerms, modPerms); // proceed with creation after edits are complete if there is anything to create.
+                        workers[guildId] = Work(guildId, invokedChannel, token, invokingPerms); // proceed with creation after edits are complete if there is anything to create.
                     }
                 }
             }
             else
             {
                 if (invokingPerms.SendMessages)
-                    try
+                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"PokeNav Moderation Channel not set yet! Run `{_settings[guildId].Prefix}set mod-channel` to set it, then run `{_settings[guildId].Prefix}resume` to create the PoI!"))
                     {
-                        await invokedChannel.SendMessageAsync($"PokeNav Moderation Channel not set yet! Run `{_settings[guildId].Prefix}set mod-channel` to set it, then run `{_settings[guildId].Prefix}resume` to create the PoI!");
-                    }
-                    catch (Exception e)
-                    {
-                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}: {e.Message}", e));
+                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                     }
                 tokens[guildId]?.Cancel(); // Sets IsCancellationRequested to make the Progress Message modify to Paused.
                 await UpdateProgress(guildId, invokedChannel, invokingPerms);

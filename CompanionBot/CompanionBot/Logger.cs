@@ -53,7 +53,7 @@ namespace CompanionBot
             }
             catch(Exception e)
             {
-                Console.Write($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Logger      ");
+                Console.Write($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} Logger      ");
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.Write("Critical ");
                 Console.ForegroundColor = ConsoleColor.Gray;
