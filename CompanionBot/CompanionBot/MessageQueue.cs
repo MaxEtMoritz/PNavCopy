@@ -10,7 +10,7 @@ using Discord;
 using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
-using Interactivity;
+using Fergun.Interactive;
 using Microsoft.Extensions.Configuration;
 using ComposableAsync;
 using RateLimiter;
@@ -21,7 +21,7 @@ namespace CompanionBot
     {
         private readonly DiscordSocketClient _client;
         private readonly Logger _logger;
-        private readonly InteractivityService _inter;
+        private readonly InteractiveService _inter;
         private readonly HttpClient _webClient = new HttpClient(TimeLimiter.GetFromMaxCountByInterval(1, TimeSpan.FromSeconds(1)).AsDelegatingHandler()); // 1 request per second at max!
         private readonly string prefix;
         private readonly ConcurrentDictionary<ulong, CancellationTokenSource> tokens = new ConcurrentDictionary<ulong, CancellationTokenSource>();
@@ -36,7 +36,7 @@ namespace CompanionBot
         private TimeSpan averageCreateTime = TimeSpan.FromSeconds(1);
         private TimeSpan averageEditTime = TimeSpan.FromSeconds(2);
 
-        public MessageQueue(DiscordSocketClient client, InteractivityService interactive, Logger logger, GuildSettings settings, IConfiguration config)
+        public MessageQueue(DiscordSocketClient client, InteractiveService interactive, Logger logger, GuildSettings settings, IConfiguration config)
         {
             _client = client;
             _inter = interactive;
@@ -187,7 +187,7 @@ namespace CompanionBot
                 }
                 catch (HttpException e)
                 {
-                    if (e.HttpCode == System.Net.HttpStatusCode.Forbidden || e.DiscordCode != null && e.DiscordCode == 50013) // Permissions Missing
+                    if (e.HttpCode == System.Net.HttpStatusCode.Forbidden || e.DiscordCode != null && e.DiscordCode == DiscordErrorCode.MissingPermissions) // Permissions Missing
                     {
                         _logger.Log(new LogMessage(LogSeverity.Info, nameof(TryToSendMessage), $"SendMessage Permission lost in channel #{channel.Name} (Guild {(channel as IGuildChannel)?.GuildId}), refreshing permissions...", e));
                         perms = (channel as SocketGuildChannel).Guild.GetUser(_client.CurrentUser.Id).GetPermissions(channel as IGuildChannel);
@@ -217,7 +217,7 @@ namespace CompanionBot
                 }
                 catch (HttpException e)
                 {
-                    if (e.HttpCode == System.Net.HttpStatusCode.Forbidden || e.DiscordCode != null && e.DiscordCode == 50013)
+                    if (e.HttpCode == System.Net.HttpStatusCode.Forbidden || e.DiscordCode != null && e.DiscordCode == DiscordErrorCode.MissingPermissions)
                     {
                         _logger.Log(new LogMessage(LogSeverity.Info, nameof(TryToReact), $"Reaction related permission(s) lost in channel {message.Channel.Name}, refreshing perms...", e));
                         perms = (message.Channel as SocketGuildChannel).Guild.GetUser(_client.CurrentUser.Id).GetPermissions(message.Channel as IGuildChannel);
@@ -369,7 +369,7 @@ namespace CompanionBot
                         }
                         CancellationTokenSource ct = new CancellationTokenSource();
                         // wait for PokeNav to respond...
-                        var nma = _inter.NextMessageAsync(x => x.Author.Id == ulong.Parse(_config["pokeNavId"]) && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error" || x.Content.StartsWith("Error:")), null, TimeSpan.FromSeconds(10), runOnGateway: false, cancellationToken: ct.Token);
+                        var nma = _inter.NextMessageAsync(x => x.Author.Id == ulong.Parse(_config["pokeNavId"]) && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error" || x.Content.StartsWith("Error:")), null, TimeSpan.FromSeconds(10), cancellationToken: ct.Token);
                         Task<bool> t = TryToSendMessage(channel, ref modPerms, $"{prefix}{current}", options: options);
                         if (!await t)
                         {
@@ -524,27 +524,33 @@ namespace CompanionBot
                                         // something was found obviously!
                                         Emoji reaction = new Emoji(embed.Fields[i].Name.Substring(0, 2));
                                         if (!modPerms.AddReactions)
+                                        {
                                             await _inter.NextReactionAsync((SocketReaction r) =>
                                             {
+                                                Console.WriteLine(r.Emote.Name == reaction.Name);
                                                 return r.MessageId == result.Value.Id && r.Emote.Name == reaction.Name;
-                                            }, (SocketReaction r, bool filteredOut) =>
+                                            }, async (SocketReaction r, bool passedFilter) =>
                                             {
-                                                if (!filteredOut)
+                                                Console.WriteLine(passedFilter);
+                                                if (passedFilter)
+                                                {
                                                     try
                                                     {
-                                                        result.Value.AddReactionAsync(r.Emote, options).Wait();
+                                                        await result.Value.AddReactionAsync(r.Emote, options);
+                                                        Console.WriteLine("React");
                                                     }
                                                     catch (Exception e)
                                                     {
-                                                        _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error adding Reaction in Guild {guildId}: {e.Message}", e));
+                                                        await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error adding Reaction in Guild {guildId}: {e.Message}", e));
                                                     }
-                                                return Task.CompletedTask;
-                                            }, runOnGateway: false);
+                                                }
+                                            });
+                                        }
                                         else // we have the permission to add reactions, so add it immediately.
                                             if (!await TryToReact(result.Value, reaction, ref modPerms, options))
-                                        {
+                                            {
 
-                                        }
+                                            }
                                     }
                                     else
                                     {
@@ -613,7 +619,6 @@ namespace CompanionBot
                                         Regex validEmote = new Regex($"[1-{embed.Fields.Length}]\u20e3");
                                         var reactResult = await _inter.NextReactionAsync((SocketReaction r) =>
                                         r.MessageId == result.Value.Id && r.User.Value.Id != ulong.Parse(_config["pokeNavId"]) && validEmote.IsMatch(r.Emote.Name),
-                                        runOnGateway: false,
                                         timeout: TimeSpan.FromMinutes(1));
                                         if (!reactResult.IsSuccess)
                                         {

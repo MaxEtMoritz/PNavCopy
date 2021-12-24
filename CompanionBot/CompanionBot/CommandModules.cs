@@ -3,7 +3,7 @@ using Discord.Addons.CommandsExtension;
 using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
-using Interactivity;
+using Fergun.Interactive;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
@@ -149,12 +149,12 @@ namespace CompanionBot
     public class ConfigurationModule : ModuleBase<SocketCommandContext>
     {
         private readonly GuildSettings _settings;
-        private readonly InteractivityService _interactive;
+        private readonly InteractiveService _interactive;
         private readonly DiscordSocketClient _client;
         private readonly Logger _logger;
         private readonly IConfiguration _config;
         private readonly string prefix;
-        public ConfigurationModule(GuildSettings settings, InteractivityService inter, IConfiguration config, DiscordSocketClient client, Logger logger)
+        public ConfigurationModule(GuildSettings settings, InteractiveService inter, IConfiguration config, DiscordSocketClient client, Logger logger)
         {
             _settings = settings;
             _interactive = inter;

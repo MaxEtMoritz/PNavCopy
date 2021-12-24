@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Interactivity;
+using Fergun.Interactive;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -32,7 +32,7 @@ namespace CompanionBot
             _services = new ServiceCollection()
                 .AddSingleton(_config)
                 .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig() { MessageCacheSize = 50 }))
-                .AddSingleton<InteractivityService>()
+                .AddSingleton<InteractiveService>()
                 .AddSingleton<MessageQueue>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()
