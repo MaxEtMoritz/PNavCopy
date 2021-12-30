@@ -3,7 +3,9 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Discord.Addons.CommandsExtension;
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -71,27 +73,54 @@ namespace CompanionBot
         private async Task OnCommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
         {
             // if an Error occurred, send the Reason for the Error in the Channel where the Command was executed.
-            if (!string.IsNullOrEmpty(result?.ErrorReason))
+            if (result.Error.HasValue)
             {
                 ChannelPermissions perms = (context.Guild as SocketGuild).GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
-                if (perms.SendMessages)
-                    await context.Channel.SendMessageAsync("Error: " + result.ErrorReason);
-                await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
-            }
-            else if (!result.IsSuccess)
-            {
-                ChannelPermissions perms = (context.Guild as SocketGuild).GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
-                if (result.Error.HasValue)
+                switch (result.Error.Value)
                 {
-                    if (perms.SendMessages)
-                        await context.Channel.SendMessageAsync("Error: " + result.Error.Value.ToString());
-                    await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.Error.Value}"));
-                }
-                else
-                {
-                    if (perms.SendMessages)
-                        await context.Channel.SendMessageAsync("Error: Unknown Error while Executing this Command!");
-                    await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Unknown Command error in guild {context.Guild.Name} ({context.Guild.Id})!"));
+                    case CommandError.UnknownCommand:
+                        await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : "unknown", $"Unknown Command in guild {context.Guild.Name} ({context.Guild.Id}): {context.Message.Resolve()}."));
+                        if (perms.SendMessages && perms.EmbedLinks)
+                            await context.Message.ReplyAsync("Unknown command.\nThese are supported:", embed: _commands.GetDefaultHelpEmbed("", "" + _settings[context.Guild.Id].Prefix));
+                        else if (perms.SendMessages)
+                            await context.Message.ReplyAsync("Unknown command.");
+                        break;
+                    case CommandError.ParseFailed:
+                        await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Parsing of command failed in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
+                        if (perms.SendMessages)
+                            await context.Message.ReplyAsync($"Invalid command structure: {result.ErrorReason}.");
+                        break;
+                    case CommandError.BadArgCount:
+                        int minCount = 0;
+                        int maxCount = 0;
+                        command.Value.Parameters.ToList().ForEach(pi => {
+                            if (!pi.IsOptional)
+                                minCount++;
+                            maxCount++;
+                        });
+                        await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Too few or many parameters. Expected {minCount} - {maxCount}."));
+                        if (perms.SendMessages)
+                            if (perms.EmbedLinks && command.IsSpecified)
+                                await context.Message.ReplyAsync("Too few or too many parameters.\nThese are expected:", embed: _commands.GetDefaultHelpEmbed(command.Value.Name, "" + _settings[context.Guild.Id].Prefix));
+                            else
+                                await context.Message.ReplyAsync($"Too few or too many parameters.");
+                        break;
+                        // TODO: Special handling for the following errors
+                    case CommandError.ObjectNotFound:
+                        //break;
+                    case CommandError.MultipleMatches:
+                        //break;
+                    case CommandError.UnmetPrecondition:
+                        //break;
+                    case CommandError.Exception:
+                        //break;
+                    case CommandError.Unsuccessful:
+                        //break;
+                    default:
+                        await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
+                        if (perms.SendMessages)
+                            await context.Message.ReplyAsync("Error: " + result.ErrorReason);
+                        break;
                 }
             }
             else

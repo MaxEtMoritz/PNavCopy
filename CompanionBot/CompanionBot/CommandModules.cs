@@ -35,7 +35,7 @@ namespace CompanionBot
         public async Task ShowHelpAsync([Summary("The name of the Command you want help for."), Remainder] string commandName = null)
         {
             var embed = _commands.GetDefaultHelpEmbed(commandName, "" + _settings[Context.Guild.Id].Prefix);
-            await ReplyAsync(embed: embed);
+            await Context.Message.ReplyAsync(embed: embed);
         }
 
         [Command("my-settings"), Alias("ms"), Summary("Shows your current Settings."), RequireBotPermission(ChannelPermission.SendMessages)]
@@ -45,7 +45,7 @@ namespace CompanionBot
             Settings settings = _settings[Context.Guild.Id];
             response += $"\nPrefix:\t{settings.Prefix}";
             response += $"\nPokeNav Mod-Channel:\t{(settings.PNavChannel != null ? "<#" + settings.PNavChannel + ">" : "none")}";
-            return ReplyAsync(response);
+            return Context.Message.ReplyAsync(response);
         }
     }
 
@@ -78,7 +78,7 @@ namespace CompanionBot
                 dataString = "[]";
                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(CreatePoIAsync), $"Download of attached File failed: {e.Message}", e));
                 if (perms.SendMessages)
-                    await ReplyAsync($"Download of Attached File Failed: {e.Message}");
+                    await Context.Message.ReplyAsync($"Download of Attached File Failed: {e.Message}");
             }
             PortalData[] data;
             try
@@ -87,7 +87,7 @@ namespace CompanionBot
             }
             catch (Exception e)
             {
-                await ReplyAsync($"Error while parsing file: {e.Message}");
+                await Context.Message.ReplyAsync($"Error while parsing file: {e.Message}");
                 await _logger.Log(new LogMessage(LogSeverity.Error, "createmultiple", $"JSON Parsing failed in guild {Context.Guild.Name} ({Context.Guild.Id}): {e.Message}", e));
                 return;
             }
@@ -127,7 +127,7 @@ namespace CompanionBot
                 dataString = "[]";
                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Download of attached File failed: {e.Message}", e));
                 if (perms.SendMessages)
-                    await ReplyAsync($"Download of Attached File Failed: {e.Message}");
+                    await Context.Message.ReplyAsync($"Download of Attached File Failed: {e.Message}");
             }
 
             List<EditData> data;
@@ -137,7 +137,7 @@ namespace CompanionBot
             }
             catch (Exception e)
             {
-                await ReplyAsync($"Error while parsing file: {e.Message}");
+                await Context.Message.ReplyAsync($"Error while parsing file: {e.Message}");
                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"JSON Parsing failed in guild {Context.Guild.Name} ({Context.Guild.Id}): {e.Message}", e));
                 return;
             }
@@ -180,11 +180,11 @@ namespace CompanionBot
                     var currentSettings = _settings[Context.Guild.Id];
                     currentSettings.PNavChannel = channel.Id;
                     _settings[Context.Guild.Id] = currentSettings;
-                    await ReplyAsync($"Moderation Channel successfully set to <#{channel.Id}>");
+                    var msg = await Context.Message.ReplyAsync($"Moderation Channel successfully set to <#{channel.Id}>");
                     await _logger.Log(new LogMessage(LogSeverity.Info, nameof(SetModChannel), $"PokeNav Mod Channel set to #{channel.Name} ({channel.Id}) for Guild {Context.Guild.Name} ({Context.Guild.Id})."));
                     ChannelPermissions modPerms = Context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(channel);
                     if (!modPerms.SendMessages || !modPerms.ViewChannel || !modPerms.AddReactions || !modPerms.ReadMessageHistory)
-                        await ReplyAsync(":warning: Attention! :warning: The bot is missing permissions in the PokeNav mod channel:" +
+                        await msg.ReplyAsync(":warning: Attention! :warning: The bot is missing permissions in the PokeNav mod channel:" +
                             $"\n\tView Channel: {(modPerms.ViewChannel ? ":white_check_mark:" : ":x:")}" +
                             $"\n\tSend Messages: {(modPerms.SendMessages ? ":white_check_mark:" : ":x:")}" +
                             $"\n\tAdd Reactions (Recommended but optional): {(modPerms.AddReactions ? ":white_check_mark:" : ":x:")}" +
@@ -192,7 +192,7 @@ namespace CompanionBot
                             $"\nMake sure to grant the necessary permissions to the bot for <#{channel.Id}>.");
                 }
                 else
-                    await ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure PokeNav is able to respond in the Channel where you execute the command!");
+                    await Context.Message.ReplyAsync($"Did not receive a Response from PokeNav in time!\nMake sure PokeNav is able to respond in the Channel where you execute the command!");
             }
         }
 
@@ -204,7 +204,7 @@ namespace CompanionBot
             current.Prefix = prefix;
             _settings[Context.Guild.Id] = current;
             if (perms.SendMessages)
-                await ReplyAsync($"Prefix successfully set to '{prefix}'.");
+                await Context.Message.ReplyAsync($"Prefix successfully set to '{prefix}'.");
             await _logger.Log(new LogMessage(LogSeverity.Info, nameof(SetPrefix), $"Prefix for guild {Context.Guild.Name} ({Context.Guild.Id}) set to {prefix}."));
         }
     }

@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "PNavCopy Configuration",
+  "description": "Schema of the config.json file needed by the PNavCopy Companion Bot.",
+  "type": "object",
+
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Discord Bot login token. Get this from the Discord developer portal when creating a new Bot account."
+    },
+    "pokeNavId": {
+      "type": "number",
+      "description": "Discord ID of the PokeNav Bot. Normally this should be 428187007965986826, but i moved it here to have it at a central place.",
+      "default": 428187007965986826
+    },
+    "testServerId": {
+      "type": "number",
+      "description": "ID of the Discord server used for testing the Bot. This is used to register Slash Commands to a guild. If not specified, registering commands to a guild will do nothing."
+    }
+  },
+  "required": ["token", "pokeNavId"]
+}

@@ -527,8 +527,7 @@ namespace CompanionBot
                                         {
                                             await _inter.NextReactionAsync((SocketReaction r) =>
                                             {
-                                                Console.WriteLine(r.Emote.Name == reaction.Name);
-                                                return r.MessageId == result.Value.Id && r.Emote.Name == reaction.Name;
+                                                return r.MessageId == result.Value.Id && r.Emote.Name == reaction.Name && r.UserId != _client.CurrentUser.Id;
                                             }, async (SocketReaction r, bool passedFilter) =>
                                             {
                                                 Console.WriteLine(passedFilter);
@@ -537,7 +536,6 @@ namespace CompanionBot
                                                     try
                                                     {
                                                         await result.Value.AddReactionAsync(r.Emote, options);
-                                                        Console.WriteLine("React");
                                                     }
                                                     catch (Exception e)
                                                     {
