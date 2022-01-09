@@ -21,6 +21,7 @@ You should be asked if you want to install an external Plugin. Confirm the Insta
 With This Plugin you can...
 - Classify a portal manually as Stop, Gym or EX Gym or use the Info already collected with Pogo Tools (see [Integrations section](#integrations))
 - Copy The Command to Clipboard, use a WebHook to send it directly to the appropriate Discord channel or use the [Companion Bot](#about-the-companion-bot)
+- Decide if the commands should be sent directly to the Discord channel or a thread
 - Send all the Data already collected with PoGo Tools to PokeNav with a few Clicks
 - Pause the Bulk export and start off where you ended it
 - Check for modifications of Pogo Tools data automatically
