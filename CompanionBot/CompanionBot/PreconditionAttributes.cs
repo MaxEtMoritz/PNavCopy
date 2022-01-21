@@ -19,7 +19,7 @@ namespace CompanionBot
             }
             else
             {
-                return Task.FromResult(PreconditionResult.FromError("This Command can only be run by a WebHook!"));
+                return Task.FromResult(PreconditionResult.FromError("Only a WebHook can run this command"));
             }
         }
     }
@@ -32,7 +32,7 @@ namespace CompanionBot
             {
                 return Task.FromResult(PreconditionResult.FromSuccess());
             }
-            return Task.FromResult(PreconditionResult.FromError("This Command only works when a single `.json` file is attached to the message!"));
+            return Task.FromResult(PreconditionResult.FromError("A single `.json` file needs to be attached to the message"));
         }
     }
 }

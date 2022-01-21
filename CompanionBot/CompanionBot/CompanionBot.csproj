@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <Platforms>AnyCPU;arm</Platforms>
   </PropertyGroup>
 
@@ -11,10 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Net.Commands" Version="3.1.0" />
-    <PackageReference Include="Discord.Net.Core" Version="3.1.0" />
-    <PackageReference Include="Discord.Net.Interactions" Version="3.1.0" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="3.1.0" />
+    <PackageReference Include="Discord.Net.Commands" Version="3.2.0" />
+    <PackageReference Include="Discord.Net.Core" Version="3.2.0" />
+    <PackageReference Include="Discord.Net.Interactions" Version="3.2.0" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="3.2.0" />
     <PackageReference Include="Fergun.Interactive" Version="1.3.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
@@ -22,14 +22,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="RateLimiter" Version="2.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Discord.Addons.CommandsExtension">
-      <!--This is a NuGet Package also (https://www.nuget.org/packages/Discord.Addons.CommandsExtension), but the author did not update it on NuGet-->
-      <!--so i cloned the Code from https://github.com/Charly6596/Discord.Addons.CommandsExtension, adapt this path if needed!-->
-      <HintPath>..\..\..\Discord.Addons.CommandsExtension\bin\Release\netstandard2.0\Discord.Addons.CommandsExtension.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>

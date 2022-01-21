@@ -45,7 +45,7 @@ namespace CompanionBot
             // required dependencies.
             //
             // If you do not use Dependency Injection, pass null.
-            // See Dependency Injection guide (https://docs.stillu.cc/guides/commands/dependency-injection.html) for more information.
+            // See Dependency Injection guide (https://discordnet.dev/guides/text_commands/dependency-injection.html) for more information.
             await _service.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             _client.InteractionCreated += HandleInteraction;
         }
@@ -77,11 +77,31 @@ namespace CompanionBot
                 await _service.RegisterCommandsToGuildAsync(id);
             else
                 await _logger.Log(new LogMessage(LogSeverity.Warning, nameof(RegisterSlashCommandsForTestGuild), "No test server ID specified in config.json, skipped registering commands!"));
+            await RegisterManualCommands();
         }
 
         public async Task RegisterSlashCommandsGlobally()
         {
             await _service.RegisterCommandsGloballyAsync();
+            await RegisterManualCommands();
+        }
+
+        private async Task RegisterManualCommands()
+        {
+            ulong testguildId = _config.GetValue<ulong>("testServerId", 0);
+            if(testguildId > 0)
+            {
+                var disconnectCmd = _service.GetSlashCommandInfo<ManualSlashModules>(nameof(ManualSlashModules.DisconnectAsync));
+                var testGuild = _client.GetGuild(testguildId);
+                var botOwner = (await _client.GetApplicationInfoAsync()).Owner;
+                await _service.AddCommandsToGuildAsync(testGuild, false, disconnectCmd);
+                await _service.ModifySlashCommandPermissionsAsync(disconnectCmd, testGuild, new ApplicationCommandPermission(botOwner, true));
+                await _logger.Log(new LogMessage(LogSeverity.Debug, nameof(RegisterManualCommands), "Registered disconnect command and modified permissions for it."));
+            }
+            else
+            {
+                await _logger.Log(new LogMessage(LogSeverity.Info, nameof(RegisterManualCommands), "Did not register disconnect command since no test server ID was provided."));
+            }
         }
 
         private async Task CommandExecuted(ICommandInfo info, IInteractionContext bla, IResult result)
@@ -100,26 +120,27 @@ namespace CompanionBot
                 {
                     case InteractionCommandError.UnknownCommand:
                         await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Unknown interaction {info.Name}!"));
-                        await respond("⚠Unknown interaction.⚠\nPlease contact the bot owner by opening a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing what you were trying to do when getting this error.", null, false, true, null, null, null, null);
+                        await respond("⚠Unknown interaction.⚠\nPlease contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you were trying to do when getting this error.", null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.ConvertFailed:
                         await _logger.Log(new LogMessage(LogSeverity.Warning, info.Name, $"Parameter(s) could not be converted: {result.ErrorReason}"));
-                        await respond($"⚠One or more parameters could not be converted.⚠\nError message:\n```{result.ErrorReason}```\nPlease check your parameters.\nIf they seem correct, open up a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing what you did, which parameters you entered and what the error message was.", null, false, true, null, null, null, null);
+                        await respond($"⚠One or more parameters could not be converted.⚠\nError message:\n```{result.ErrorReason}```\nPlease check your parameters.\nIf they seem correct, open up an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did, which parameters you entered and what the error message was.", null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.BadArgs:
                         int minCount = 0;
                         int maxCount = 0;
-                        info.Parameters.ToList().ForEach(pi => {
+                        info.Parameters.ToList().ForEach(pi =>
+                        {
                             if (pi.IsRequired)
                                 minCount++;
                             maxCount++;
                         });
                         await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Too many or few parameters (expected {minCount} to {maxCount}): {result.ErrorReason}"));
-                        await respond($"⚠Too many or few parameters.⚠\nError message:\n```{result.ErrorReason}```\nPlease contact the bot owner by opening a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing what you did and which parameters you specified.", null, false, true, null, null, null, null);
+                        await respond($"⚠Too many or few parameters.⚠\nError message:\n```{result.ErrorReason}```\nPlease contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did and which parameters you specified.", null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.Exception:
                         await _logger.Log(new LogMessage(LogSeverity.Critical, info.Name, $"Exception while executing interaction.\nGuild: {context.Guild.Name} ({context.Guild.Id})\nUser: {context.User.Username} ({context.User.Id})\nMessage: {result.ErrorReason}"));
-                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
+                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.Unsuccessful:
                         await _logger.Log(new LogMessage(LogSeverity.Warning, info.Name, $"Interaction execution unsuccessful: {result.ErrorReason}"));
@@ -131,11 +152,11 @@ namespace CompanionBot
                         break;
                     case InteractionCommandError.ParseFailed:
                         await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Parsing of Command Context failed: {result.ErrorReason}"));
-                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
+                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
                         break;
                     default:
                         await _logger.Log(new LogMessage(LogSeverity.Critical, info.Name, $"Unknown Error Type encountered: {result.Error.Value} - {result.ErrorReason}"));
-                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. Please open a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
+                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. Please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
                         break;
                 }
             }

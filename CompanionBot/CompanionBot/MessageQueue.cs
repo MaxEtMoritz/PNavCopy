@@ -14,6 +14,7 @@ using Fergun.Interactive;
 using Microsoft.Extensions.Configuration;
 using ComposableAsync;
 using RateLimiter;
+using Discord.Interactions;
 
 namespace CompanionBot
 {
@@ -112,7 +113,7 @@ namespace CompanionBot
             return Task.CompletedTask;
         }
 
-        public Task Pause(SocketCommandContext context)
+        public async Task Pause(SocketInteractionContext context)
         {
             ChannelPermissions perms = context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
             if (workers.TryGetValue(context.Guild.Id, out Task worker) && !worker.IsCompleted)
@@ -120,27 +121,27 @@ namespace CompanionBot
                 if (tokens.TryGetValue(context.Guild.Id, out CancellationTokenSource token))
                 { // TODO: Does canceling the same token twice work or does it throw an Exception? can it be in the dictionary, but disposed?
                     token.Cancel(); // Disposing is done in the Task itself when it is canceled or completed.
-                    UpdateProgress(context.Guild.Id, context.Channel, perms);
-                    if (perms.SendMessages)
-                        context.Channel.SendMessageAsync("Successfully paused!");
+                    await context.Interaction.RespondAsync("⏸ Pausing, please be patient...");
+                    await worker.ContinueWith((state) =>
+                    {
+                        context.Interaction.FollowupAsync("✅ Successfully paused!");
+                        UpdateProgress(context.Guild.Id, context.Channel, perms);
+                    });
                 }
                 else
                 {
-                    _logger.Log(new LogMessage(LogSeverity.Error, nameof(Pause), $"Task running for Guild {context.Guild.Name} ({context.Guild.Id}), but no Cancellation Token was present!"));
-                    if (perms.SendMessages)
-                        context.Channel.SendMessageAsync("Error while pausing!");
+                    await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Pause), $"Task running for Guild {context.Guild.Name} ({context.Guild.Id}), but no Cancellation Token was present!"));
+                    await context.Interaction.RespondAsync("❌Error while pausing!");
                 }
             }
             else
             {
-                _logger.Log(new LogMessage(LogSeverity.Info, nameof(Pause), $"Pause failed in Guild {context.Guild.Name} ({context.Guild.Id}): No Bulk Export was running."));
-                if (perms.SendMessages)
-                    context.Channel.SendMessageAsync("Nothing to Pause here, no Bulk Export running at the moment!");
+                await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Pause), $"Pause failed in Guild {context.Guild.Name} ({context.Guild.Id}): No Bulk Import was running."));
+                await context.Interaction.RespondAsync("ℹ Nothing to Pause here, no Bulk Import running at the moment!");
             }
-            return Task.CompletedTask;
         }
 
-        public Task Resume(SocketCommandContext context)
+        public async Task Resume(SocketInteractionContext context)
         {
             ChannelPermissions perms = context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
             if (!workers.TryGetValue(context.Guild.Id, out Task worker) || worker.IsCompleted)
@@ -152,29 +153,28 @@ namespace CompanionBot
                     CancellationTokenSource source = new CancellationTokenSource();
                     tokens[context.Guild.Id] = source;
                     workers[context.Guild.Id] = Work(context.Guild.Id, context.Channel, source.Token, perms);
-                    UpdateProgress(context.Guild.Id, context.Channel, perms);
+                    await context.Interaction.RespondAsync("▶ Continuing...");
+                    await UpdateProgress(context.Guild.Id, context.Channel, perms);
                 }
                 else if (editQueues.TryGetValue(context.Guild.Id, out ConcurrentQueue<EditData> edit) && !edit.IsEmpty)
                 {
                     CancellationTokenSource source = new CancellationTokenSource();
                     tokens[context.Guild.Id] = source;
                     workers[context.Guild.Id] = Edit(context.Guild.Id, context.Channel, source.Token, perms);
-                    UpdateProgress(context.Guild.Id, context.Channel, perms);
+                    await context.Interaction.RespondAsync("▶ Continuing...");
+                    await UpdateProgress(context.Guild.Id, context.Channel, perms);
                 }
                 else
                 {
-                    if (perms.SendMessages)
-                        context.Channel.SendMessageAsync("No Data to Export present!");
-                    _logger.Log(new LogMessage(LogSeverity.Info, nameof(Resume), $"Resume failed in Guild {context.Guild.Name} ({context.Guild.Id}): No Data was present."));
+                    await context.Interaction.RespondAsync("ℹ No data to import present.");
+                    await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Resume), $"Resume failed in Guild {context.Guild.Name} ({context.Guild.Id}): No Data was present."));
                 }
             }
             else
             {
-                if (perms.SendMessages)
-                    context.Channel.SendMessageAsync("Bulk Export is already running, no need to Resume!");
-                _logger.Log(new LogMessage(LogSeverity.Info, nameof(Resume), $"Resume failed in Guild {context.Guild.Name} ({context.Guild.Id}): Bulk Export was already running."));
+                await context.Interaction.RespondAsync("ℹ Bulk import is already running, no need to resume.");
+                await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Resume), $"Resume failed in Guild {context.Guild.Name} ({context.Guild.Id}): Bulk Import was already running."));
             }
-            return Task.CompletedTask;
         }
 
         private Task<bool> TryToSendMessage(IMessageChannel channel, ref ChannelPermissions perms, string text = null, Embed embed = null, RequestOptions options = null, ushort numTry = 0)
@@ -245,8 +245,8 @@ namespace CompanionBot
                 EmbedBuilder embed = new EmbedBuilder()
                 {
                     Description = "This is still to do:",
-                    Title = workers.TryGetValue(guild, out Task worker) && !worker.IsCompleted && tokens.TryGetValue(guild, out CancellationTokenSource token) && !token.IsCancellationRequested ? "Exporting..." : "Paused",
-                    Footer = new EmbedFooterBuilder() { Text = "use pause or resume Commands to manage the export!" },
+                    Title = workers.TryGetValue(guild, out Task worker) && !worker.IsCompleted && tokens.TryGetValue(guild, out CancellationTokenSource token) && !token.IsCancellationRequested ? "Importing..." : "Paused",
+                    Footer = new EmbedFooterBuilder() { Text = "use pause or resume Commands to manage the import!" },
                     Fields = new List<EmbedFieldBuilder>
                 {
                     new EmbedFieldBuilder()
@@ -338,7 +338,7 @@ namespace CompanionBot
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Mod-Channel was no Message Channel for Guild {guildId}!"));
                     if (invokingPerms.SendMessages)
-                        await TryToSendMessage(invokedChannel, ref invokingPerms, $"There was a problem with the mod-channel. Try to run `{_settings[guildId].Prefix}set mod-channel` and then `{_settings[guildId].Prefix}resume` to try again!");
+                        await TryToSendMessage(invokedChannel, ref invokingPerms, $"There was a problem with the mod-channel. Try to run `/mod-channel` and then `/resume` to try again!");
                     return;
                 }
 
@@ -405,7 +405,7 @@ namespace CompanionBot
             else
             {
                 if (invokingPerms.SendMessages)
-                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"PokeNav Moderation Channel not set yet. Run `{_settings[guildId].Prefix}set mod-channel` to set it, then run `{_settings[guildId].Prefix}resume` to create the PoI!"))
+                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"PokeNav Moderation Channel not set yet. Run `/mod-channel` to set it, then run `/resume` to create the PoI!"))
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending error message in Guild {guildId}."));
                     }
@@ -432,7 +432,7 @@ namespace CompanionBot
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Mod-Channel was no Message Channel for Guild {guildId}!"));
                     if (invokingPerms.SendMessages)
-                        if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"There was a problem with the mod-channel. Try to run `{_settings[guildId].Prefix}set mod-channel` and then `{_settings[guildId].Prefix}resume` to try again!"))
+                        if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"There was a problem with the mod-channel. Try to run `/mod-channel` and then `/resume` to try again!"))
                         {
                             await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                         }
@@ -456,7 +456,7 @@ namespace CompanionBot
                         start = DateTime.UtcNow;
                         string type = current.oldType == PoiType.pokestop ? "stop" : "gym";
                         CancellationTokenSource ct = new CancellationTokenSource();
-                        var nma = _inter.NextMessageAsync((msg) => 
+                        var nma = _inter.NextMessageAsync((msg) =>
                             msg.Author.Id == ulong.Parse(_config["pokeNavId"])
                             && msg.Channel.Id == channel.Id
                             && msg.Embeds.Count == 1
@@ -546,9 +546,9 @@ namespace CompanionBot
                                         }
                                         else // we have the permission to add reactions, so add it immediately.
                                             if (!await TryToReact(result.Value, reaction, ref modPerms, options))
-                                            {
+                                        {
 
-                                            }
+                                        }
                                     }
                                     else
                                     {
@@ -731,7 +731,7 @@ namespace CompanionBot
             else
             {
                 if (invokingPerms.SendMessages)
-                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"PokeNav Moderation Channel not set yet! Run `{_settings[guildId].Prefix}set mod-channel` to set it, then run `{_settings[guildId].Prefix}resume` to create the PoI!"))
+                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"PokeNav Moderation Channel not set yet! Run `/mod-channel` to set it, then run `/resume` to create the PoI!"))
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                     }

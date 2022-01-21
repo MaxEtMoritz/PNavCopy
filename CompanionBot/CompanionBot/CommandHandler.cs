@@ -55,8 +55,7 @@ namespace CompanionBot
             // Determine if the message is a command based on the prefix or a mention inside of a guild and make sure no bots trigger commands
             if (!(message.Channel is IGuildChannel) ||
                 (message.Author.IsBot && !message.Author.IsWebhook) ||
-                !(message.HasCharPrefix(_settings[(message.Channel as IGuildChannel).Guild.Id].Prefix, ref argPos) ||
-                message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
+                !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
                 return;
 
             // Create a WebSocket-based command context based on the message
@@ -80,10 +79,8 @@ namespace CompanionBot
                 {
                     case CommandError.UnknownCommand:
                         await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : "unknown", $"Unknown Command in guild {context.Guild.Name} ({context.Guild.Id}): {context.Message.Resolve()}."));
-                        if (perms.SendMessages && perms.EmbedLinks)
-                            await context.Message.ReplyAsync("Unknown command.\nThese are supported:", embed: _commands.GetDefaultHelpEmbed("", "" + _settings[context.Guild.Id].Prefix));
-                        else if (perms.SendMessages)
-                            await context.Message.ReplyAsync("Unknown command.");
+                        //if (perms.SendMessages)
+                        //    await context.Message.ReplyAsync("Unknown command.");
                         break;
                     case CommandError.ParseFailed:
                         await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Parsing of command failed in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
@@ -100,22 +97,33 @@ namespace CompanionBot
                         });
                         await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Too few or many parameters. Expected {minCount} - {maxCount}."));
                         if (perms.SendMessages)
-                            if (perms.EmbedLinks && command.IsSpecified)
-                                await context.Message.ReplyAsync("Too few or too many parameters.\nThese are expected:", embed: _commands.GetDefaultHelpEmbed(command.Value.Name, "" + _settings[context.Guild.Id].Prefix));
-                            else
-                                await context.Message.ReplyAsync($"Too few or too many parameters.");
+                            await context.Message.ReplyAsync($"Too few or too many parameters.\nExpected {minCount} to {maxCount}.");
                         break;
-                        // TODO: Special handling for the following errors
                     case CommandError.ObjectNotFound:
-                        //break;
+                        await _logger.Log(new LogMessage(LogSeverity.Error, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"ObjectNotFound while parsing parameter in guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
+                        if (perms.SendMessages)
+                            await context.Message.ReplyAsync($"Could not parse Command parameter(s): {result.ErrorReason}.");
+                        break;
                     case CommandError.MultipleMatches:
-                        //break;
+                        await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Multiple matches while parsing parameter in guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
+                        if (perms.SendMessages)
+                            await context.Message.ReplyAsync($"There are multiple matches for one or more parameters. Please refine your query.\n```{result.ErrorReason}```");
+                        break;
                     case CommandError.UnmetPrecondition:
-                        //break;
+                        await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Unmet precondition in guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
+                        if (perms.SendMessages)
+                            await context.Message.ReplyAsync($"This command is not allowed in the current context: {result.ErrorReason}.");
+                        break;
                     case CommandError.Exception:
-                        //break;
+                        await _logger.Log(new LogMessage(LogSeverity.Error, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"CommandHandler Exception thrown for guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
+                        if (perms.SendMessages)
+                            await context.Message.ReplyAsync($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this command. If the error persists, please open a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```");
+                        break;
                     case CommandError.Unsuccessful:
-                        //break;
+                        await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Unsuccessful command in guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
+                        if (perms.SendMessages)
+                            await context.Message.ReplyAsync($"This command failed: {result.ErrorReason}.");
+                        break;
                     default:
                         await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
                         if (perms.SendMessages)

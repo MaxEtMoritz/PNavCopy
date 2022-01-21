@@ -33,7 +33,7 @@ namespace CompanionBot
                 }
                 else
                 {
-                    return Settings.Default;
+                    return new();
                 }
             }
             set
@@ -109,14 +109,14 @@ namespace CompanionBot
 
     internal struct Settings
     {
-        public char Prefix { get; set; }
+        //public char Prefix { get; set; }
         public ulong? PNavChannel { get; set; }
 
-        public static readonly Settings Default = new Settings('!');
+        //public static readonly Settings Default = new Settings('!');
 
-        public Settings(char prefix = '!', ulong? pokeNavChannel = null)
+        public Settings(ulong? pokeNavChannel = null)
         {
-            Prefix = prefix;
+            //Prefix = prefix;
             PNavChannel = pokeNavChannel;
         }
     }

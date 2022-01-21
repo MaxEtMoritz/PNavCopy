@@ -37,13 +37,14 @@ namespace CompanionBot
                 .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig() {
                     MessageCacheSize = 20,
                     GatewayIntents = GatewayIntents.GuildMessageReactions
-                    | GatewayIntents.GuildMessageTyping
                     | GatewayIntents.GuildMessages
                     | GatewayIntents.Guilds,
                     AlwaysDownloadDefaultStickers = false,
                     AlwaysResolveStickers = false,
+#if DEBUG
                     LogGatewayIntentWarnings = true,
                     LogLevel = LogSeverity.Debug
+#endif
                 }))
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<MessageQueue>()
