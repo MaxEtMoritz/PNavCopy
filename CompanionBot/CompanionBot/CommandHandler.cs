@@ -3,7 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Discord.Addons.CommandsExtension;
 using System;
 using System.Linq;
 using System.Reflection;

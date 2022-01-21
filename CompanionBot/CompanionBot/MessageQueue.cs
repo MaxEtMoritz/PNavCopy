@@ -679,7 +679,7 @@ namespace CompanionBot
                                 editString = $"{prefix}update poi {id}";
                                 foreach (var pair in current.edits)
                                 {
-                                    editString += $" \"{pair.Key}: {pair.Value}\""; //TODO: Is EditType properly converted to string?
+                                    editString += $" «{pair.Key}: {pair.Value}»"; //TODO: Is EditType properly converted to string?
                                 }
                             }
                             nma = _inter.NextMessageAsync((msg) => msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1, timeout: TimeSpan.FromSeconds(10), cancellationToken: ct.Token);
