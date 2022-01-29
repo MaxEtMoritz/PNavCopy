@@ -1,7 +1,5 @@
 ﻿using Discord;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -9,7 +7,7 @@ namespace CompanionBot
 {
     public class Logger
     {
-        public static object Lock = new Object();
+        private static readonly object Lock = new();
         public Task Log(LogMessage message)
         {
             lock (Lock)

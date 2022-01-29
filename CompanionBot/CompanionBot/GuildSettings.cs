@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Text;
 
 namespace CompanionBot
 {
@@ -66,12 +65,12 @@ namespace CompanionBot
                 {
                     logger.Log(new LogMessage(LogSeverity.Error, this.GetType().Name, $"Invalid Settings File (JSON parsing failed)! Exception: {e.GetType().Name} - {e.Message}.\n" +
                         "If there are present settings, they will be overridden!", e));
-                    settings = new ConcurrentDictionary<ulong, Settings>();
+                    settings = new();
                 }
             }
             else
             {
-                settings = new ConcurrentDictionary<ulong, Settings>();
+                settings = new();
             }
         }
 
@@ -109,14 +108,10 @@ namespace CompanionBot
 
     internal struct Settings
     {
-        //public char Prefix { get; set; }
         public ulong? PNavChannel { get; set; }
-
-        //public static readonly Settings Default = new Settings('!');
 
         public Settings(ulong? pokeNavChannel = null)
         {
-            //Prefix = prefix;
             PNavChannel = pokeNavChannel;
         }
     }

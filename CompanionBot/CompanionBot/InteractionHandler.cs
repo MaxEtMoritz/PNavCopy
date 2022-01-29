@@ -3,12 +3,10 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CompanionBot
@@ -89,7 +87,7 @@ namespace CompanionBot
         private async Task RegisterManualCommands()
         {
             ulong testguildId = _config.GetValue<ulong>("testServerId", 0);
-            if(testguildId > 0)
+            if (testguildId > 0)
             {
                 var disconnectCmd = _service.GetSlashCommandInfo<ManualSlashModules>(nameof(ManualSlashModules.DisconnectAsync));
                 var testGuild = _client.GetGuild(testguildId);
@@ -113,6 +111,7 @@ namespace CompanionBot
                 respond = context.Interaction.FollowupAsync;
             else
                 respond = context.Interaction.RespondAsync;
+            CultureInfo.CurrentCulture = new(context.Interaction.UserLocale);
             // if an Error occurred, send the Reason for the Error as response to the interaction, or as follow-up message.
             if (result.Error.HasValue)
             {
@@ -120,11 +119,11 @@ namespace CompanionBot
                 {
                     case InteractionCommandError.UnknownCommand:
                         await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Unknown interaction {info.Name}!"));
-                        await respond("⚠Unknown interaction.⚠\nPlease contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you were trying to do when getting this error.", null, false, true, null, null, null, null);
+                        await respond(Properties.Resources.ErrorUnknownCommand, null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.ConvertFailed:
                         await _logger.Log(new LogMessage(LogSeverity.Warning, info.Name, $"Parameter(s) could not be converted: {result.ErrorReason}"));
-                        await respond($"⚠One or more parameters could not be converted.⚠\nError message:\n```{result.ErrorReason}```\nPlease check your parameters.\nIf they seem correct, open up an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did, which parameters you entered and what the error message was.", null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.ErrorConvertFailed, result.ErrorReason), null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.BadArgs:
                         int minCount = 0;
@@ -136,34 +135,37 @@ namespace CompanionBot
                             maxCount++;
                         });
                         await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Too many or few parameters (expected {minCount} to {maxCount}): {result.ErrorReason}"));
-                        await respond($"⚠Too many or few parameters.⚠\nError message:\n```{result.ErrorReason}```\nPlease contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did and which parameters you specified.", null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.errorBadArgs,result.ErrorReason), null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.Exception:
-                        await _logger.Log(new LogMessage(LogSeverity.Critical, info.Name, $"Exception while executing interaction.\nGuild: {context.Guild.Name} ({context.Guild.Id})\nUser: {context.User.Username} ({context.User.Id})\nMessage: {result.ErrorReason}"));
-                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
+                        string logentry = "Exception while executing interaction.\n";
+                        if (context.Guild != null) logentry += $"Guild: {context.Guild.Name} ({context.Guild.Id})\n";
+                        logentry += $"User: {context.User.Username} ({context.User.Id})\nError message: {result.ErrorReason}";
+                        await _logger.Log(new LogMessage(LogSeverity.Critical, info.Name, logentry));
+                        await respond(String.Format(Properties.Resources.errorException,result.ErrorReason), null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.Unsuccessful:
                         await _logger.Log(new LogMessage(LogSeverity.Warning, info.Name, $"Interaction execution unsuccessful: {result.ErrorReason}"));
-                        await respond($"❌This interaction failed.❌\nReason: {result.ErrorReason}", null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.interactionUnsuccessful,result.ErrorReason), null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.UnmetPrecondition:
                         await _logger.Log(new LogMessage(LogSeverity.Info, info.Name, $"User {context.User.Username} did not meet all preconditions: {result.ErrorReason}"));
-                        await respond($"❌This interaction is not allowed in this context.❌\n{result.ErrorReason}", null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.unmetPrecondition,result.ErrorReason), null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.ParseFailed:
                         await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Parsing of Command Context failed: {result.ErrorReason}"));
-                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.errorParseFailed,result.ErrorReason), null, false, true, null, null, null, null);
                         break;
                     default:
                         await _logger.Log(new LogMessage(LogSeverity.Critical, info.Name, $"Unknown Error Type encountered: {result.Error.Value} - {result.ErrorReason}"));
-                        await respond($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this interaction. Please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```", null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.errorException, result.ErrorReason), null, false, true, null, null, null, null);
                         break;
                 }
             }
             else
             {
                 // Log Command Execution
-                await _logger.Log(new LogMessage(LogSeverity.Info, info.Name, $"Interaction executed in guild {context.Guild.Name} ({context.Guild.Id})"));
+                await _logger.Log(new LogMessage(LogSeverity.Info, info.Name, context.Guild != null ? $"Interaction executed in guild {context.Guild.Name} ({context.Guild.Id})" : $"Interaction executed in DM with User {context.User.Username}#{context.User.Discriminator} ({context.User.Id})."));
             }
         }
     }

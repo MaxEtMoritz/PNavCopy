@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Resources;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -22,7 +23,7 @@ namespace CompanionBot
         private IServiceProvider _services;
         private InteractionHandler iHandler;
 
-        public static void Main(string[] args)
+        public static void Main()
         => new Program().MainAsync().GetAwaiter().GetResult();
 
         public async Task MainAsync()

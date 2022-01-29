@@ -53,7 +53,7 @@ namespace CompanionBot
                 return;
             }
 
-            List<string> commands = new List<string>();
+            List<string> commands = new();
             foreach (PortalData current in data)
             {
                 commands.Add($"create poi {current.type} «{current.name}» {current.lat} {current.lng}{(current.isEx != null ? $" \"ex_eligible: {Convert.ToInt16((bool)current.isEx)}\"" : "")}");

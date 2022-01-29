@@ -15,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using ComposableAsync;
 using RateLimiter;
 using Discord.Interactions;
+using System.Globalization;
 
 namespace CompanionBot
 {
@@ -23,13 +24,13 @@ namespace CompanionBot
         private readonly DiscordSocketClient _client;
         private readonly Logger _logger;
         private readonly InteractiveService _inter;
-        private readonly HttpClient _webClient = new HttpClient(TimeLimiter.GetFromMaxCountByInterval(1, TimeSpan.FromSeconds(1)).AsDelegatingHandler()); // 1 request per second at max!
+        private readonly HttpClient _webClient = new(TimeLimiter.GetFromMaxCountByInterval(1, TimeSpan.FromSeconds(1)).AsDelegatingHandler()); // 1 request per second at max!
         private readonly string prefix;
-        private readonly ConcurrentDictionary<ulong, CancellationTokenSource> tokens = new ConcurrentDictionary<ulong, CancellationTokenSource>();
-        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<string>> createQueues = new ConcurrentDictionary<ulong, ConcurrentQueue<string>>();
-        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<EditData>> editQueues = new ConcurrentDictionary<ulong, ConcurrentQueue<EditData>>();
-        private readonly ConcurrentDictionary<ulong, Task> workers = new ConcurrentDictionary<ulong, Task>();
-        private readonly ConcurrentDictionary<ulong, IUserMessage> progress = new ConcurrentDictionary<ulong, IUserMessage>();
+        private readonly ConcurrentDictionary<ulong, CancellationTokenSource> tokens = new();
+        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<string>> createQueues = new();
+        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<EditData>> editQueues = new();
+        private readonly ConcurrentDictionary<ulong, Task> workers = new();
+        private readonly ConcurrentDictionary<ulong, IUserMessage> progress = new();
         private readonly GuildSettings _settings;
         private readonly RequestOptions options;
         private readonly RequestOptions typingOptions;
@@ -66,16 +67,16 @@ namespace CompanionBot
 
             workers.AddOrUpdate(context.Guild.Id, (ulong key) =>
             {
-                CancellationTokenSource source = new CancellationTokenSource();
+                CancellationTokenSource source = new();
                 tokens[key] = source;
-                return Work(key, context.Channel, source.Token, invokingPerms);
+                return Work(key, context.Channel, invokingPerms, source.Token);
             }, (ulong key, Task current) =>
             {
                 if (current.IsCompleted && !current.IsCanceled)
                 {
-                    CancellationTokenSource source = new CancellationTokenSource();
+                    CancellationTokenSource source = new();
                     tokens[key] = source;
-                    return Work(key, context.Channel, source.Token, invokingPerms);
+                    return Work(key, context.Channel, invokingPerms, source.Token);
                 }
                 return current;
             });
@@ -97,16 +98,16 @@ namespace CompanionBot
 
             workers.AddOrUpdate(context.Guild.Id, (ulong key) =>
             {
-                CancellationTokenSource source = new CancellationTokenSource();
+                CancellationTokenSource source = new();
                 tokens[key] = source;
-                return Edit(key, context.Channel, source.Token, invokingPerms);
+                return Edit(key, context.Channel, invokingPerms, source.Token);
             }, (ulong key, Task current) =>
             {
                 if (current.IsCompleted && !current.IsCanceled)
                 {
-                    CancellationTokenSource source = new CancellationTokenSource();
+                    CancellationTokenSource source = new();
                     tokens[key] = source;
-                    return Edit(key, context.Channel, source.Token, invokingPerms);
+                    return Edit(key, context.Channel, invokingPerms, source.Token);
                 }
                 return current;
             });
@@ -115,34 +116,36 @@ namespace CompanionBot
 
         public async Task Pause(SocketInteractionContext context)
         {
+            CultureInfo.CurrentCulture = new(context.Interaction.UserLocale);
             ChannelPermissions perms = context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
             if (workers.TryGetValue(context.Guild.Id, out Task worker) && !worker.IsCompleted)
             {
                 if (tokens.TryGetValue(context.Guild.Id, out CancellationTokenSource token))
                 { // TODO: Does canceling the same token twice work or does it throw an Exception? can it be in the dictionary, but disposed?
                     token.Cancel(); // Disposing is done in the Task itself when it is canceled or completed.
-                    await context.Interaction.RespondAsync("⏸ Pausing, please be patient...");
+                    await context.Interaction.RespondAsync(Properties.Resources.pauseInProgress);
                     await worker.ContinueWith((state) =>
                     {
-                        context.Interaction.FollowupAsync("✅ Successfully paused!");
+                        context.Interaction.FollowupAsync(Properties.Resources.pauseSuccessful);
                         UpdateProgress(context.Guild.Id, context.Channel, perms);
                     });
                 }
                 else
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Pause), $"Task running for Guild {context.Guild.Name} ({context.Guild.Id}), but no Cancellation Token was present!"));
-                    await context.Interaction.RespondAsync("❌Error while pausing!");
+                    await context.Interaction.RespondAsync(Properties.Resources.pauseError);
                 }
             }
             else
             {
                 await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Pause), $"Pause failed in Guild {context.Guild.Name} ({context.Guild.Id}): No Bulk Import was running."));
-                await context.Interaction.RespondAsync("ℹ Nothing to Pause here, no Bulk Import running at the moment!");
+                await context.Interaction.RespondAsync(Properties.Resources.pauseNoOp);
             }
         }
 
         public async Task Resume(SocketInteractionContext context)
         {
+            CultureInfo.CurrentCulture = new(context.Interaction.UserLocale);
             ChannelPermissions perms = context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
             if (!workers.TryGetValue(context.Guild.Id, out Task worker) || worker.IsCompleted)
             {
@@ -150,29 +153,29 @@ namespace CompanionBot
                     value.Dispose();
                 if (createQueues.TryGetValue(context.Guild.Id, out ConcurrentQueue<string> create) && !create.IsEmpty)
                 {
-                    CancellationTokenSource source = new CancellationTokenSource();
+                    CancellationTokenSource source = new();
                     tokens[context.Guild.Id] = source;
-                    workers[context.Guild.Id] = Work(context.Guild.Id, context.Channel, source.Token, perms);
-                    await context.Interaction.RespondAsync("▶ Continuing...");
+                    workers[context.Guild.Id] = Work(context.Guild.Id, context.Channel, perms, source.Token);
+                    await context.Interaction.RespondAsync(Properties.Resources.resume);
                     await UpdateProgress(context.Guild.Id, context.Channel, perms);
                 }
                 else if (editQueues.TryGetValue(context.Guild.Id, out ConcurrentQueue<EditData> edit) && !edit.IsEmpty)
                 {
-                    CancellationTokenSource source = new CancellationTokenSource();
+                    CancellationTokenSource source = new();
                     tokens[context.Guild.Id] = source;
-                    workers[context.Guild.Id] = Edit(context.Guild.Id, context.Channel, source.Token, perms);
-                    await context.Interaction.RespondAsync("▶ Continuing...");
+                    workers[context.Guild.Id] = Edit(context.Guild.Id, context.Channel, perms, source.Token);
+                    await context.Interaction.RespondAsync(Properties.Resources.resume);
                     await UpdateProgress(context.Guild.Id, context.Channel, perms);
                 }
                 else
                 {
-                    await context.Interaction.RespondAsync("ℹ No data to import present.");
+                    await context.Interaction.RespondAsync(Properties.Resources.resumeNoOp);
                     await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Resume), $"Resume failed in Guild {context.Guild.Name} ({context.Guild.Id}): No Data was present."));
                 }
             }
             else
             {
-                await context.Interaction.RespondAsync("ℹ Bulk import is already running, no need to resume.");
+                await context.Interaction.RespondAsync(Properties.Resources.resumeAlreadyRunning);
                 await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Resume), $"Resume failed in Guild {context.Guild.Name} ({context.Guild.Id}): Bulk Import was already running."));
             }
         }
@@ -328,13 +331,12 @@ namespace CompanionBot
             return Task.CompletedTask;
         }
 
-        private async Task Work(ulong guildId, IMessageChannel invokedChannel, CancellationToken token, ChannelPermissions invokingPerms)
+#pragma warning disable CA2016 // Parameter "CancellationToken" an Methoden weiterleiten, die diesen Parameter akzeptieren
+        private async Task Work(ulong guildId, IMessageChannel invokedChannel, ChannelPermissions invokingPerms, CancellationToken token)
         {
             if (_settings[guildId].PNavChannel.HasValue)
             {
-                IMessageChannel channel = _client.GetChannel(_settings[guildId].PNavChannel.Value) as IMessageChannel;
-
-                if (channel == null)
+                if (_client.GetChannel(_settings[guildId].PNavChannel.Value) is not IMessageChannel channel)
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Mod-Channel was no Message Channel for Guild {guildId}!"));
                     if (invokingPerms.SendMessages)
@@ -367,7 +369,7 @@ namespace CompanionBot
                         {
                             await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while entering typing state in Guild {guildId}: {e.Message}", e));
                         }
-                        CancellationTokenSource ct = new CancellationTokenSource();
+                        CancellationTokenSource ct = new();
                         // wait for PokeNav to respond...
                         var nma = _inter.NextMessageAsync(x => x.Author.Id == ulong.Parse(_config["pokeNavId"]) && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error" || x.Content.StartsWith("Error:")), null, TimeSpan.FromSeconds(10), cancellationToken: ct.Token);
                         Task<bool> t = TryToSendMessage(channel, ref modPerms, $"{prefix}{current}", options: options);
@@ -398,7 +400,7 @@ namespace CompanionBot
                     }
                     if (editQueues.TryGetValue(guildId, out ConcurrentQueue<EditData> edit) && !edit.IsEmpty)
                     {
-                        workers[guildId] = Edit(guildId, invokedChannel, token, invokingPerms); // proceed with edits after creation is complete if there are any.
+                        workers[guildId] = Edit(guildId, invokedChannel, invokingPerms, token); // proceed with edits after creation is complete if there are any.
                     }
                 }
             }
@@ -421,14 +423,12 @@ namespace CompanionBot
             await UpdateProgress(guildId, invokedChannel, invokingPerms);
         }
 
-        private async Task Edit(ulong guildId, IMessageChannel invokedChannel, CancellationToken token, ChannelPermissions invokingPerms)
+        private async Task Edit(ulong guildId, IMessageChannel invokedChannel, ChannelPermissions invokingPerms, CancellationToken token)
         {
 
             if (_settings[guildId].PNavChannel != null)
             {
-                IMessageChannel channel = _client.GetChannel((ulong)_settings[guildId].PNavChannel) as IMessageChannel;
-
-                if (channel == null)
+                if (_client.GetChannel((ulong)_settings[guildId].PNavChannel) is not IMessageChannel channel)
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Mod-Channel was no Message Channel for Guild {guildId}!"));
                     if (invokingPerms.SendMessages)
@@ -455,7 +455,7 @@ namespace CompanionBot
                         }
                         start = DateTime.UtcNow;
                         string type = current.oldType == PoiType.pokestop ? "stop" : "gym";
-                        CancellationTokenSource ct = new CancellationTokenSource();
+                        CancellationTokenSource ct = new();
                         var nma = _inter.NextMessageAsync((msg) =>
                             msg.Author.Id == ulong.Parse(_config["pokeNavId"])
                             && msg.Channel.Id == channel.Id
@@ -505,7 +505,7 @@ namespace CompanionBot
                                     }
 
                                     //https://stackoverflow.com/a/12858633 answer by user dtb on StackOverflow
-                                    SemaphoreSlim signal = new SemaphoreSlim(0, 1);
+                                    SemaphoreSlim signal = new(0, 1);
                                     Task handler(SocketMessage msg)
                                     {
                                         if (signal.CurrentCount == 0 && msg.Channel == channel && msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Embeds.Count == 1 && string.IsNullOrEmpty(msg.Content)
@@ -522,9 +522,10 @@ namespace CompanionBot
                                     if (i < embed.Fields.Length)
                                     {
                                         // something was found obviously!
-                                        Emoji reaction = new Emoji(embed.Fields[i].Name.Substring(0, 2));
+                                        Emoji reaction = new(embed.Fields[i].Name.Substring(0, 2));
                                         if (!modPerms.AddReactions)
                                         {
+
                                             await _inter.NextReactionAsync((SocketReaction r) =>
                                             {
                                                 return r.MessageId == result.Value.Id && r.Emote.Name == reaction.Name && r.UserId != _client.CurrentUser.Id;
@@ -559,7 +560,7 @@ namespace CompanionBot
                                             string addressJson;
                                             try
                                             {
-                                                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"https://nominatim.openstreetmap.org/reverse?lat={current.lat}&lon={current.lng}&format=json&addressdetails=0&accept-language={_client.GetGuild(guildId)?.PreferredLocale}");
+                                                HttpRequestMessage request = new(HttpMethod.Get, $"https://nominatim.openstreetmap.org/reverse?lat={current.lat}&lon={current.lng}&format=json&addressdetails=0&accept-language={_client.GetGuild(guildId)?.PreferredLocale}");
                                                 request.Headers.UserAgent.Clear();
                                                 request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("IITCPokenavCompanion", null));
                                                 var temp = await _webClient.SendAsync(request);
@@ -614,7 +615,7 @@ namespace CompanionBot
                                             }
                                             return Task.CompletedTask;
                                         });
-                                        Regex validEmote = new Regex($"[1-{embed.Fields.Length}]\u20e3");
+                                        Regex validEmote = new($"[1-{embed.Fields.Length}]\u20e3");
                                         var reactResult = await _inter.NextReactionAsync((SocketReaction r) =>
                                         r.MessageId == result.Value.Id && r.User.Value.Id != ulong.Parse(_config["pokeNavId"]) && validEmote.IsMatch(r.Emote.Name),
                                         timeout: TimeSpan.FromMinutes(1));
@@ -724,7 +725,7 @@ namespace CompanionBot
                     }
                     if (createQueues.TryGetValue(guildId, out ConcurrentQueue<string> create) && !create.IsEmpty)
                     {
-                        workers[guildId] = Work(guildId, invokedChannel, token, invokingPerms); // proceed with creation after edits are complete if there is anything to create.
+                        workers[guildId] = Work(guildId, invokedChannel, invokingPerms, token); // proceed with creation after edits are complete if there is anything to create.
                     }
                 }
             }
@@ -744,5 +745,6 @@ namespace CompanionBot
                 source.Dispose();
             await UpdateProgress(guildId, invokedChannel, invokingPerms);
         }
+#pragma warning restore CA2016 // Parameter "CancellationToken" an Methoden weiterleiten, die diesen Parameter akzeptieren
     }
 }

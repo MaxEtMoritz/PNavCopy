@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
@@ -15,14 +14,12 @@ namespace CompanionBot
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
         private readonly IServiceProvider _services;
-        private readonly GuildSettings _settings;
         private readonly Logger _logger;
         public CommandHandler(IServiceProvider services)
         {
             _services = services;
             _client = services.GetRequiredService<DiscordSocketClient>();
             _commands = services.GetRequiredService<CommandService>();
-            _settings = services.GetRequiredService<GuildSettings>();
             _logger = services.GetRequiredService<Logger>();
         }
 
@@ -46,13 +43,13 @@ namespace CompanionBot
         private async Task HandleCommandAsync(SocketMessage messageParam)
         {
             // Don't process the command if it was a system message
-            if (!(messageParam is SocketUserMessage message)) return;
+            if (messageParam is not SocketUserMessage message) return;
 
             // Create a number to track where the prefix ends and the command begins
             int argPos = 0;
 
-            // Determine if the message is a command based on the prefix or a mention inside of a guild and make sure no bots trigger commands
-            if (!(message.Channel is IGuildChannel) ||
+            // Determine if the message is a command based on a mention inside of a guild and make sure no bots trigger commands
+            if (message.Channel is not IGuildChannel ||
                 (message.Author.IsBot && !message.Author.IsWebhook) ||
                 !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
                 return;

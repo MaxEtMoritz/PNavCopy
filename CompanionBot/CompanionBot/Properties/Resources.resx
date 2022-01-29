@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="errorBadArgs" xml:space="preserve">
+    <value>⚠ Too many or few parameters. ⚠\nError message:\n```{0}```\nPlease contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did and which parameters you specified.</value>
+    <comment>Interaction failed because too many or too few parameters were given.</comment>
+  </data>
+  <data name="ErrorConvertFailed" xml:space="preserve">
+    <value>⚠ One or more parameters could not be converted. ⚠\nError message:\n```{0}```\nPlease check your parameters.\nIf they seem correct, open up an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did, which parameters you entered and what the error message was.</value>
+    <comment>Interaction failed because Parameter(s) could not be converted.</comment>
+  </data>
+  <data name="errorException" xml:space="preserve">
+    <value>⚠ Internal Error. ⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{0}```</value>
+    <comment>Interaction failed because of an Exception.</comment>
+  </data>
+  <data name="errorParseFailed" xml:space="preserve">
+    <value>⚠ Internal Error. ⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{0}```</value>
+    <comment>Interaction failed because the Context was faulty</comment>
+  </data>
+  <data name="ErrorUnknownCommand" xml:space="preserve">
+    <value>⚠ Unknown interaction. ⚠\nPlease contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you were trying to do when getting this error.</value>
+    <comment>Interaction failed because it was not known.</comment>
+  </data>
+  <data name="goodbye" xml:space="preserve">
+    <value>Disconnecting now. Goodbye!</value>
+    <comment>/disconnect confirmed by Button click</comment>
+  </data>
+  <data name="interactionUnsuccessful" xml:space="preserve">
+    <value>❌ This interaction failed. ❌\nReason: {0}</value>
+    <comment>Interaction was not successful.</comment>
+  </data>
+  <data name="modChannelFail" xml:space="preserve">
+    <value>Did not receive a Response from PokeNav in time!\nMake sure PokeNav is able to respond in the Channel where you execute the command!</value>
+    <comment>/mod-channel failed, PokeNav did not respond</comment>
+  </data>
+  <data name="modChannelSuccess" xml:space="preserve">
+    <value>Moderation channel successfully set to &lt;#{0}&gt;</value>
+    <comment>/mod-channel completed successfully</comment>
+  </data>
+  <data name="pauseError" xml:space="preserve">
+    <value>❌ Error while pausing</value>
+    <comment>/pause error</comment>
+  </data>
+  <data name="pauseInProgress" xml:space="preserve">
+    <value>⏸ Pausing, please be patient...</value>
+    <comment>/pause</comment>
+  </data>
+  <data name="pauseNoOp" xml:space="preserve">
+    <value>ℹ Nothing to Pause here, no Bulk Import running at the moment.</value>
+    <comment>/pause when no import was running</comment>
+  </data>
+  <data name="pauseSuccessful" xml:space="preserve">
+    <value>✅ Successfully paused!</value>
+    <comment>/pause finished successfully</comment>
+  </data>
+  <data name="promptMissingPerms" xml:space="preserve">
+    <value>⚠ Attention! ⚠ The Bot is missing permissions in the PokeNav mod-channel:\n\t{0} View Channel\n\t{1} Send Messages\n\t{2} Add Reactions (recommended but optional)\n\t{3} View message history (for ambiguous edits)\nMake sure to grant the neccessary permissions for the bot for &lt;#{4}&gt;.</value>
+    <comment>/mod-channel (Not all permissions granted for new mod-channel)</comment>
+  </data>
+  <data name="resume" xml:space="preserve">
+    <value>▶ Continuing...</value>
+    <comment>/resume</comment>
+  </data>
+  <data name="resumeAlreadyRunning" xml:space="preserve">
+    <value>ℹ Bulk import is already running, no need to resume.</value>
+    <comment>/resume when import is already in progress</comment>
+  </data>
+  <data name="resumeNoOp" xml:space="preserve">
+    <value>ℹ No data to import present.</value>
+    <comment>/resume when nothing can be resumed</comment>
+  </data>
+  <data name="sure" xml:space="preserve">
+    <value>Are you really sure? The bot will need manual restart if you do this!</value>
+    <comment>/disconnect</comment>
+  </data>
+  <data name="testInstance" xml:space="preserve">
+    <value>\nThis is the test instance.</value>
+    <comment>/disconnect test instance</comment>
+  </data>
+  <data name="unmetPrecondition" xml:space="preserve">
+    <value>❌ This interaction is not allowed in this context. ❌\n{0}</value>
+    <comment>Interaction is not allowed.</comment>
+  </data>
+  <data name="yesIAm" xml:space="preserve">
+    <value>Yes i am</value>
+    <comment>/disconnect confirmation button content (Answer to the question: Are you sure you want to disconnect?)</comment>
+  </data>
+</root>
