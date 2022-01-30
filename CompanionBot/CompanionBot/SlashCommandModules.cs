@@ -31,6 +31,7 @@ namespace CompanionBot
         public override void BeforeExecute(ICommandInfo cmd)
         {
             CultureInfo.CurrentCulture = new(Context.Interaction.UserLocale);
+            CultureInfo.CurrentUICulture = new(Context.Interaction.UserLocale);
         }
 
         [SlashCommand("mod-channel", "Requests PokeNav's mod channel and saves it."), RequireBotPermission(ChannelPermission.ViewChannel, Group = "g"), RequireContext(ContextType.Guild, Group = "g")]
@@ -65,6 +66,7 @@ namespace CompanionBot
         [SlashCommand("pause", "Pauses the currently running PokeNav POI import."), RequireContext(ContextType.Guild)]
         public Task Pause()
         {
+            Console.WriteLine(CultureInfo.CurrentCulture.Name);
             return _queue.Pause(Context);
         }
 
@@ -100,6 +102,7 @@ namespace CompanionBot
         public override void BeforeExecute(ICommandInfo cmd)
         {
             CultureInfo.CurrentCulture = new(Context.Interaction.UserLocale);
+            CultureInfo.CurrentUICulture = new(Context.Interaction.UserLocale);
         }
 
         [SlashCommand("disconnect", "Disconnects the Bot from the gateway."), RequireOwner, DefaultPermission(false)]

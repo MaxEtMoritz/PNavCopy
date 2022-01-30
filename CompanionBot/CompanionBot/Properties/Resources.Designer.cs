@@ -61,7 +61,83 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Too many or few parameters. ⚠\nError message:\n```{0}```\nPlease contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did and which parameters you specified. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Action Required! ähnelt.
+        /// </summary>
+        internal static string actionRequired {
+            get {
+                return ResourceManager.GetString("actionRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Address: ähnelt.
+        /// </summary>
+        internal static string address {
+            get {
+                return ResourceManager.GetString("address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Creations ähnelt.
+        /// </summary>
+        internal static string creations {
+            get {
+                return ResourceManager.GetString("creations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Download of attached file failed: {0} ähnelt.
+        /// </summary>
+        internal static string downloadFailed {
+            get {
+                return ResourceManager.GetString("downloadFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Please select the correct location. If you are not sure, let it time out.
+        ///The following info is available: ähnelt.
+        /// </summary>
+        internal static string editMultiMatches {
+            get {
+                return ResourceManager.GetString("editMultiMatches", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Edits ähnelt.
+        /// </summary>
+        internal static string edits {
+            get {
+                return ResourceManager.GetString("edits", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Edits: ähnelt.
+        /// </summary>
+        internal static string edits_ {
+            get {
+                return ResourceManager.GetString("edits:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die use /pause or /resume commands to manage the import ähnelt.
+        /// </summary>
+        internal static string embedFooter {
+            get {
+                return ResourceManager.GetString("embedFooter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Too many or few parameters. ⚠
+        ///Error message:
+        ///```{0}```
+        ///Please contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did and which parameters you specified. ähnelt.
         /// </summary>
         internal static string errorBadArgs {
             get {
@@ -70,7 +146,11 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ One or more parameters could not be converted. ⚠\nError message:\n```{0}```\nPlease check your parameters.\nIf they seem correct, open up an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did, which parameters you entered and what the error message was. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ One or more parameters could not be converted. ⚠
+        ///Error message:
+        ///```{0}```
+        ///Please check your parameters.
+        ///If they seem correct, open up an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did, which parameters you entered and what the error message was. ähnelt.
         /// </summary>
         internal static string ErrorConvertFailed {
             get {
@@ -79,7 +159,10 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Internal Error. ⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{0}``` ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Internal Error. ⚠
+        ///The bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.
+        ///This Error message will (hopefully😅) help the developer investigate:
+        ///```{0}``` ähnelt.
         /// </summary>
         internal static string errorException {
             get {
@@ -88,7 +171,10 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Internal Error. ⚠\nThe bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{0}``` ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Internal Error. ⚠
+        ///The bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.
+        ///This Error message will (hopefully😅) help the developer investigate:
+        ///```{0}``` ähnelt.
         /// </summary>
         internal static string errorParseFailed {
             get {
@@ -97,7 +183,8 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Unknown interaction. ⚠\nPlease contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you were trying to do when getting this error. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Unknown interaction. ⚠
+        ///Please contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you were trying to do when getting this error. ähnelt.
         /// </summary>
         internal static string ErrorUnknownCommand {
             get {
@@ -115,7 +202,17 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ This interaction failed. ❌\nReason: {0} ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Importing... ähnelt.
+        /// </summary>
+        internal static string importing {
+            get {
+                return ResourceManager.GetString("importing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ This interaction failed. ❌
+        ///Reason: {0} ähnelt.
         /// </summary>
         internal static string interactionUnsuccessful {
             get {
@@ -124,11 +221,39 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Did not receive a Response from PokeNav in time!\nMake sure PokeNav is able to respond in the Channel where you execute the command! ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Error while parsing file: {0} ähnelt.
+        /// </summary>
+        internal static string jsonParsingFailed {
+            get {
+                return ResourceManager.GetString("jsonParsingFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Error: Parsing of PokeNav ID failed. ähnelt.
+        /// </summary>
+        internal static string locationIdParseFailed {
+            get {
+                return ResourceManager.GetString("locationIdParseFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Did not receive a Response from PokeNav in time.
+        ///Make sure PokeNav is able to respond in the Channel where you execute the command. ähnelt.
         /// </summary>
         internal static string modChannelFail {
             get {
                 return ResourceManager.GetString("modChannelFail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die There was a problem with the mod-channel. Try to run `/mod-channel` and then `/resume` to try again. ähnelt.
+        /// </summary>
+        internal static string modChannelProblem {
+            get {
+                return ResourceManager.GetString("modChannelProblem", resourceCulture);
             }
         }
         
@@ -138,6 +263,42 @@ namespace CompanionBot.Properties {
         internal static string modChannelSuccess {
             get {
                 return ResourceManager.GetString("modChannelSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die PokeNav Moderation Channel not set yet. Run `/mod-channel` to set it, then run `/resume` to create the PoI. ähnelt.
+        /// </summary>
+        internal static string modChannelUnset {
+            get {
+                return ResourceManager.GetString("modChannelUnset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Name: ähnelt.
+        /// </summary>
+        internal static string name {
+            get {
+                return ResourceManager.GetString("name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Message History permission missing. Unable to handle location select dialog =&gt; edit skipped. ähnelt.
+        /// </summary>
+        internal static string noMsgHistoryPerm {
+            get {
+                return ResourceManager.GetString("noMsgHistoryPerm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Paused ähnelt.
+        /// </summary>
+        internal static string paused {
+            get {
+                return ResourceManager.GetString("paused", resourceCulture);
             }
         }
         
@@ -178,11 +339,52 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Attention! ⚠ The Bot is missing permissions in the PokeNav mod-channel:\n\t{0} View Channel\n\t{1} Send Messages\n\t{2} Add Reactions (recommended but optional)\n\t{3} View message history (for ambiguous edits)\nMake sure to grant the neccessary permissions for the bot for &lt;#{4}&gt;. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Edit Failed. PoI not found. ähnelt.
+        /// </summary>
+        internal static string poiNotFound {
+            get {
+                return ResourceManager.GetString("poiNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die PokeNav did not respond in time. Please try again manually. ähnelt.
+        /// </summary>
+        internal static string pokeNavTimeout {
+            get {
+                return ResourceManager.GetString("pokeNavTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die PokeNav did not update the select message in time, please try again manually. ähnelt.
+        /// </summary>
+        internal static string pokeNavUpdateTimeout {
+            get {
+                return ResourceManager.GetString("pokeNavUpdateTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Attention! ⚠ The Bot is missing permissions in the PokeNav mod-channel:
+        ///	{0} View Channel
+        ///	{1} Send Messages
+        ///	{2} Add Reactions (recommended but optional)
+        ///	{3} View message history (for ambiguous edits)
+        ///Make sure to grant the neccessary permissions for the bot for &lt;#{4}&gt;. ähnelt.
         /// </summary>
         internal static string promptMissingPerms {
             get {
                 return ResourceManager.GetString("promptMissingPerms", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die No one reacted. Please try again manually. ähnelt.
+        /// </summary>
+        internal static string reactTimeout {
+            get {
+                return ResourceManager.GetString("reactTimeout", resourceCulture);
             }
         }
         
@@ -214,6 +416,24 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Head to &lt;#{0}&gt; and select the right location! ähnelt.
+        /// </summary>
+        internal static string selectRightLocation {
+            get {
+                return ResourceManager.GetString("selectRightLocation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die This is still to do: ähnelt.
+        /// </summary>
+        internal static string stillToDo {
+            get {
+                return ResourceManager.GetString("stillToDo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Are you really sure? The bot will need manual restart if you do this! ähnelt.
         /// </summary>
         internal static string sure {
@@ -223,7 +443,8 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die \nThis is the test instance. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die 
+        ///This is the test instance. ähnelt.
         /// </summary>
         internal static string testInstance {
             get {
@@ -232,7 +453,26 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ This interaction is not allowed in this context. ❌\n{0} ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Time remaining ähnelt.
+        /// </summary>
+        internal static string timeRemaining {
+            get {
+                return ResourceManager.GetString("timeRemaining", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Type: ähnelt.
+        /// </summary>
+        internal static string type {
+            get {
+                return ResourceManager.GetString("type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ This interaction is not allowed in this context. ❌
+        ///{0} ähnelt.
         /// </summary>
         internal static string unmetPrecondition {
             get {

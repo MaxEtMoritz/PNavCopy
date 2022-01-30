@@ -11,6 +11,7 @@ using System.Linq;
 using System.Resources;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace CompanionBot
 {
@@ -32,6 +33,9 @@ namespace CompanionBot
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("config.json")
                 .Build();
+
+            CultureInfo.DefaultThreadCurrentCulture = new("en-US");
+            CultureInfo.DefaultThreadCurrentUICulture = new("en-US");
 
             _services = new ServiceCollection()
                 .AddSingleton(_config)

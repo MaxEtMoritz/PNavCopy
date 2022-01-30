@@ -112,6 +112,7 @@ namespace CompanionBot
             else
                 respond = context.Interaction.RespondAsync;
             CultureInfo.CurrentCulture = new(context.Interaction.UserLocale);
+            CultureInfo.CurrentUICulture = new(context.Interaction.UserLocale);
             // if an Error occurred, send the Reason for the Error as response to the interaction, or as follow-up message.
             if (result.Error.HasValue)
             {

@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -28,6 +29,8 @@ namespace CompanionBot
         [Command("createmultiple", RunMode = RunMode.Async), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm"), RequireAttachedJson]
         public async Task CreatePoIAsync() // Async because download could take time
         {
+            CultureInfo.CurrentCulture = new(Context.Guild.PreferredLocale);
+            CultureInfo.CurrentUICulture = new(Context.Guild.PreferredLocale);
             ChannelPermissions perms = Context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(Context.Channel as IGuildChannel);
             string dataString = "";
             try
@@ -39,7 +42,7 @@ namespace CompanionBot
                 dataString = "[]";
                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(CreatePoIAsync), $"Download of attached File failed: {e.Message}", e));
                 if (perms.SendMessages)
-                    await Context.Message.ReplyAsync($"Download of Attached File Failed: {e.Message}");
+                    await Context.Message.ReplyAsync(String.Format(Properties.Resources.downloadFailed,e.Message));
             }
             PortalData[] data;
             try
@@ -48,7 +51,7 @@ namespace CompanionBot
             }
             catch (Exception e)
             {
-                await Context.Message.ReplyAsync($"Error while parsing file: {e.Message}");
+                await Context.Message.ReplyAsync(String.Format(Properties.Resources.jsonParsingFailed,e.Message));
                 await _logger.Log(new LogMessage(LogSeverity.Error, "createmultiple", $"JSON Parsing failed in guild {Context.Guild.Name} ({Context.Guild.Id}): {e.Message}", e));
                 return;
             }
@@ -75,7 +78,7 @@ namespace CompanionBot
                 dataString = "[]";
                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Download of attached File failed: {e.Message}", e));
                 if (perms.SendMessages)
-                    await Context.Message.ReplyAsync($"Download of Attached File Failed: {e.Message}");
+                    await Context.Message.ReplyAsync(String.Format(Properties.Resources.downloadFailed, e.Message));
             }
 
             List<EditData> data;
@@ -85,7 +88,7 @@ namespace CompanionBot
             }
             catch (Exception e)
             {
-                await Context.Message.ReplyAsync($"Error while parsing file: {e.Message}");
+                await Context.Message.ReplyAsync(String.Format(Properties.Resources.jsonParsingFailed, e.Message));
                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"JSON Parsing failed in guild {Context.Guild.Name} ({Context.Guild.Id}): {e.Message}", e));
                 return;
             }

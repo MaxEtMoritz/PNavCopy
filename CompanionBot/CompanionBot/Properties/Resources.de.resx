@@ -1,0 +1,279 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="actionRequired" xml:space="preserve">
+    <value>Aktion erforderlich!</value>
+  </data>
+  <data name="address" xml:space="preserve">
+    <value>Adresse:</value>
+  </data>
+  <data name="creations" xml:space="preserve">
+    <value>Erstellungen</value>
+  </data>
+  <data name="downloadFailed" xml:space="preserve">
+    <value>Download der angehängten Datei fehlgeschlagen: {0}</value>
+  </data>
+  <data name="editMultiMatches" xml:space="preserve">
+    <value>Bitte wählen Sie den korrekten Standort aus. Falls Sie unsicher sind, lassen Sie die Zeit ablaufen.
+Folgende Informationen sind verfügbar:</value>
+  </data>
+  <data name="edits" xml:space="preserve">
+    <value>Bearbeitungen</value>
+  </data>
+  <data name="edits:" xml:space="preserve">
+    <value>Bearbeitungen:</value>
+  </data>
+  <data name="embedFooter" xml:space="preserve">
+    <value>Verwenden Sie die /pause oder /resume-Kommandos um den Importvorgang zu verwalten</value>
+  </data>
+  <data name="errorBadArgs" xml:space="preserve">
+    <value>⚠ Zu viele oder zu wenige Parameter. ⚠
+Fehlermeldung:
+```{0}```
+Bitte kontaktieren Sie den Entwickler indem sie ein Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) eröffnen und angeben, was Sie tun wollten und welche Parameter Sie angegeben haben.</value>
+  </data>
+  <data name="ErrorConvertFailed" xml:space="preserve">
+    <value>⚠ Ein oder mehrere Parameter konnten nicht konvertiert werden. ⚠
+Fehlermeldung:
+```{0}```
+Bitte überprüfen Sie Ihre Parameter.
+Wenn Diese richtig zu sein scheinen, eröffnen Sie ein Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) und geben Sie an, was Sie getan haben und welche Parameter Sie angegeben haben.</value>
+  </data>
+  <data name="errorException" xml:space="preserve">
+    <value>⚠ Interner Fehler. ⚠
+Es ist ein Fehler bei der Ausführung dieses Befehls aufgetreten. Wenn der Fehler wiederholt auftritt, eröffnen Sie einen Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) und geben Sie so viel Information wie möglich an.
+Diese Fehlermeldung wird dem Entwickler (hoffentlich😅) bei der Fehlerbehebung helfen:
+```{0}```</value>
+  </data>
+  <data name="errorParseFailed" xml:space="preserve">
+    <value>⚠ Interner Fehler. ⚠
+Es ist ein Fehler bei der Ausführung dieses Befehls aufgetreten. Wenn der Fehler wiederholt auftritt, eröffnen Sie einen Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) und geben Sie so viel Information wie möglich an.
+Diese Fehlermeldung wird dem Entwickler (hoffentlich😅) bei der Fehlerbehebung helfen:
+```{0}```</value>
+  </data>
+  <data name="ErrorUnknownCommand" xml:space="preserve">
+    <value>⚠ Unbekannter Befehl. ⚠
+Bitte kontaktieren Sie den Entwickler, indem Sie einen Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) eröffnen und angeben, was Sie tun wollten als der Fehler auftrat.</value>
+  </data>
+  <data name="goodbye" xml:space="preserve">
+    <value>Beende jetzt die Verbindung. Servus!</value>
+  </data>
+  <data name="importing" xml:space="preserve">
+    <value>Importiere...</value>
+  </data>
+  <data name="interactionUnsuccessful" xml:space="preserve">
+    <value>❌ Dieser Befehl ist fehlgeschlagen. ❌
+Grund: {0}</value>
+  </data>
+  <data name="jsonParsingFailed" xml:space="preserve">
+    <value>Fehler beim Parsen der Datei: {0}</value>
+  </data>
+  <data name="locationIdParseFailed" xml:space="preserve">
+    <value>Fehler: Parsen der PokeNav-ID fehlgeschlagen.</value>
+  </data>
+  <data name="modChannelFail" xml:space="preserve">
+    <value>Keine rechtzeitige Antwort von PokeNav erhalten.
+Stellen Sie sicher, dass PokeNav in dem Kanal antworten kann, in dem Sie den Befehl ausführen.</value>
+  </data>
+  <data name="modChannelProblem" xml:space="preserve">
+    <value>Es gibt ein Problem mit dem PokeNav-Administrationskanal. Versuchen Sie `/mod-channel` und danach `/resume` auszuführen um es erneut zu versuchen.</value>
+  </data>
+  <data name="modChannelSuccess" xml:space="preserve">
+    <value>PokeNav-Administrationskanal erfolgreich auf &lt;#{0}&gt; festgelegt</value>
+  </data>
+  <data name="modChannelUnset" xml:space="preserve">
+    <value>PokeNav-Administrationskanal noch nicht gesetzt. Führen Sie `/mod-channel` aus, um Ihn zu setzen, danach `/resume` um es erneut zu versuchen.</value>
+  </data>
+  <data name="name" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="noMsgHistoryPerm" xml:space="preserve">
+    <value>Berechtigung "Nachrichtenverlauf anzeigen" nicht erteilt. Der PoI-Auswahldialog kann deshalb nicht verarbeitet werden =&gt; Die Bearbeitung wurde übersprungen.</value>
+  </data>
+  <data name="paused" xml:space="preserve">
+    <value>Pausiert</value>
+  </data>
+  <data name="pauseError" xml:space="preserve">
+    <value>❌ Fehler beim Pausieren</value>
+  </data>
+  <data name="pauseInProgress" xml:space="preserve">
+    <value>⏸ Pausiere, etwas Geduld bitte...</value>
+  </data>
+  <data name="pauseNoOp" xml:space="preserve">
+    <value>ℹ Nichts zu Pausieren hier, da momentan kein Massen-Import läuft.</value>
+  </data>
+  <data name="pauseSuccessful" xml:space="preserve">
+    <value>✅ Erfolgreich pausiert!</value>
+  </data>
+  <data name="poiNotFound" xml:space="preserve">
+    <value>Bearbeitung fehlgeschlagen. PoI nicht gefunden.</value>
+  </data>
+  <data name="pokeNavTimeout" xml:space="preserve">
+    <value>PokeNav hat nicht rechtzeitig geantwortet. Bitte versuchen Sie es manuell erneut.</value>
+  </data>
+  <data name="pokeNavUpdateTimeout" xml:space="preserve">
+    <value>PokeNav hat die Auswahl-Nachricht nicht rechtzeitig aktualisiert, Bitte versuchen Sie es manuell erneut.</value>
+  </data>
+  <data name="promptMissingPerms" xml:space="preserve">
+    <value>⚠ Achtung! ⚠ Dem Bot fehlen Berechtigungen im PokeNav-Administrationskanal:
+	{0} Kanal anzeigen
+	{1} Nachrichten senden
+	{2} Reaktionen hinzufügen (empfohlen aber optional)
+	{3} Nachrichtenverlauf anzeigen (für mehrdeutige Bearbeitungen)
+Stellen Sie sicher, dass Sie dem Bot die nötigen Berechtigungen für &lt;#{4}&gt; erteilen.</value>
+  </data>
+  <data name="reactTimeout" xml:space="preserve">
+    <value>Niemand hat eine Reaktion hinzugefügt. Bitte versuchen Sie es manuell erneut.</value>
+  </data>
+  <data name="resume" xml:space="preserve">
+    <value>▶ Setze fort...</value>
+  </data>
+  <data name="resumeAlreadyRunning" xml:space="preserve">
+    <value>ℹ Massen-Import läuft bereits, er muss nicht fortgesetzt werden.</value>
+  </data>
+  <data name="resumeNoOp" xml:space="preserve">
+    <value>ℹ Keine weiteren Daten zum Importieren vorhanden.</value>
+  </data>
+  <data name="selectRightLocation" xml:space="preserve">
+    <value>Gehen Sie in &lt;#{0}&gt; und wählen Sie den korrekten Standort aus!</value>
+  </data>
+  <data name="stillToDo" xml:space="preserve">
+    <value>Folgendes ist noch zu tun:</value>
+  </data>
+  <data name="sure" xml:space="preserve">
+    <value>Sind Sie wirklich sicher? Der Bot muss manuell neu gestartet werden, wenn Sie diesen Befehl ausführen!</value>
+  </data>
+  <data name="testInstance" xml:space="preserve">
+    <value>
+Dies ist die Test-Instanz.</value>
+  </data>
+  <data name="timeRemaining" xml:space="preserve">
+    <value>Verbleibende Zeit</value>
+  </data>
+  <data name="type" xml:space="preserve">
+    <value>Art:</value>
+  </data>
+  <data name="unmetPrecondition" xml:space="preserve">
+    <value>❌ Dieser Befehl ist im aktuellen Kontext nicht erlaubt. ❌
+{0}</value>
+  </data>
+  <data name="yesIAm" xml:space="preserve">
+    <value>Ja, bin ich</value>
+  </data>
+</root>

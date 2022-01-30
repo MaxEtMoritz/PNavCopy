@@ -117,6 +117,7 @@ namespace CompanionBot
         public async Task Pause(SocketInteractionContext context)
         {
             CultureInfo.CurrentCulture = new(context.Interaction.UserLocale);
+            CultureInfo.CurrentUICulture = new(context.Interaction.UserLocale);
             ChannelPermissions perms = context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
             if (workers.TryGetValue(context.Guild.Id, out Task worker) && !worker.IsCompleted)
             {
@@ -146,6 +147,7 @@ namespace CompanionBot
         public async Task Resume(SocketInteractionContext context)
         {
             CultureInfo.CurrentCulture = new(context.Interaction.UserLocale);
+            CultureInfo.CurrentUICulture = new(context.Interaction.UserLocale);
             ChannelPermissions perms = context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
             if (!workers.TryGetValue(context.Guild.Id, out Task worker) || worker.IsCompleted)
             {
@@ -242,31 +244,33 @@ namespace CompanionBot
         {
             if (perms.SendMessages && perms.EmbedLinks)
             {
+                CultureInfo.CurrentCulture = new((channel as IGuildChannel).Guild.PreferredLocale);
+                CultureInfo.CurrentUICulture = new((channel as IGuildChannel).Guild.PreferredLocale);
                 bool create = createQueues.TryGetValue(guild, out ConcurrentQueue<string> createQueue);
                 bool edit = editQueues.TryGetValue(guild, out ConcurrentQueue<EditData> editQueue);
                 bool progr = progress.TryGetValue(guild, out IUserMessage message);
                 EmbedBuilder embed = new EmbedBuilder()
                 {
-                    Description = "This is still to do:",
-                    Title = workers.TryGetValue(guild, out Task worker) && !worker.IsCompleted && tokens.TryGetValue(guild, out CancellationTokenSource token) && !token.IsCancellationRequested ? "Importing..." : "Paused",
-                    Footer = new EmbedFooterBuilder() { Text = "use pause or resume Commands to manage the import!" },
+                    Description = Properties.Resources.stillToDo,
+                    Title = workers.TryGetValue(guild, out Task worker) && !worker.IsCompleted && tokens.TryGetValue(guild, out CancellationTokenSource token) && !token.IsCancellationRequested ? Properties.Resources.importing : Properties.Resources.paused,
+                    Footer = new EmbedFooterBuilder() { Text = Properties.Resources.embedFooter },
                     Fields = new List<EmbedFieldBuilder>
                 {
                     new EmbedFieldBuilder()
                     {
-                        Name = "Creations",
+                        Name = Properties.Resources.creations,
                         Value = create ? createQueue.Count : 0,
                         IsInline = true
                     },
                     new EmbedFieldBuilder()
                     {
-                        Name = "Edits",
+                        Name = Properties.Resources.edits,
                         Value = edit ? editQueue.Count : 0,
                         IsInline = true
                     },
                     new EmbedFieldBuilder()
                     {
-                        Name = "Time Remaining",
+                        Name = Properties.Resources.timeRemaining,
                         Value = Math.Ceiling((((create ? createQueue.Count : 0) * averageCreateTime) + ((edit ? editQueue.Count : 0) * averageEditTime)).TotalSeconds) + "s"
                     }
                 }
@@ -274,9 +278,9 @@ namespace CompanionBot
 
                 if (actionRequired)
                 {
-                    embed.Title = "Action Required!";
+                    embed.Title = Properties.Resources.actionRequired;
                     embed.Color = Color.DarkRed;
-                    embed.Description = $"Head to <#{_settings[guild].PNavChannel}> and select the right Location!";
+                    embed.Description = String.Format(Properties.Resources.selectRightLocation,_settings[guild].PNavChannel.Value);
                 }
 
                 if (progr && (!create || createQueue.IsEmpty) && (!edit || editQueue.IsEmpty))
@@ -334,13 +338,15 @@ namespace CompanionBot
 #pragma warning disable CA2016 // Parameter "CancellationToken" an Methoden weiterleiten, die diesen Parameter akzeptieren
         private async Task Work(ulong guildId, IMessageChannel invokedChannel, ChannelPermissions invokingPerms, CancellationToken token)
         {
+            CultureInfo.CurrentCulture = new((invokedChannel as IGuildChannel).Guild.PreferredLocale);
+            CultureInfo.CurrentUICulture = new((invokedChannel as IGuildChannel).Guild.PreferredLocale);
             if (_settings[guildId].PNavChannel.HasValue)
             {
                 if (_client.GetChannel(_settings[guildId].PNavChannel.Value) is not IMessageChannel channel)
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Mod-Channel was no Message Channel for Guild {guildId}!"));
                     if (invokingPerms.SendMessages)
-                        await TryToSendMessage(invokedChannel, ref invokingPerms, $"There was a problem with the mod-channel. Try to run `/mod-channel` and then `/resume` to try again!");
+                        await TryToSendMessage(invokedChannel, ref invokingPerms, Properties.Resources.modChannelProblem);
                     return;
                 }
 
@@ -386,7 +392,7 @@ namespace CompanionBot
                             typing.Dispose();
                         if (!Result.IsSuccess)
                         {
-                            if (!await TryToSendMessage(channel, ref modPerms, $"PokeNav did not respond in time. Please try again by Hand!", options: options))
+                            if (!await TryToSendMessage(channel, ref modPerms, Properties.Resources.pokeNavTimeout, options: options))
                             {
                                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending Error Message in Guild {guildId}."));
                             }
@@ -407,7 +413,7 @@ namespace CompanionBot
             else
             {
                 if (invokingPerms.SendMessages)
-                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"PokeNav Moderation Channel not set yet. Run `/mod-channel` to set it, then run `/resume` to create the PoI!"))
+                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, Properties.Resources.modChannelUnset))
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending error message in Guild {guildId}."));
                     }
@@ -417,7 +423,7 @@ namespace CompanionBot
             }
 
 
-            workers.TryRemove(guildId, out Task value); // value is not needed, bool return also not.
+            workers.TryRemove(guildId, out _); // value is not needed, bool return also not.
             if (tokens.TryRemove(guildId, out CancellationTokenSource source))
                 source.Dispose();
             await UpdateProgress(guildId, invokedChannel, invokingPerms);
@@ -425,14 +431,15 @@ namespace CompanionBot
 
         private async Task Edit(ulong guildId, IMessageChannel invokedChannel, ChannelPermissions invokingPerms, CancellationToken token)
         {
-
+            CultureInfo.CurrentCulture = new((invokedChannel as IGuildChannel).Guild.PreferredLocale);
+            CultureInfo.CurrentUICulture = new((invokedChannel as IGuildChannel).Guild.PreferredLocale);
             if (_settings[guildId].PNavChannel != null)
             {
                 if (_client.GetChannel((ulong)_settings[guildId].PNavChannel) is not IMessageChannel channel)
                 {
                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Mod-Channel was no Message Channel for Guild {guildId}!"));
                     if (invokingPerms.SendMessages)
-                        if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"There was a problem with the mod-channel. Try to run `/mod-channel` and then `/resume` to try again!"))
+                        if (!await TryToSendMessage(invokedChannel, ref invokingPerms, Properties.Resources.modChannelProblem))
                         {
                             await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                         }
@@ -479,7 +486,7 @@ namespace CompanionBot
                             Embed embed = result.Value.Embeds.First();
                             if (embed.Title == "Error")
                             {
-                                if (!await TryToSendMessage(channel, ref modPerms, "Edit Failed. PoI not found."))
+                                if (!await TryToSendMessage(channel, ref modPerms, Properties.Resources.poiNotFound))
                                 {
                                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                                 }
@@ -581,29 +588,29 @@ namespace CompanionBot
                                                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error Converting Address Response JSON in Guild {guildId}: {e.Message}", e));
                                                 response = new AddressResponse() { error = "Error getting Address!" };
                                             }
-                                            string prompt = "Please select the right location! If you are not sure, let it time out!\nThe following info is available:";
+                                            string prompt = Properties.Resources.editMultiMatches;
                                             if (modPerms.MentionEveryone)
                                                 prompt = "@here " + prompt;
                                             EmbedBuilder infoEmbed = null;
                                             if (modPerms.EmbedLinks)
                                             {
                                                 infoEmbed = new EmbedBuilder().WithCurrentTimestamp();
-                                                infoEmbed.AddField("Name:", current.oldName, true);
-                                                infoEmbed.AddField("Type:", current.oldType, true);
-                                                infoEmbed.AddField("Address:", $"[{(string.IsNullOrEmpty(response.display_name) ? response.error : response.display_name)}](https://www.google.com/maps/search/?api=1&query={current.lat}%2c%20{current.lng})", true);
+                                                infoEmbed.AddField(Properties.Resources.name, current.oldName, true);
+                                                infoEmbed.AddField(Properties.Resources.type, current.oldType, true);
+                                                infoEmbed.AddField(Properties.Resources.address, $"[{(string.IsNullOrEmpty(response.display_name) ? response.error : response.display_name)}](https://www.google.com/maps/search/?api=1&query={current.lat}%2c%20{current.lng})", true);
                                                 string edits = "";
                                                 foreach (var pair in current.edits)
                                                 {
                                                     edits += $"\n{pair.Key} => {pair.Value}";
                                                 }
-                                                infoEmbed.AddField("Edits:", edits);
+                                                infoEmbed.AddField(Properties.Resources.edits_, edits);
                                             }
                                             else
                                             {
-                                                prompt += $"\n\tName: {current.oldName}" +
-                                                $"\n\tType: {current.oldType}" +
-                                                $"\n\tAddress: {(String.IsNullOrEmpty(response.display_name) ? response.error : response.display_name)} (https://www.google.com/maps/search/?api=1&query={current.lat}%2c%20{current.lng})" +
-                                                "\n\tEdits:";
+                                                prompt += $"\n\t{Properties.Resources.name} {current.oldName}" +
+                                                $"\n\t{Properties.Resources.type} {current.oldType}" +
+                                                $"\n\t{Properties.Resources.address} {(String.IsNullOrEmpty(response.display_name) ? response.error : response.display_name)} (https://www.google.com/maps/search/?api=1&query={current.lat}%2c%20{current.lng})" +
+                                                $"\n\t{Properties.Resources.edits_}";
                                                 foreach (var pair in current.edits)
                                                 {
                                                     prompt += $"\n\t\t{pair.Key} => {pair.Value}";
@@ -623,7 +630,7 @@ namespace CompanionBot
                                         {
                                             // No one reacted!
                                             await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"Timeout while waiting for User Reaction in Guild {guildId}."));
-                                            if (!await TryToSendMessage(channel, ref modPerms, "No one reacted! Please try again manually!"))
+                                            if (!await TryToSendMessage(channel, ref modPerms, Properties.Resources.reactTimeout))
                                             {
                                                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending error message in Guild {guildId}."));
                                             }
@@ -646,7 +653,7 @@ namespace CompanionBot
                                     {
                                         // Timeout!
                                         await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"Timeout while waiting for PokeNav to send the new Message in Guild {guildId}."));
-                                        if (!await TryToSendMessage(channel, ref modPerms, "PokeNav did not update the select message within 10 seconds, please try again manually!"))
+                                        if (!await TryToSendMessage(channel, ref modPerms, Properties.Resources.pokeNavUpdateTimeout))
                                         {
                                             await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error sending error message in Guild {guildId}."));
                                         }
@@ -658,14 +665,14 @@ namespace CompanionBot
                                 }
                                 else
                                 {
-                                    await TryToSendMessage(channel, ref modPerms, "Message History permission missing! Unable to handle location select dialog, edit skipped.");
+                                    await TryToSendMessage(channel, ref modPerms, Properties.Resources.noMsgHistoryPerm);
                                     continue;
                                 }
                             }
                             string text = embed.Footer.Value.Text.Split('\u25AB')[2];
                             if (!uint.TryParse(text[2..], out uint id))
                             {
-                                if (!await TryToSendMessage(channel, ref modPerms, "Error: Parsing of Location ID failed!"))
+                                if (!await TryToSendMessage(channel, ref modPerms, Properties.Resources.locationIdParseFailed))
                                 {
                                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                                 }
@@ -680,7 +687,7 @@ namespace CompanionBot
                                 editString = $"{prefix}update poi {id}";
                                 foreach (var pair in current.edits)
                                 {
-                                    editString += $" «{pair.Key}: {pair.Value}»"; //TODO: Is EditType properly converted to string?
+                                    editString += $" «{pair.Key}: {pair.Value}»";
                                 }
                             }
                             nma = _inter.NextMessageAsync((msg) => msg.Author.Id == ulong.Parse(_config["pokeNavId"]) && msg.Channel.Id == channel.Id && msg.Embeds.Count == 1, timeout: TimeSpan.FromSeconds(10), cancellationToken: ct.Token);
@@ -701,7 +708,7 @@ namespace CompanionBot
                             if (!result.IsSuccess)
                             {
                                 //no response in timeout!
-                                if (!await TryToSendMessage(channel, ref modPerms, $"PokeNav did not respond in time! Please try again manually!"))
+                                if (!await TryToSendMessage(channel, ref modPerms, Properties.Resources.pokeNavTimeout))
                                 {
                                     await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                                 }
@@ -711,7 +718,7 @@ namespace CompanionBot
                         else
                         {
                             //no response in timeout!
-                            if (!await TryToSendMessage(channel, ref modPerms, $"PokeNav did not respond in time! Please try again manually!"))
+                            if (!await TryToSendMessage(channel, ref modPerms, Properties.Resources.pokeNavTimeout))
                             {
                                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                             }
@@ -732,7 +739,7 @@ namespace CompanionBot
             else
             {
                 if (invokingPerms.SendMessages)
-                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, $"PokeNav Moderation Channel not set yet! Run `/mod-channel` to set it, then run `/resume` to create the PoI!"))
+                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, Properties.Resources.modChannelUnset))
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                     }
@@ -740,7 +747,7 @@ namespace CompanionBot
                 await UpdateProgress(guildId, invokedChannel, invokingPerms);
                 await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Edit), $"Execution failed in Guild {guildId}: Mod-Channel was not set!"));
             }
-            workers.TryRemove(guildId, out Task value); // value is not needed, as well as success/failure information.
+            workers.TryRemove(guildId, out _); // value is not needed, as well as success/failure information.
             if (tokens.TryRemove(guildId, out CancellationTokenSource source))
                 source.Dispose();
             await UpdateProgress(guildId, invokedChannel, invokingPerms);
