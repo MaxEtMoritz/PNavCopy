@@ -57,7 +57,7 @@ namespace CompanionBot
                 .AddSingleton<Logger>()
                 .AddSingleton<InteractionHandler>()
                 .AddSingleton(new HttpClient() { Timeout = TimeSpan.FromSeconds(10) })
-                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
+                .AddSingleton<InteractionService>()
                 .BuildServiceProvider();
 
             _client = _services.GetRequiredService<DiscordSocketClient>();
@@ -65,7 +65,8 @@ namespace CompanionBot
             _client.LeftGuild += GuildLeft;
 
             _client.Ready += ClientReady;
-            Console.WriteLine(_services.GetRequiredService<InteractionService>().RestClient);
+
+            _services.GetRequiredService<InteractiveService>().Log += _services.GetRequiredService<Logger>().Log;
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
