@@ -46,10 +46,6 @@ function wrapper (plugin_info) {
   // use own namespace for plugin
   window.plugin.pnav = function () { };
 
-  BigInt.prototype.toJSON = function () {
-    return `${this.toString()}n`;
-  };
-
   // Language is set in setup() if not already present in localStorage.
   /* eslint-disable no-undefined */
   window.plugin.pnav.settings = {
@@ -59,9 +55,7 @@ function wrapper (plugin_info) {
     lat: null,
     lng: null,
     language: undefined,
-    useBot: false,
-    useThread: false,
-    threadId: 0n
+    useBot: false
   };
   /* eslint-enable no-undefined */
   let selectedGuid = null;
@@ -109,7 +103,6 @@ function wrapper (plugin_info) {
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.',
       bulkExportProgressTitle: 'PokeNav Bulk Export Progress',
-      errorThreadIdText: 'Invalid thread ID. Please enter a valid one or uncheck \'use thread\'.',
       exportDialogTitle: 'Export',
       exportProgressBarDescription: 'Progress:',
       exportStateTextExporting: 'Exporting...',
@@ -216,12 +209,8 @@ function wrapper (plugin_info) {
       pokeNavSettingsTitle: 'Configure PokeNav',
       portalHighlighterName: 'PokeNav State',
       requestAddressDescription: 'Request Address',
-      threadIdDescription: 'Thread ID:',
-      threadIdTitle: 'Enter the thread ID of the thread that should be used for sending the commands. The thread has to be in the channel the WebHook is set up for.',
       useBotText: 'Use Companion Bot',
-      useBotTitle: 'Tick this if you have invited the Companion Bot to your Server. This enables a faster bulk export. More Info on GitHub!',
-      useThreadDescription: 'Use thread',
-      useThreadTitle: 'Send commands to a thread rather than the channel itself. You must specify a thread ID for this to work.'
+      useBotTitle: 'Tick this if you have invited the Companion Bot to your Server. This enables a faster bulk export. More Info on GitHub!'
     },
     de: {
       alertAlreadyExported: 'Dieser POI wurde schon exportiert! Wenn dies mit Sicherheit nicht der Fall ist, wurde das Kommando zum Erstellen in die Zwischenablage kopiert. Passiert dies zu häufig, versuche, den Export-Status in den Einstellungen zurückzusetzen.',
@@ -251,7 +240,6 @@ function wrapper (plugin_info) {
       bulkExportProgressButtonText: 'Pause',
       bulkExportProgressButtonTitle: 'Speichert den Fortschritt lokal und beendet den Export. Starten Sie zum Fortsetzen des Exports diesen in den Einstellungen neu.',
       bulkExportProgressTitle: 'Fortschritt des PokeNav Massen-Exports',
-      errorThreadIdText: 'Ungültige Thread-ID. Bitte geben Sie eine Gültige ein oder entfernen Sie den Haken bei \'Thread verwenden\'.',
       exportDialogTitle: 'Export',
       exportProgressBarDescription: 'Fortschritt:',
       exportStateTextExporting: 'Exportiere...',
@@ -359,12 +347,8 @@ function wrapper (plugin_info) {
       pokeNavSettingsTitle: 'Konfigurieren Sie PokeNav',
       portalHighlighterName: 'PokeNav-Status',
       requestAddressDescription: 'Adresse abfragen',
-      threadIdDescription: 'Thread-ID:',
-      threadIdTitle: 'Geben Sie die Thread-ID des Threads ein, der zum Senden der Kommandos benutzt werden soll. Der Thread muss sich in dem Kanal befinden, für den der WebHook eingereichtet wurde.',
       useBotText: 'Bot verwenden',
-      useBotTitle: 'Setzen Sie den Haken, wenn Sie den Assistenz-Bot auf Ihren Server hinzugefügt haben. Dadurch kann der Massen-Export beschleunigt werden. Mehr Infos dazu auf GitHub!',
-      useThreadDescription: 'Thread verwenden',
-      useThreadTitle: 'Kommandos in einen Thread anstatt den Kanal senden. Dazu muss eine Thread-ID angegeben werden.'
+      useBotTitle: 'Setzen Sie den Haken, wenn Sie den Assistenz-Bot auf Ihren Server hinzugefügt haben. Dadurch kann der Massen-Export beschleunigt werden. Mehr Infos dazu auf GitHub!'
     }
   };
   // #endregion
@@ -572,13 +556,9 @@ function wrapper (plugin_info) {
               formData.append('content', `<@${companionId}> cm`);
               formData.append('username', window.plugin.pnav.settings.name);
               formData.append('file', new Blob([JSON.stringify(data)], {type: 'application/json'}), `creation.json`);
-              let query = window.plugin.pnav.settings.webhookUrl;
-              if (window.plugin.pnav.settings.useThread) {
-                query += `?thread_id=${window.plugin.pnav.settings.threadId}`;
-              }
               $.ajax({
                 method: 'POST',
-                url: query,
+                url: window.plugin.pnav.settings.webhookUrl,
                 contentType: 'application/json',
                 processData: false,
                 data: formData,
@@ -757,17 +737,6 @@ function wrapper (plugin_info) {
           </label>
         </p>
         <p>
-          <label title="${getString('useThreadTitle')}">
-            <input type="checkbox" id="useThread"${window.plugin.pnav.settings.useThread ? ' checked' : ''} onchange="$('#lblThreadId').css('display',$(this).prop('checked') ? '' : 'none')"></input>
-            ${getString('useThreadDescription')}
-          </label>
-          <br>
-          <label id="lblThreadId" title="${getString('threadIdTitle')}"${!window.plugin.pnav.settings.useThread ? ' style="display:none;"' : ''}>
-            ${getString('threadIdDescription')}
-            <input id="threadId" type="number" min="0" step="1" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" value="${window.plugin.pnav.settings.threadId}"></input>
-          </label>
-        </p>
-        <p>
           <Label title="${getString('pnavCodenameTitle')}">
             ${getString('pnavCodenameDescription')}
             <input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/>
@@ -898,18 +867,6 @@ function wrapper (plugin_info) {
             settings.name = $('#pnavCodename').val();
           }
           settings.useBot = $('#useBot').prop('checked');
-          if ($('#useThread').prop('checked') && (!$('#threadId').val() || !(/^\d+$/).test($('#threadId').val()))) {
-            // TODO: Display Error message
-            allOK = false;
-            $('#lblThreadId').after(`<span id="errorThreadId" style="color:red;"><br>${getString('errorThreadIdText')}</span>`);
-          } else {
-            $('#errorThreadId').remove();
-            settings.useThread = $('#useThread').prop('checked');
-            if ((/^\d+$/).test($('#threadId').val())) {
-              settings.threadId = BigInt($('#threadId').val());
-            }
-            // Else: silently ignore it.
-          }
           if (!window.plugin.pnav.timer) {
             if (allOK) {
               localStorage.setItem(
@@ -1494,13 +1451,9 @@ function wrapper (plugin_info) {
     formData.append('content', `<@${companionId}> cm`);
     formData.append('username', window.plugin.pnav.settings.name);
     formData.append('file', new Blob([JSON.stringify(exportdata, null, 2)], {type: 'application/json'}), `creations-${window.plugin.pnav.settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`);
-    let url = window.plugin.pnav.settings.webhookUrl;
-    if (window.plugin.pnav.settings.useThread) {
-      url += `?thread_id=${window.plugin.pnav.settings.threadId}`;
-    }
     $.ajax({
       method: 'POST',
-      url,
+      url: window.plugin.pnav.settings.webhookUrl,
       contentType: false,
       processData: false,
       data: formData,
@@ -1544,11 +1497,7 @@ function wrapper (plugin_info) {
       avatar_url: '',
       content
     };
-    let url = window.plugin.pnav.settings.webhookUrl;
-    if (window.plugin.pnav.settings.useThread) {
-      url += `?thread_id=${window.plugin.pnav.settings.threadId}`;
-    }
-    let success = await fetch(url, {
+    let success = await fetch(window.plugin.pnav.settings.webhookUrl, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(params)
@@ -1592,13 +1541,9 @@ function wrapper (plugin_info) {
     data.append('content', `<@${companionId}> e`);
     data.append('username', window.plugin.pnav.settings.name);
     data.append('file', new Blob([JSON.stringify(changes, null, 2)], {type: 'application/json'}), `edits-${window.plugin.pnav.settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`);
-    let url = window.plugin.pnav.settings.webhookUrl;
-    if (window.plugin.pnav.settings.useThread) {
-      url += `?thread_id=${window.plugin.pnav.settings.threadId}`;
-    }
     $.ajax({
       method: 'POST',
-      url,
+      url: window.plugin.pnav.settings.webhookUrl,
       contentType: false,
       processData: false,
       data,
@@ -1699,11 +1644,7 @@ function wrapper (plugin_info) {
       avatar_url: '',
       content: msg
     };
-    let query = window.plugin.pnav.settings.webhookUrl;
-    if (window.plugin.pnav.settings.useThread) {
-      query += `?thread_id=${window.plugin.pnav.settings.threadId}`;
-    }
-    request.open('POST', query);
+    request.open('POST', window.plugin.pnav.settings.webhookUrl);
     request.setRequestHeader('Content-type', 'application/json');
     request.send(JSON.stringify(params), false);
   }
@@ -1801,14 +1742,7 @@ function wrapper (plugin_info) {
       }
     </style>`);
     if (localStorage['plugin-pnav-settings']) {
-      let savedSettings = JSON.parse(localStorage.getItem('plugin-pnav-settings'), (key, value) => {
-        if (typeof (value) === 'string' && (/^\d+n$/).test(value)) {
-          const v = value.slice(0, -1);
-          console.debug('BigInt parsed', value, BigInt(v));
-          return BigInt(v);
-        }
-        return value;
-      });
+      let savedSettings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
       Object.keys(window.plugin.pnav.settings).forEach((key) => {
         if (typeof (savedSettings[key]) !== 'undefined') {
           window.plugin.pnav.settings[key] = savedSettings[key];
