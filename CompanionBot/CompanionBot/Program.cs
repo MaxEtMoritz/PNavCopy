@@ -6,9 +6,6 @@ using Fergun.Interactive;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Resources;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Globalization;
@@ -39,7 +36,8 @@ namespace CompanionBot
 
             _services = new ServiceCollection()
                 .AddSingleton(_config)
-                .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig() {
+                .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig()
+                {
                     MessageCacheSize = 20,
                     GatewayIntents = GatewayIntents.GuildMessageReactions
                     | GatewayIntents.GuildMessages
@@ -58,8 +56,8 @@ namespace CompanionBot
                 .AddSingleton<GuildSettings>()
                 .AddSingleton<Logger>()
                 .AddSingleton<InteractionHandler>()
-                .AddSingleton(new HttpClient() {Timeout=TimeSpan.FromSeconds(10)})
-                .AddSingleton(x=>new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
+                .AddSingleton(new HttpClient() { Timeout = TimeSpan.FromSeconds(10) })
+                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
                 .BuildServiceProvider();
 
             _client = _services.GetRequiredService<DiscordSocketClient>();

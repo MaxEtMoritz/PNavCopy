@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -71,6 +72,8 @@ namespace CompanionBot
             if (result.Error.HasValue)
             {
                 ChannelPermissions perms = (context.Guild as SocketGuild).GetUser(_client.CurrentUser.Id).GetPermissions(context.Channel as IGuildChannel);
+                CultureInfo.CurrentCulture = new(context.Guild.PreferredLocale);
+                CultureInfo.CurrentUICulture = new(context.Guild.PreferredLocale);
                 switch (result.Error.Value)
                 {
                     case CommandError.UnknownCommand:
@@ -81,49 +84,50 @@ namespace CompanionBot
                     case CommandError.ParseFailed:
                         await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Parsing of command failed in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
                         if (perms.SendMessages)
-                            await context.Message.ReplyAsync($"Invalid command structure: {result.ErrorReason}.");
+                            await context.Message.ReplyAsync(String.Format(Properties.Resources.invalidCommandStructure, result.ErrorReason));
                         break;
                     case CommandError.BadArgCount:
                         int minCount = 0;
                         int maxCount = 0;
-                        command.Value.Parameters.ToList().ForEach(pi => {
+                        command.Value.Parameters.ToList().ForEach(pi =>
+                        {
                             if (!pi.IsOptional)
                                 minCount++;
                             maxCount++;
                         });
                         await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Too few or many parameters. Expected {minCount} - {maxCount}."));
                         if (perms.SendMessages)
-                            await context.Message.ReplyAsync($"Too few or too many parameters.\nExpected {minCount} to {maxCount}.");
+                            await context.Message.ReplyAsync(String.Format(Properties.Resources.parameterMismatch, minCount, maxCount));
                         break;
                     case CommandError.ObjectNotFound:
                         await _logger.Log(new LogMessage(LogSeverity.Error, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"ObjectNotFound while parsing parameter in guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
                         if (perms.SendMessages)
-                            await context.Message.ReplyAsync($"Could not parse Command parameter(s): {result.ErrorReason}.");
+                            await context.Message.ReplyAsync(String.Format(Properties.Resources.paramParseFailed, result.ErrorReason));
                         break;
                     case CommandError.MultipleMatches:
                         await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Multiple matches while parsing parameter in guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
                         if (perms.SendMessages)
-                            await context.Message.ReplyAsync($"There are multiple matches for one or more parameters. Please refine your query.\n```{result.ErrorReason}```");
+                            await context.Message.ReplyAsync(String.Format(Properties.Resources.parameterMultiMatches, result.ErrorReason));
                         break;
                     case CommandError.UnmetPrecondition:
                         await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Unmet precondition in guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
                         if (perms.SendMessages)
-                            await context.Message.ReplyAsync($"This command is not allowed in the current context: {result.ErrorReason}.");
+                            await context.Message.ReplyAsync(String.Format(Properties.Resources.unmetPreconditionTextBased, result.ErrorReason));
                         break;
                     case CommandError.Exception:
                         await _logger.Log(new LogMessage(LogSeverity.Error, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"CommandHandler Exception thrown for guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
                         if (perms.SendMessages)
-                            await context.Message.ReplyAsync($"⚠Internal Error.⚠\nThe bot has encountered a problem while executing this command. If the error persists, please open a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing as much information as possible.\nThis Error message will (hopefully😅) help the developer investigate:\n```{result.ErrorReason}```");
+                            await context.Message.ReplyAsync(String.Format(Properties.Resources.textCommandException, result.ErrorReason));
                         break;
                     case CommandError.Unsuccessful:
                         await _logger.Log(new LogMessage(LogSeverity.Info, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Unsuccessful command in guild  {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
                         if (perms.SendMessages)
-                            await context.Message.ReplyAsync($"This command failed: {result.ErrorReason}.");
+                            await context.Message.ReplyAsync(String.Format(Properties.Resources.textCommandUnsuccessful, result.ErrorReason));
                         break;
                     default:
                         await _logger.Log(new LogMessage(LogSeverity.Warning, command.IsSpecified ? command.Value.Name : this.GetType().Name, $"Command error in guild {context.Guild.Name} ({context.Guild.Id}): {result.ErrorReason}"));
                         if (perms.SendMessages)
-                            await context.Message.ReplyAsync("Error: " + result.ErrorReason);
+                            await context.Message.ReplyAsync(String.Format(Properties.Resources.textCommandException, result.ErrorReason));
                         break;
                 }
             }

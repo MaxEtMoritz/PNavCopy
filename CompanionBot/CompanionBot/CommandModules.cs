@@ -26,11 +26,15 @@ namespace CompanionBot
             _client = socketClient;
         }
 
-        [Command("createmultiple", RunMode = RunMode.Async), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm"), RequireAttachedJson]
-        public async Task CreatePoIAsync() // Async because download could take time
+        protected override void BeforeExecute(CommandInfo command)
         {
             CultureInfo.CurrentCulture = new(Context.Guild.PreferredLocale);
             CultureInfo.CurrentUICulture = new(Context.Guild.PreferredLocale);
+        }
+
+        [Command("createmultiple", RunMode = RunMode.Async), Alias("cm"), Summary("Receives data for multiple PoI from the IITC plugin and sends the data one by one for the PokeNav Bot."), RequireWebhook(Group = "Perm"), RequireOwner(Group = "Perm"), RequireAttachedJson]
+        public async Task CreatePoIAsync() // Async because download could take time
+        {
             ChannelPermissions perms = Context.Guild.GetUser(_client.CurrentUser.Id).GetPermissions(Context.Channel as IGuildChannel);
             string dataString = "";
             try
@@ -42,7 +46,7 @@ namespace CompanionBot
                 dataString = "[]";
                 await _logger.Log(new LogMessage(LogSeverity.Error, nameof(CreatePoIAsync), $"Download of attached File failed: {e.Message}", e));
                 if (perms.SendMessages)
-                    await Context.Message.ReplyAsync(String.Format(Properties.Resources.downloadFailed,e.Message));
+                    await Context.Message.ReplyAsync(String.Format(Properties.Resources.downloadFailed, e.Message));
             }
             PortalData[] data;
             try
@@ -51,7 +55,7 @@ namespace CompanionBot
             }
             catch (Exception e)
             {
-                await Context.Message.ReplyAsync(String.Format(Properties.Resources.jsonParsingFailed,e.Message));
+                await Context.Message.ReplyAsync(String.Format(Properties.Resources.jsonParsingFailed, e.Message));
                 await _logger.Log(new LogMessage(LogSeverity.Error, "createmultiple", $"JSON Parsing failed in guild {Context.Guild.Name} ({Context.Guild.Id}): {e.Message}", e));
                 return;
             }

@@ -221,6 +221,15 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Invalid command structure: {0}. ähnelt.
+        /// </summary>
+        internal static string invalidCommandStructure {
+            get {
+                return ResourceManager.GetString("invalidCommandStructure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Error while parsing file: {0} ähnelt.
         /// </summary>
         internal static string jsonParsingFailed {
@@ -290,6 +299,35 @@ namespace CompanionBot.Properties {
         internal static string noMsgHistoryPerm {
             get {
                 return ResourceManager.GetString("noMsgHistoryPerm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Too few or too many parameters.
+        ///Expected {0} to {1}. ähnelt.
+        /// </summary>
+        internal static string parameterMismatch {
+            get {
+                return ResourceManager.GetString("parameterMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die There are multiple matches for one or more parameters. Please refine your query.
+        ///```{0}``` ähnelt.
+        /// </summary>
+        internal static string parameterMultiMatches {
+            get {
+                return ResourceManager.GetString("parameterMultiMatches", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Could not parse Command parameter(s): {0}. ähnelt.
+        /// </summary>
+        internal static string paramParseFailed {
+            get {
+                return ResourceManager.GetString("paramParseFailed", resourceCulture);
             }
         }
         
@@ -453,6 +491,27 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Internal Error. ⚠
+        ///The bot has encountered a problem while executing this command. If the error persists, please open a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing as much information as possible.
+        ///This Error message will (hopefully😅) help the developer investigate:
+        ///```{0}``` ähnelt.
+        /// </summary>
+        internal static string textCommandException {
+            get {
+                return ResourceManager.GetString("textCommandException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die This command failed: {0}. ähnelt.
+        /// </summary>
+        internal static string textCommandUnsuccessful {
+            get {
+                return ResourceManager.GetString("textCommandUnsuccessful", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Time remaining ähnelt.
         /// </summary>
         internal static string timeRemaining {
@@ -471,12 +530,21 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ This interaction is not allowed in this context. ❌
+        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ This interaction is not allowed in the current context. ❌
         ///{0} ähnelt.
         /// </summary>
         internal static string unmetPrecondition {
             get {
                 return ResourceManager.GetString("unmetPrecondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die This command is not allowed in the current context: {0}. ähnelt.
+        /// </summary>
+        internal static string unmetPreconditionTextBased {
+            get {
+                return ResourceManager.GetString("unmetPreconditionTextBased", resourceCulture);
             }
         }
         

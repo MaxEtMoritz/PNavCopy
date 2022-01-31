@@ -280,7 +280,7 @@ namespace CompanionBot
                 {
                     embed.Title = Properties.Resources.actionRequired;
                     embed.Color = Color.DarkRed;
-                    embed.Description = String.Format(Properties.Resources.selectRightLocation,_settings[guild].PNavChannel.Value);
+                    embed.Description = String.Format(Properties.Resources.selectRightLocation, _settings[guild].PNavChannel.Value);
                 }
 
                 if (progr && (!create || createQueue.IsEmpty) && (!edit || editQueue.IsEmpty))

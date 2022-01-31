@@ -181,6 +181,9 @@ Bitte kontaktieren Sie den Entwickler, indem Sie einen Issue auf [GitHub](https:
     <value>❌ Dieser Befehl ist fehlgeschlagen. ❌
 Grund: {0}</value>
   </data>
+  <data name="invalidCommandStructure" xml:space="preserve">
+    <value>Ungültige Befehlsstruktur: {0}.</value>
+  </data>
   <data name="jsonParsingFailed" xml:space="preserve">
     <value>Fehler beim Parsen der Datei: {0}</value>
   </data>
@@ -205,6 +208,17 @@ Stellen Sie sicher, dass PokeNav in dem Kanal antworten kann, in dem Sie den Bef
   </data>
   <data name="noMsgHistoryPerm" xml:space="preserve">
     <value>Berechtigung "Nachrichtenverlauf anzeigen" nicht erteilt. Der PoI-Auswahldialog kann deshalb nicht verarbeitet werden =&gt; Die Bearbeitung wurde übersprungen.</value>
+  </data>
+  <data name="parameterMismatch" xml:space="preserve">
+    <value>Zu viele oder zu wenige Parameter.
+{0} bis {1} Parameter wurden erwartet.</value>
+  </data>
+  <data name="parameterMultiMatches" xml:space="preserve">
+    <value>Ein oder mehr Parameter sind mehrdeutig. Bitte überarbeiten Sie Ihre Anfrage.
+```{0}```</value>
+  </data>
+  <data name="paramParseFailed" xml:space="preserve">
+    <value>Konnte mindestens einen Parameter nicht parsen: {0}.</value>
   </data>
   <data name="paused" xml:space="preserve">
     <value>Pausiert</value>
@@ -263,6 +277,15 @@ Stellen Sie sicher, dass Sie dem Bot die nötigen Berechtigungen für &lt;#{4}&g
     <value>
 Dies ist die Test-Instanz.</value>
   </data>
+  <data name="textCommandException" xml:space="preserve">
+    <value>⚠ Interner Fehler. ⚠
+Es ist ein Fehler bei der Ausführung dieses Befehls aufgetreten. Wenn der Fehler wiederholt auftritt, eröffnen Sie einen GitHub-Issue unter https://github.com/MaxEtMoritz/PNavCopy und geben Sie so viel Information wie möglich an.
+Diese Fehlermeldung wird dem Entwickler (hoffentlich😅) bei der Fehlerbehebung helfen:
+```{0}```</value>
+  </data>
+  <data name="textCommandUnsuccessful" xml:space="preserve">
+    <value>Dieser Befehl schlug fehl: {0}.</value>
+  </data>
   <data name="timeRemaining" xml:space="preserve">
     <value>Verbleibende Zeit</value>
   </data>
@@ -272,6 +295,9 @@ Dies ist die Test-Instanz.</value>
   <data name="unmetPrecondition" xml:space="preserve">
     <value>❌ Dieser Befehl ist im aktuellen Kontext nicht erlaubt. ❌
 {0}</value>
+  </data>
+  <data name="unmetPreconditionTextBased" xml:space="preserve">
+    <value>Dieser Befehl ist im aktuellen Kontext nicht erlaubt: {0}.</value>
   </data>
   <data name="yesIAm" xml:space="preserve">
     <value>Ja, bin ich</value>
