@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Fergun.Interactive;
 using System.Linq;
 using System.Globalization;
+using System.Collections.Generic;
+using System.Text;
 
 namespace CompanionBot
 {
@@ -34,7 +36,7 @@ namespace CompanionBot
             CultureInfo.CurrentUICulture = new(Context.Interaction.UserLocale);
         }
 
-        [SlashCommand("mod-channel", "Requests PokeNav's mod channel and saves it."), RequireBotPermission(ChannelPermission.ViewChannel, Group = "g"), RequireContext(ContextType.Guild, Group = "g")]
+        [SlashCommand("mod-channel", "Requests PokeNav's mod channel and saves it."), RequireBotPermission(ChannelPermission.ViewChannel), EnabledInDm(false)]
         public async Task SetModChannelAsync()
         {
             Task T = RespondAsync($"<@{_config["pokeNavId"]}> show mod-channel");
@@ -63,14 +65,14 @@ namespace CompanionBot
                 await FollowupAsync(Properties.Resources.modChannelFail);
         }
 
-        [SlashCommand("pause", "Pauses the currently running PokeNav POI import."), RequireContext(ContextType.Guild)]
+        [SlashCommand("pause", "Pauses the currently running PokeNav POI import."), EnabledInDm(false)]
         public Task Pause()
         {
             Console.WriteLine(CultureInfo.CurrentCulture.Name);
             return _queue.Pause(Context);
         }
 
-        [SlashCommand("resume", "Restarts the previously paused PokeNav POI import."), RequireContext(ContextType.Guild)]
+        [SlashCommand("resume", "Restarts the previously paused PokeNav POI import."), EnabledInDm(false)]
         public Task Resume()
         {
             return _queue.Resume(Context);
@@ -83,7 +85,9 @@ namespace CompanionBot
 #endif
         public async Task ConfirmDisconnectAsync()
         {
-            await RespondAsync(Properties.Resources.goodbye, ephemeral: true);
+            await RespondAsync("Saving state...", ephemeral: true);
+            await _queue.SaveState();
+            await FollowupAsync(Properties.Resources.goodbye, ephemeral: true);
             await _client.LogoutAsync();
             await _client.StopAsync();
             Environment.Exit(0);
@@ -94,9 +98,13 @@ namespace CompanionBot
     public class ManualSlashModules : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly Logger _logger;
-        public ManualSlashModules(Logger logger)
+        private readonly MessageQueue _queue;
+        private readonly DiscordSocketClient _client;
+        public ManualSlashModules(Logger logger, MessageQueue queue, DiscordSocketClient client)
         {
             _logger = logger;
+            _queue = queue;
+            _client = client;
         }
 
         public override void BeforeExecute(ICommandInfo cmd)
@@ -105,7 +113,7 @@ namespace CompanionBot
             CultureInfo.CurrentUICulture = new(Context.Interaction.UserLocale);
         }
 
-        [SlashCommand("disconnect", "Disconnects the Bot from the gateway."), RequireOwner, DefaultPermission(false)]
+        [SlashCommand("disconnect", "Disconnects the Bot from the gateway."), RequireOwner]
         public async Task DisconnectAsync()
         {
             string prompt = Properties.Resources.sure;
@@ -122,6 +130,43 @@ namespace CompanionBot
 #endif
                 ButtonStyle.Danger, new Emoji("⚠"))
                 .Build());
+        }
+
+        [SlashCommand("status", "shows the current bot status"), RequireOwner]
+        public async Task BotStatus()
+        {
+            var status = _queue.GetState();
+            // embed fields have max length of 1024 chars (https://discord.com/developers/docs/resources/channel#embed-object-embed-limits)
+            StringBuilder servers = new(100, 1024);
+            StringBuilder creations = new(100, 1024);
+            StringBuilder edits = new(100, 1024);
+            foreach (var state in status)
+            {
+                try
+                {
+                    servers.AppendLine(state.server.ToString());
+                    creations.AppendLine(state.creations.ToString());
+                    edits.AppendLine(state.edits.ToString());
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    break;
+                }
+            }
+            List<EmbedFieldBuilder> fields = new()
+            {
+                new() { IsInline = true, Name = Properties.Resources.guildId, Value = String.IsNullOrEmpty(servers.ToString()) ? "---" : servers.ToString() },
+                new() { IsInline = true, Name = Properties.Resources.numCreations, Value = String.IsNullOrEmpty(creations.ToString()) ? "---" : creations.ToString() },
+                new() { IsInline = true, Name = Properties.Resources.numEdits, Value = String.IsNullOrEmpty(edits.ToString()) ? "---" : edits.ToString() }
+            };
+            EmbedBuilder embed = new EmbedBuilder()
+                .WithTitle(Properties.Resources.currentBotState)
+                .WithDescription(String.Format(Properties.Resources.currentlyXServers, _client.Guilds.Count))
+                .WithCurrentTimestamp()
+                .WithFooter(Properties.Resources.dataByBot)
+                .WithAuthor(_client.CurrentUser)
+                .WithFields(fields);
+            await RespondAsync(embed: embed.Build(), ephemeral: true);
         }
     }
 }

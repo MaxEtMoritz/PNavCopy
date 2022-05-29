@@ -16,6 +16,9 @@ using ComposableAsync;
 using RateLimiter;
 using Discord.Interactions;
 using System.Globalization;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.IO;
 
 namespace CompanionBot
 {
@@ -27,8 +30,8 @@ namespace CompanionBot
         private readonly HttpClient _webClient = new(TimeLimiter.GetFromMaxCountByInterval(1, TimeSpan.FromSeconds(1)).AsDelegatingHandler()); // 1 request per second at max!
         private readonly string prefix;
         private readonly ConcurrentDictionary<ulong, CancellationTokenSource> tokens = new();
-        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<string>> createQueues = new();
-        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<EditData>> editQueues = new();
+        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<string>> createQueues;
+        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<EditData>> editQueues;
         private readonly ConcurrentDictionary<ulong, Task> workers = new();
         private readonly ConcurrentDictionary<ulong, IUserMessage> progress = new();
         private readonly GuildSettings _settings;
@@ -50,6 +53,26 @@ namespace CompanionBot
             options.RetryMode = RetryMode.RetryRatelimit;
             typingOptions = RequestOptions.Default;
             typingOptions.RetryMode = RetryMode.AlwaysFail;
+
+            //deserialize state
+            if (File.Exists("pendingCreations.json"))
+            {
+                var ms = File.OpenRead("pendingCreations.json");
+                createQueues = JsonSerializer.Deserialize<ConcurrentDictionary<ulong, ConcurrentQueue<string>>>(ms);
+                _logger.Log(new(LogSeverity.Info, nameof(MessageQueue), "deserialized createQueues."));
+                ms.Close();
+                File.Delete("pendingCreations.json");
+            }
+            createQueues ??= new();
+            if (File.Exists("pendingEdits.json"))
+            {
+                var ms = File.OpenRead("pendingEdits.json");
+                editQueues = JsonSerializer.Deserialize<ConcurrentDictionary<ulong, ConcurrentQueue<EditData>>>(ms);
+                _logger.Log(new(LogSeverity.Info, nameof(MessageQueue), "deserialized editQueues."));
+                ms.Close();
+                File.Delete("pendingEdits.json");
+            }
+            editQueues ??= new();
         }
 
         public Task EnqueueCreate(ICommandContext context, List<string> commands, ChannelPermissions invokingPerms)
@@ -180,6 +203,94 @@ namespace CompanionBot
                 await context.Interaction.RespondAsync(Properties.Resources.resumeAlreadyRunning);
                 await _logger.Log(new LogMessage(LogSeverity.Info, nameof(Resume), $"Resume failed in Guild {context.Guild.Name} ({context.Guild.Id}): Bulk Import was already running."));
             }
+        }
+
+        internal List<(ulong server, int creations, int edits)> GetState()
+        {
+            List<(ulong, int, int)> result = new();
+            // get keys that are in both dicts
+            foreach (ulong key in createQueues.Keys.Intersect(editQueues.Keys))
+            {
+                int c = 0;
+                if (createQueues.TryGetValue(key, out var v))
+                {
+                    c = v.Count;
+                }
+                int e = 0;
+                if (editQueues.TryGetValue(key, out var v2))
+                {
+                    e = v2.Count;
+                }
+                if (c > 0 || e > 0)
+                    result.Add((key, c, e));
+            }
+            // get keys only in createQueues
+            foreach (ulong key in createQueues.Keys.Except(editQueues.Keys))
+            {
+                int c = 0;
+                if (createQueues.TryGetValue(key, out var v))
+                {
+                    c = v.Count;
+                }
+                if (c > 0)
+                    result.Add((key, c, 0));
+            }
+            // get keys only in editQueues
+            foreach (ulong key in editQueues.Keys.Except(createQueues.Keys))
+            {
+                int e = 0;
+                if (editQueues.TryGetValue(key, out var v2))
+                {
+                    e = v2.Count;
+                }
+                if (e > 0)
+                    result.Add((key, 0, e));
+            }
+            return result;
+        }
+
+        internal async Task SaveState()
+        {
+            // cancel all workers and wait for them
+            foreach (CancellationTokenSource token in tokens.Values)
+            {
+                if (!token.IsCancellationRequested)
+                {
+                    await _logger.Log(new(LogSeverity.Debug, nameof(SaveState), "canceling token..."));
+                    token.Cancel();
+                }
+            }
+            var waiter = Task.WhenAll(workers.Values);
+            try
+            {
+                waiter.Wait(100000);
+            }
+            catch (AggregateException agg)
+            {
+                if (agg.InnerExceptions.Any(x => !(x is TaskCanceledException)))
+                {
+                    throw;
+                }
+                else
+                {
+                    await _logger.Log(new LogMessage(LogSeverity.Info, nameof(SaveState), $"{agg.InnerExceptions.Count} TaskCanceledExceptions"));
+                }
+            }
+            if (!waiter.IsCompleted)
+            {
+                await _logger.Log(new(LogSeverity.Warning, nameof(SaveState), "Not all workers completed after 100 seconds, maybe inconsistencies..."));
+            }
+
+            // serialize creations and edits to json
+            var ms = File.Create("pendingCreations.json");
+            await JsonSerializer.SerializeAsync(ms, createQueues);
+            await ms.FlushAsync();
+            ms.Close();
+
+            ms = File.Create("pendingEdits.json");
+            await JsonSerializer.SerializeAsync(ms, editQueues);
+            await ms.FlushAsync();
+            ms.Close();
         }
 
         private Task<bool> TryToSendMessage(IMessageChannel channel, ref ChannelPermissions perms, string text = null, Embed embed = null, RequestOptions options = null, ushort numTry = 0)

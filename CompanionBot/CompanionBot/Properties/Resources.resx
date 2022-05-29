@@ -128,6 +128,19 @@
     <value>Creations</value>
     <comment>progress embed, heading of creations</comment>
   </data>
+  <data name="currentBotState" xml:space="preserve">
+    <value>Current bot status</value>
+    <comment>Bot state embed title</comment>
+  </data>
+  <data name="currentlyXServers" xml:space="preserve">
+    <value>The bot is currently in {0} servers.
+Not yet processed data:</value>
+    <comment>Bot state embed description</comment>
+  </data>
+  <data name="dataByBot" xml:space="preserve">
+    <value>Data by PNavCopy</value>
+    <comment>Bot state embed footer</comment>
+  </data>
   <data name="downloadFailed" xml:space="preserve">
     <value>Download of attached file failed: {0}</value>
     <comment>cm / e attachment could not be downloaded</comment>
@@ -186,6 +199,10 @@ Please contact the bot owner by opening an issue at [GitHub](https://github.com/
     <value>Disconnecting now. Goodbye!</value>
     <comment>/disconnect confirmed by Button click</comment>
   </data>
+  <data name="guildId" xml:space="preserve">
+    <value>Guild ID</value>
+    <comment>Bot state embed</comment>
+  </data>
   <data name="importing" xml:space="preserve">
     <value>Importing...</value>
     <comment>progress embed heading while working</comment>
@@ -230,6 +247,14 @@ Make sure PokeNav is able to respond in the Channel where you execute the comman
   <data name="noMsgHistoryPerm" xml:space="preserve">
     <value>Message History permission missing. Unable to handle location select dialog =&gt; edit skipped.</value>
     <comment>The bot lacks "Read message history" permission in the mod-channel but needs it.</comment>
+  </data>
+  <data name="numCreations" xml:space="preserve">
+    <value># creations</value>
+    <comment>Bot state embed</comment>
+  </data>
+  <data name="numEdits" xml:space="preserve">
+    <value># edits</value>
+    <comment>Bot state embed</comment>
   </data>
   <data name="parameterMismatch" xml:space="preserve">
     <value>Too few or too many parameters.

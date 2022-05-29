@@ -88,6 +88,34 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Current bot status ähnelt.
+        /// </summary>
+        internal static string currentBotState {
+            get {
+                return ResourceManager.GetString("currentBotState", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The bot is currently in {0} servers.
+        ///Not yet processed data: ähnelt.
+        /// </summary>
+        internal static string currentlyXServers {
+            get {
+                return ResourceManager.GetString("currentlyXServers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Data by PNavCopy ähnelt.
+        /// </summary>
+        internal static string dataByBot {
+            get {
+                return ResourceManager.GetString("dataByBot", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Download of attached file failed: {0} ähnelt.
         /// </summary>
         internal static string downloadFailed {
@@ -202,6 +230,15 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Guild ID ähnelt.
+        /// </summary>
+        internal static string guildId {
+            get {
+                return ResourceManager.GetString("guildId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Importing... ähnelt.
         /// </summary>
         internal static string importing {
@@ -299,6 +336,24 @@ namespace CompanionBot.Properties {
         internal static string noMsgHistoryPerm {
             get {
                 return ResourceManager.GetString("noMsgHistoryPerm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die # creations ähnelt.
+        /// </summary>
+        internal static string numCreations {
+            get {
+                return ResourceManager.GetString("numCreations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die # edits ähnelt.
+        /// </summary>
+        internal static string numEdits {
+            get {
+                return ResourceManager.GetString("numEdits", resourceCulture);
             }
         }
         

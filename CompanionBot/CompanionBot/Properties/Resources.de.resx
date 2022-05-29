@@ -126,6 +126,16 @@
   <data name="creations" xml:space="preserve">
     <value>Erstellungen</value>
   </data>
+  <data name="currentBotState" xml:space="preserve">
+    <value>Aktueller Bot-Status</value>
+  </data>
+  <data name="currentlyXServers" xml:space="preserve">
+    <value>Der Bot befindet sich aktuell in {0} Servern.
+Noch nicht verarbeitete Daten:</value>
+  </data>
+  <data name="dataByBot" xml:space="preserve">
+    <value>Daten von PNavCopy</value>
+  </data>
   <data name="downloadFailed" xml:space="preserve">
     <value>Download der angehängten Datei fehlgeschlagen: {0}</value>
   </data>
@@ -174,6 +184,9 @@ Bitte kontaktieren Sie den Entwickler, indem Sie einen Issue auf [GitHub](https:
   <data name="goodbye" xml:space="preserve">
     <value>Beende jetzt die Verbindung. Servus!</value>
   </data>
+  <data name="guildId" xml:space="preserve">
+    <value>Server-ID</value>
+  </data>
   <data name="importing" xml:space="preserve">
     <value>Importiere...</value>
   </data>
@@ -208,6 +221,12 @@ Stellen Sie sicher, dass PokeNav in dem Kanal antworten kann, in dem Sie den Bef
   </data>
   <data name="noMsgHistoryPerm" xml:space="preserve">
     <value>Berechtigung "Nachrichtenverlauf anzeigen" nicht erteilt. Der PoI-Auswahldialog kann deshalb nicht verarbeitet werden =&gt; Die Bearbeitung wurde übersprungen.</value>
+  </data>
+  <data name="numCreations" xml:space="preserve">
+    <value># Erstellungen</value>
+  </data>
+  <data name="numEdits" xml:space="preserve">
+    <value># Bearbeitungen</value>
   </data>
   <data name="parameterMismatch" xml:space="preserve">
     <value>Zu viele oder zu wenige Parameter.

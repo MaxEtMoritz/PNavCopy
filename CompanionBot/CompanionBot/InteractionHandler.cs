@@ -50,7 +50,6 @@ namespace CompanionBot
 
         private async Task HandleInteraction(SocketInteraction arg)
         {
-            await _logger.Log(new LogMessage(LogSeverity.Debug, nameof(HandleInteraction), "HandleInteraction Called."));
             try
             {
                 // Create an execution context that matches the generic type parameter of your InteractionModuleBase<T> modules
@@ -88,13 +87,22 @@ namespace CompanionBot
         {
             ulong testguildId = _config.GetValue<ulong>("testServerId", 0);
             if (testguildId > 0)
-            {
+            {                    
                 var disconnectCmd = _service.GetSlashCommandInfo<ManualSlashModules>(nameof(ManualSlashModules.DisconnectAsync));
                 var testGuild = _client.GetGuild(testguildId);
                 var botOwner = (await _client.GetApplicationInfoAsync()).Owner;
-                await _service.AddCommandsToGuildAsync(testGuild, false, disconnectCmd);
-                await _service.ModifySlashCommandPermissionsAsync(disconnectCmd, testGuild, new ApplicationCommandPermission(botOwner, true));
-                await _logger.Log(new LogMessage(LogSeverity.Debug, nameof(RegisterManualCommands), "Registered disconnect command and modified permissions for it."));
+                var statusCommand = _service.GetSlashCommandInfo<ManualSlashModules>(nameof(ManualSlashModules.BotStatus));
+                await _service.AddCommandsToGuildAsync(testGuild, false, disconnectCmd, statusCommand);
+                try
+                {
+                    await _service.ModifySlashCommandPermissionsAsync(disconnectCmd, testGuild, new(testGuild.EveryoneRole, false), new(botOwner, true));
+                    await _service.ModifySlashCommandPermissionsAsync(statusCommand, testGuild, new(testGuild.EveryoneRole, false), new(botOwner, true));
+                }
+                catch (Exception e)
+                {
+                    await _logger.Log(new(LogSeverity.Warning, nameof(RegisterManualCommands), "permission modification broken.", e));
+                }
+                await _logger.Log(new LogMessage(LogSeverity.Debug, nameof(RegisterManualCommands), "Registered disconnect + status command and modified permissions for it."));
             }
             else
             {
@@ -104,7 +112,6 @@ namespace CompanionBot
 
         private async Task CommandExecuted(ICommandInfo info, IInteractionContext bla, IResult result)
         {
-            await _logger.Log(new LogMessage(LogSeverity.Debug, nameof(CommandExecuted), "CommandExecuted Handler called."));
             SocketInteractionContext<SocketInteraction> context = bla as SocketInteractionContext<SocketInteraction>;
             Func<string, Embed[], bool, bool, AllowedMentions, MessageComponent, Embed, RequestOptions, Task> respond;
             if (context.Interaction.HasResponded)
