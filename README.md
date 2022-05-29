@@ -1,4 +1,8 @@
 # IITC-Plugin: Copy PokeNav Command
+
+[![Discord](https://discord.com/api/guilds/781826303128371241/widget.png?style=shield)](https://discord.gg/j7ZZ2N8r73)
+
+
 IITC Plugin that copies Portal Info to Clipboard or sends it directly to Discord via WebHook in the format needed by the PokeNav Discord Bot as follows:
 
 ```@PokeNav create poi <type> "<name>" <latitude> <longitude> "ex-eligible: 1" (if Ex Gym)```
@@ -54,7 +58,7 @@ The Companion Bot is a helper Bot that recieves a JSON file from the WebHook con
 
 After the Export, the Bot does its Work automatically without the need to keep IITC open so long.
 
-__Note:__ The Companion Bot is still under construction, but if you want to test it, leave a comment on [this issue](https://github.com/MaxEtMoritz/PNavCopy/issues/10). Please let me know the nickname you have set for the [PokeNav Discord server](https://discord.gg/h3UP37y3zk) (you can change it temporarily if you like). I will DM you then. You will need to invite me to the server you want to try the bot on and give me "manage server" permission (the bot is set to private so only i can add it to servers). When i added the bot, i can leave your server again if you like.
+You can invite it to your server with **[This Link](https://discord.com/api/oauth2/authorize?client_id=806533005626572813&permissions=274878131264&scope=bot%20applications.commands)**.
 
 ## How to contribute?
 You can contribute by...

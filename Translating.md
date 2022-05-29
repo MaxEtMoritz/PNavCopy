@@ -1,10 +1,14 @@
-# How to Translate:
+# Userscript
+
+This describes how to translate the Userscript. Instructions for the Companion Bot see below.
+
+## How to Translate:
 At the beginning of the Userscript you can find all strings that need to be translated. If you want to translate in a language, just copy all english strings and paste them below, giving a new language code (like en, de, ru etc., currently not something like en-US etc.).
-# Translation Syntax:
+## Translation Syntax:
 Each string has a key that is the identifier of the string. Don't change it, otherwise the translated string will not be found and the English string will be displayed!
 
 The Values to the Keys can be simple strings like ```'Hello World!'``` or they can be in a structure called 'nested strings' by me:
-# 'Nested string' Syntax:
+## 'Nested string' Syntax:
 ```yaml
 {
     ...
@@ -67,5 +71,13 @@ Be cautious with references and do not build endless loops which will lead to a 
 }
 ```
 
-# Future improvements of 'nested string' syntax:
+## Future improvements of 'nested string' syntax:
 At the moment, passing variables in the options is not supported because i did not need it. I could imagine it being done in a kind of template syntax like ```'${varName}'``` but without using real template strings. If you need that, feel free to implement it Yourself.
+
+
+# Companion Bot
+The repository contains a [Resources.resx](https://github.com/MaxEtMoritz/PNavCopy/blob/main/CompanionBot/CompanionBot/Properties/Resources.resx) file which contains all translatable strings in english.
+
+To add a new language, create a copy of this file and name it Resources.\<language code\>.resx, like e.g. [Resources.de.resx](https://github.com/MaxEtMoritz/PNavCopy/blob/main/CompanionBot/CompanionBot/Properties/Resources.de.resx).
+
+For the best convenience, if you work with Visual Studio, you can install the [ResXManager extension](https://marketplace.visualstudio.com/items?itemName=TomEnglert.ResXManager) that greatly simplifies translation of resx files.

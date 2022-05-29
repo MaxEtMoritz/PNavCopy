@@ -7,6 +7,5 @@ The Plugin is based on a plugin included in a [Fork of the original IITC Mobile 
 
 ## Companion Bot
 - [Discord.Net](https://github.com/discord-net/Discord.Net), License: [MIT](https://github.com/discord-net/Discord.Net/blob/dev/LICENSE)
-- [Discord.InteractivityAddon by Playwo](https://github.com/Playwo/Discord.InteractivityAddon), License: [MIT](https://github.com/Playwo/Discord.InteractivityAddon/blob/main/LICENSE)
-- [Discord.Addons.CommandsExtension by Charly6596](https://github.com/Charly6596/Discord.Addons.CommandsExtension), License: [MIT](https://github.com/Charly6596/Discord.Addons.CommandsExtension/blob/master/LICENSE)
+- [Fergun.Interactive by d4n3436](https://github.com/d4n3436/Fergun.Interactive), License: [MIT](https://github.com/d4n3436/Fergun.Interactive/blob/master/LICENSE)
 - [RateLimiter by David Desmaisons](https://github.com/David-Desmaisons/RateLimiter), License: [MIT](https://github.com/David-Desmaisons/RateLimiter/blob/master/LICENSE)
