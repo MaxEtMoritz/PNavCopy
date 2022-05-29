@@ -302,6 +302,10 @@ Expected {0} to {1}.</value>
     <value>PokeNav did not update the select message in time, please try again manually.</value>
     <comment>PokeNav did not update the "select location" message in time.</comment>
   </data>
+  <data name="probablyFinished" xml:space="preserve">
+    <value>Probably finished {0}</value>
+    <comment>progress embed, time remaining description</comment>
+  </data>
   <data name="promptMissingPerms" xml:space="preserve">
     <value>⚠ Attention! ⚠ The Bot is missing permissions in the PokeNav mod-channel:
 	{0} View Channel
@@ -322,6 +326,10 @@ Make sure to grant the neccessary permissions for the bot for &lt;#{4}&gt;.</val
   <data name="resumeAlreadyRunning" xml:space="preserve">
     <value>ℹ Bulk import is already running, no need to resume.</value>
     <comment>/resume when import is already in progress</comment>
+  </data>
+  <data name="resumeForPrediction" xml:space="preserve">
+    <value>/resume to see prediction</value>
+    <comment>progress embed, time remaining when paused</comment>
   </data>
   <data name="resumeNoOp" xml:space="preserve">
     <value>ℹ No data to import present.</value>

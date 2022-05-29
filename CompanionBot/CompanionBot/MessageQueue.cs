@@ -360,10 +360,13 @@ namespace CompanionBot
                 bool create = createQueues.TryGetValue(guild, out ConcurrentQueue<string> createQueue);
                 bool edit = editQueues.TryGetValue(guild, out ConcurrentQueue<EditData> editQueue);
                 bool progr = progress.TryGetValue(guild, out IUserMessage message);
+                bool working = workers.TryGetValue(guild, out Task worker) && !worker.IsCompleted && tokens.TryGetValue(guild, out CancellationTokenSource token) && !token.IsCancellationRequested;
+                var time = TimestampTag.FromDateTimeOffset(DateTimeOffset.UtcNow + (((create ? createQueue.Count : 0) * averageCreateTime) + ((edit ? editQueue.Count : 0) * averageEditTime)));
+                time.Style = TimestampTagStyles.Relative;
                 EmbedBuilder embed = new EmbedBuilder()
                 {
                     Description = Properties.Resources.stillToDo,
-                    Title = workers.TryGetValue(guild, out Task worker) && !worker.IsCompleted && tokens.TryGetValue(guild, out CancellationTokenSource token) && !token.IsCancellationRequested ? Properties.Resources.importing : Properties.Resources.paused,
+                    Title = working ? Properties.Resources.importing : Properties.Resources.paused,
                     Footer = new EmbedFooterBuilder() { Text = Properties.Resources.embedFooter },
                     Fields = new List<EmbedFieldBuilder>
                 {
@@ -382,7 +385,7 @@ namespace CompanionBot
                     new EmbedFieldBuilder()
                     {
                         Name = Properties.Resources.timeRemaining,
-                        Value = Math.Ceiling((((create ? createQueue.Count : 0) * averageCreateTime) + ((edit ? editQueue.Count : 0) * averageEditTime)).TotalSeconds) + "s"
+                        Value = working?String.Format(Properties.Resources.probablyFinished, time):"/resume to see prediction"
                     }
                 }
                 }.WithCurrentTimestamp();

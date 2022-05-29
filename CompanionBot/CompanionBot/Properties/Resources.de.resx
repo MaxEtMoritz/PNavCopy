@@ -263,6 +263,9 @@ Stellen Sie sicher, dass PokeNav in dem Kanal antworten kann, in dem Sie den Bef
   <data name="pokeNavUpdateTimeout" xml:space="preserve">
     <value>PokeNav hat die Auswahl-Nachricht nicht rechtzeitig aktualisiert, Bitte versuchen Sie es manuell erneut.</value>
   </data>
+  <data name="probablyFinished" xml:space="preserve">
+    <value>Voraussichtlich fertig {0}</value>
+  </data>
   <data name="promptMissingPerms" xml:space="preserve">
     <value>⚠ Achtung! ⚠ Dem Bot fehlen Berechtigungen im PokeNav-Administrationskanal:
 	{0} Kanal anzeigen
@@ -279,6 +282,9 @@ Stellen Sie sicher, dass Sie dem Bot die nötigen Berechtigungen für &lt;#{4}&g
   </data>
   <data name="resumeAlreadyRunning" xml:space="preserve">
     <value>ℹ Massen-Import läuft bereits, er muss nicht fortgesetzt werden.</value>
+  </data>
+  <data name="resumeForPrediction" xml:space="preserve">
+    <value>/resume, um Vorhersage zu sehen</value>
   </data>
   <data name="resumeNoOp" xml:space="preserve">
     <value>ℹ Keine weiteren Daten zum Importieren vorhanden.</value>

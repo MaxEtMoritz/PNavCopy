@@ -459,6 +459,15 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Probably finished {0} ähnelt.
+        /// </summary>
+        internal static string probablyFinished {
+            get {
+                return ResourceManager.GetString("probablyFinished", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Attention! ⚠ The Bot is missing permissions in the PokeNav mod-channel:
         ///	{0} View Channel
         ///	{1} Send Messages
@@ -496,6 +505,15 @@ namespace CompanionBot.Properties {
         internal static string resumeAlreadyRunning {
             get {
                 return ResourceManager.GetString("resumeAlreadyRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die /resume to see prediction ähnelt.
+        /// </summary>
+        internal static string resumeForPrediction {
+            get {
+                return ResourceManager.GetString("resumeForPrediction", resourceCulture);
             }
         }
         
