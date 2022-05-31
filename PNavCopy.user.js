@@ -1054,8 +1054,8 @@ function wrapper (plugin_info) {
    */
   function updateDone (changeList) {
     const pogoData = localStorage['plugin-pogo'] ? JSON.parse(localStorage['plugin-pogo']) : {};
-    const pogoGyms = pogoData.gyms ? pogoData.gyms : {};
-    const pogoStops = pogoData.stops ? pogoData.stops : {};
+    const pogoGyms = pogoData.gyms ?? {};
+    const pogoStops = pogoData.pokestops ?? {};
     changeList.forEach((change) => {
       if (Object.keys(pogoStops).includes(change.guid)) {
         pNavData.pokestop[change.guid] = pogoStops[change.guid];
