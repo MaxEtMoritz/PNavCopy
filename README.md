@@ -1,6 +1,6 @@
 # IITC-Plugin: Copy PokeNav Command
 
-[![Discord](https://discord.com/api/guilds/781826303128371241/widget.png?style=shield)](https://discord.gg/j7ZZ2N8r73)
+[![Visit the Discord server!](https://discord.com/api/guilds/781826303128371241/widget.png?style=shield)](https://discord.gg/j7ZZ2N8r73 "Visit the Discord server!")
 
 
 IITC Plugin that copies Portal Info to Clipboard or sends it directly to Discord via WebHook in the format needed by the PokeNav Discord Bot as follows:
