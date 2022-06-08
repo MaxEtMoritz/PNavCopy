@@ -532,9 +532,9 @@ function wrapper (plugin_info) {
       }
 
       if (
-        typeof window.plugin.pnav.settings.lat !== 'undefined' &&
-        typeof window.plugin.pnav.settings.lng !== 'undefined' &&
-        typeof window.plugin.pnav.settings.radius !== 'undefined' &&
+        window.plugin.pnav.settings.lat !== null &&
+        window.plugin.pnav.settings.lng !== null &&
+        window.plugin.pnav.settings.radius !== null &&
         checkDistance(data.lat, data.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) >
         window.plugin.pnav.settings.radius
       ) {
@@ -717,43 +717,35 @@ function wrapper (plugin_info) {
   };
 
   window.plugin.pnav.showSettings = function () {
-    let validURL = '^https?://discord(app)?.com/api/webhooks/[0-9]{1,20}/[0-9a-f]*';
-    let html = `
-        <p>
-          <label>
-            ${getString('pnavLanguageDescription')}
-            <select id="pnavLanguage" onchange="window.plugin.pnav.settings.language = this.value;alert(window.plugin.pnav.getString('alertLanguageAfterReload'));"></select>
-          </label>
-        </p>
-        <p id="webhook">
-          <label title="${getString('pnavhookurlTitle')}">
-            ${getString('pnavhookurlDescription')}
-            <input type="url" style="width:100%" id="pnavhookurl" value="${typeof window.plugin.pnav.settings.webhookUrl !== 'undefined' ? window.plugin.pnav.settings.webhookUrl : ''}" pattern="${validURL}"/>
-          </label>
-          <br>
-          <label title="${getString('useBotTitle')}">
-            <input type="checkbox" id="useBot" ${window.plugin.pnav.settings.useBot ? 'checked' : ''}></input>
-            ${getString('useBotText')}
-          </label>
-        </p>
-        <p>
-          <Label title="${getString('pnavCodenameTitle')}">
-            ${getString('pnavCodenameDescription')}
-            <input id="pnavCodename" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}"/>
-          </label>
-        </p>
-        <p>
-          <label id="center" title="${getString('pnavCenterTitle')}">
-          ${getString('pnavCenterDescription')}
-          <input id="pnavCenter" size="17" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?1?&#92;d?&#92;d(&#92;.&#92;d+)?$" value="${typeof window.plugin.pnav.settings.lat !== 'undefined' && typeof window.plugin.pnav.settings.lng !== 'undefined' ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}"/>
-          </label>
-          <br>
-          <label id="radius" title="${getString('pnavRadiusTitle')}">
-          ${getString('pnavRadiusDescription')}
-          <input id="pnavRadius" style="width:41px;appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="0.001" value="${typeof window.plugin.pnav.settings.radius !== 'undefined' ? window.plugin.pnav.settings.radius : ''}"/>
-          </label>
-        </p>
-        <p><button type="Button" id="btnEraseHistory" style="width:100%" title="${getString('btnEraseHistoryTitle')}" onclick="
+    let html = /*html*/ `
+        <div class="form-group">
+          <label for="pnavLanguage">${getString('pnavLanguageDescription')}</label>
+          <select id="pnavLanguage" onchange="window.plugin.pnav.settings.language = this.value;alert(window.plugin.pnav.getString('alertLanguageAfterReload'));"></select>
+        </div>
+        <div>
+          <label for="webhookUrl" title="${getString('pnavhookurlTitle')}">${getString('pnavhookurlDescription')}</label>
+          <input type="url" style="width:100%" id="webhookUrl" value="${window.plugin.pnav.settings.webhookUrl !== null ? window.plugin.pnav.settings.webhookUrl : ''}" pattern="^https?://(ptb.|canary.)?discord(app)?.com/api/webhooks/[0&#45;9]{1,20}/[^/]*$"/>
+          <div style="color: red; display:none;">${getString('lblErrorWHText')}</div>
+        </div>
+        <div class="form-group">
+          <label for="useBot" title="${getString('useBotTitle')}">${getString('useBotText')}</label>
+          <input type="checkbox" id="useBot"${window.plugin.pnav.settings.useBot ? ' checked' : ''}>
+        </div>
+        <div class="form-group">
+          <Label for="name" title="${getString('pnavCodenameTitle')}">${getString('pnavCodenameDescription')}</label>
+          <input id="name" type="text" placeholder="${window.PLAYER.nickname}" value="${window.plugin.pnav.settings.name}">
+        </div>
+        <div>
+          <label id="center" for="latlng" title="${getString('pnavCenterTitle')}">${getString('pnavCenterDescription')}</label>
+          <input id="latlng" size="17" type="text" pattern="^-?&#92;d?&#92;d(&#92;.&#92;d+)?, -?1?&#92;d?&#92;d(&#92;.&#92;d+)?$" value="${window.plugin.pnav.settings.lat !== null && window.plugin.pnav.settings.lng !== null ? `${window.plugin.pnav.settings.lat}, ${window.plugin.pnav.settings.lng}` : ''}">
+          <div style="color:red;display:none;">${getString('lblErrorCnText')}</div>
+        </div>
+        <div class="form-group">
+          <label for="radius" title="${getString('pnavRadiusTitle')}">${getString('pnavRadiusDescription')}</label>
+          <input id="radius" style="width:41px;appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="0.001" value="${window.plugin.pnav.settings.radius !== null ? window.plugin.pnav.settings.radius : ''}">
+          <div style="color:red;display:none">${getString('lblErrorRdText')}</div>
+        </div>
+        <div class="form-group"><button type="Button" id="btnEraseHistory" style="width:100%" title="${getString('btnEraseHistoryTitle')}" onclick="
           window.plugin.pnav.deleteExportState();
           $(this).css('color','green');
           $(this).css('border','1px solid green')
@@ -766,21 +758,21 @@ function wrapper (plugin_info) {
             }
           }, 1000);
           return false;
-        ">${getString('btnEraseHistoryTextDefault')}</button></p>
-        <p>
+        ">${getString('btnEraseHistoryTextDefault')}</button></div>
+        <div class="form-group">
           <button type="Button" id="btnImExport" style="width:100%" title="${getString('btnImExportTitle')}" onclick="window.plugin.pnav.imExport();return false;">${getString('btnImExportText')}</button>
-        </p>
+        </div>
         `;
     if (window.plugin.pogo && window.plugin.pnav.settings.webhookUrl) {
-      html += `
-            <p><button type="Button" id="btnBulkExportGyms" style="width:100%" title="${getString('btnBulkExportGymsTitle')}" onclick="window.plugin.pnav.bulkExport('gym');return false;">${getString('btnBulkExportGymsText')}</button></p>
-            <p><button type="Button" id="btnBulkExportStops" style="width:100%" title="${getString('btnBulkExportStopsTitle')}" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">${getString('btnBulkExportStopsText')}</button></p>
+      html += /* html */ `
+            <div class="form-group"><button type="Button" id="btnBulkExportGyms" style="width:100%" title="${getString('btnBulkExportGymsTitle')}" onclick="window.plugin.pnav.bulkExport('gym');return false;">${getString('btnBulkExportGymsText')}</button></div>
+            <div class="form-group"><button type="Button" id="btnBulkExportStops" style="width:100%" title="${getString('btnBulkExportStopsTitle')}" onclick="window.plugin.pnav.bulkExport('pokestop');return false;">${getString('btnBulkExportStopsText')}</button></div>
             `;
     }
     if (window.plugin.pogo) {
-      html += `
-      <p><button type="Button" id="btnBulkModify" style="width:100%" title="${getString('btnBulkModifyTitle')}" onclick="window.plugin.pnav.bulkModify(); return false;">
-      ${getString('btnBulkModifyText')}</button></p>
+      html += /* html */`
+      <div class="form-group"><button type="Button" id="btnBulkModify" style="width:100%" title="${getString('btnBulkModifyTitle')}" onclick="window.plugin.pnav.bulkModify(); return false;">
+      ${getString('btnBulkModifyText')}</button></div>
       `;
     }
 
@@ -792,116 +784,100 @@ function wrapper (plugin_info) {
       title: getString('pnavsettingsTitle'),
       buttons: {
         OK () {
-          let allOK = true;
-          let settings = {...window.plugin.pnav.settings};
-          if (
-            !$('#pnavhookurl').val() ||
-            new RegExp(validURL).test($('#pnavhookurl').val())
-          ) {
-            settings.webhookUrl = $('#pnavhookurl').val();
-            if ($('#lblErrorWH').length > 0) {
-              $('#lblErrorWH').remove();
-            }
-          } else {
-            if ($('#lblErrorWH').length == 0) {
-              $('#webhook').after(`<label id="lblErrorWH" style="color:red">${getString('lblErrorWHText')}</label>`);
-            }
-            allOK = false;
-          }
-          if (!$('#pnavRadius').val()) {
-            delete settings.radius;
-            if ($('#lblErrorRd').length > 0) {
-              $('#lblErrorRd').remove();
-            }
-          } else if (
-            (/^\d+(\.\d+)?$/).test($('#pnavRadius').val()) &&
-            !Number.isNaN(parseFloat($('#pnavRadius').val()))
-          ) {
-            settings.radius = parseFloat($('#pnavRadius').val());
-            if ($('#lblErrorRd').length > 0) {
-              $('#lblErrorRd').remove();
-            }
-          } else {
-            if ($('#lblErrorRd').length == 0) {
-              $('#radius').after(`<label id="lblErrorRd" style="color:red"><br>${getString('lblErrorRdText')}</label>`);
-            }
-            allOK = false;
-          }
-          if (!$('#pnavCenter').val()) {
-            delete settings.lat;
-            delete settings.lng;
-            if ($('#lblErrorCn').length > 0) {
-              $('#lblErrorCn').remove();
-            }
-          } else {
-
-            /** @type {string[]} */
-            let arr = $('#pnavCenter').val()
-              .split(', ');
-            let lat = arr[0] ? parseFloat(arr[0]) : NaN;
-            let lng = arr[1] ? parseFloat(arr[1]) : NaN;
-            if (
-              !Number.isNaN(lat) &&
-              !Number.isNaN(lng) &&
-              (/^-?\d?\d(\.\d+)?, -?1?\d?\d(\.\d+)?$/).test($('#pnavCenter').val()) &&
-              lat >= -90 &&
-              lat <= 90 &&
-              lng >= -180 &&
-              lng <= 180
-            ) {
-              settings.lat = lat;
-              settings.lng = lng;
-              if ($('#lblErrorCn').length > 0) {
-                $('#lblErrorCn').remove();
-              }
-            } else {
-              if ($('#lblErrorCn').length == 0) {
-                $('#center').after(`<label id="lblErrorCn" style="color:red"><br>${getString('lblErrorCnText')}</label>`);
-              }
-              allOK = false;
-            }
-          }
-          if (!$('#pnavCodename').val()) {
-            settings.name = window.PLAYER.nickname;
-          } else {
-            settings.name = $('#pnavCodename').val();
-          }
-          settings.useBot = $('#useBot').prop('checked');
           if (!window.plugin.pnav.timer) {
-            if (allOK) {
-              localStorage.setItem(
-                'plugin-pnav-settings',
-                JSON.stringify(settings)
-              );
-              window.plugin.pnav.settings = settings;
-              lCommBounds.clearLayers();
-              if (settings.lat && settings.lng && settings.radius) {
-                let circle = L.circle(L.latLng([
-                  settings.lat,
-                  settings.lng
-                ]), {radius: settings.radius * 1000,
-                  interactive: false,
-                  fillOpacity: 0.1,
-                  color: '#000000'});
-                lCommBounds.addLayer(circle);
-              }
-              container.dialog('close');
+            lCommBounds.clearLayers();
+            if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
+              let circle = L.circle(L.latLng([
+                window.plugin.pnav.settings.lat,
+                window.plugin.pnav.settings.lng
+              ]), {radius: window.plugin.pnav.settings.radius * 1000,
+                interactive: false,
+                fillOpacity: 0.1,
+                color: '#000000'});
+              lCommBounds.addLayer(circle);
             }
           } else {
             alert(getString('alertExportRunning'));
-            container.dialog('close');
           }
+          container.dialog('close');
         }
       }
     });
-    // unfocus all input fields to prevent the explanation tooltips to pop up
-    $('input', container).trigger('blur');
+
     let languageDropdown = $('#pnavLanguage', container);
     Object.keys(strings).forEach(function (key) {
       languageDropdown.append(`<option value="${key}">${key}</option>`);
     });
     languageDropdown.val(window.plugin.pnav.settings.language);
+    $('input', container).on('blur', validateAndSaveSetting);
   };
+
+  /**
+   * Validates an input field and saves the corresponding setting if valid.
+   * @param {JQuery.BlurEvent<HTMLElement, undefined, HTMLInputElement, HTMLElement>} e - the JQuery event
+   */
+  function validateAndSaveSetting (e) {
+    console.log('blur');
+    if (e.currentTarget.checkValidity()) {
+      console.log('valid');
+      // special handling of center input
+      if (e.currentTarget.id === 'latlng') {
+        let lat, lng;
+        if (e.currentTarget.value) {
+          let value = e.currentTarget.value?.split(',', 2);
+          lat = parseFloat(value[0]);
+          lng = parseFloat(value[1]);
+          if (!(lat >= -90 &&
+            lat <= 90) || !(lng >= -180 &&
+            lng <= 180)) {
+            if (e.currentTarget.nextElementSibling && e.currentTarget.nextElementSibling instanceof HTMLDivElement) {
+              e.currentTarget.nextElementSibling.style.display = '';
+            }
+            return;
+          }
+        }
+        window.plugin.pnav.settings.lat = lat;
+        window.plugin.pnav.settings.lng = lng;
+        if (e.currentTarget.nextElementSibling && e.currentTarget.nextElementSibling instanceof HTMLDivElement)e.currentTarget.nextElementSibling.style.display = 'none';
+        localStorage.setItem(
+          'plugin-pnav-settings',
+          JSON.stringify(window.plugin.pnav.settings)
+        );
+      } else if (Object.getOwnPropertyNames(window.plugin.pnav.settings).includes(e.currentTarget.id)) {
+        let value;
+        switch (e.currentTarget.type) {
+        case 'checkbox':
+          value = e.currentTarget.checked;
+          break;
+        case 'number':
+          value = e.currentTarget.valueAsNumber;
+          break;
+        default:
+          value = e.currentTarget.value;
+          break;
+        }
+        // if no value but placeholder, use placeholder
+        if (!value && e.currentTarget.placeholder) {
+          value = e.currentTarget.placeholder;
+        }
+        if (value === '') {
+          value = null;
+        }
+        if (e.currentTarget.nextElementSibling && e.currentTarget.nextElementSibling instanceof HTMLDivElement)e.currentTarget.nextElementSibling.style.display = 'none';
+        window.plugin.pnav.settings[e.currentTarget.id] = value;
+        localStorage.setItem(
+          'plugin-pnav-settings',
+          JSON.stringify(window.plugin.pnav.settings)
+        );
+      }
+    } else {
+      console.log('invalid', e.currentTarget.nextSibling, e.currentTarget);
+      // TODO: show error message
+      if (e.currentTarget.nextElementSibling && e.currentTarget.nextElementSibling instanceof HTMLDivElement) {
+        e.currentTarget.nextElementSibling.style.display = '';
+      }
+    }
+  }
 
   window.plugin.pnav.deleteExportState = function () {
     if (localStorage['plugin-pnav-done-pokestop']) {
@@ -993,11 +969,11 @@ function wrapper (plugin_info) {
       let poi = changeList[i];
       $('#pNavPoiInfo', modDialog).on('click', function () {
         if (window.plugin.pnav.settings.webhookUrl) {
-          sendMessage(`<@${pNavId}> ${poi.oldType}-info ${poi.oldName}`);
+          sendMessage(`<@${pNavId}> ${poi.oldType==='pokestop' ? 'stop' : poi.oldType}-info ${poi.oldName}`);
         } else {
           const input = $('#copyInput');
           input.show();
-          input.val(`<@${pNavId}> ${poi.oldType}-info ${poi.oldName}`);
+          input.val(`<@${pNavId}> ${poi.oldType==='pokestop' ? 'stop' : poi.oldType}-info ${poi.oldName}`);
           copyfieldvalue('copyInput');
           input.hide();
         }
@@ -1169,7 +1145,7 @@ function wrapper (plugin_info) {
         }
         if (Object.keys(detectedChanges.edits).length > 0) {
           detectedChanges.oldName = stop.name;
-          detectedChanges.oldType = 'stop';
+          detectedChanges.oldType = 'pokestop';
           detectedChanges.guid = stop.guid;
           detectedChanges.lat = stop.lat;
           detectedChanges.lng = stop.lng;
@@ -1230,7 +1206,7 @@ function wrapper (plugin_info) {
   /**
    * Edit Data that lists what edits should be made.
    * @typedef {object} editData
-   * @property {string} oldType - expected stop or gym
+   * @property {string} oldType - expected pokestop or gym
    * @property {string} oldName
    * @property {string} guid
    * @property {string} lat
@@ -1303,7 +1279,7 @@ function wrapper (plugin_info) {
     }
     if (Object.keys(changes.edits).length > 0) {
       changes.oldName = savedData.name;
-      changes.oldType = savedData.type === 'pokestop' ? 'stop' : savedData.type;
+      changes.oldType = savedData.type;
       changes.guid = savedData.guid;
       changes.lat = savedData.lat;
       changes.lng = savedData.lng;
@@ -1326,9 +1302,9 @@ function wrapper (plugin_info) {
       pogoData = Object.values(pogoData[`${type}s`]);
       const doneGuids = (Object.keys(pNavData.pokestop).concat(Object.keys(pNavData.gym)));
       const distanceNotCheckable =
-        typeof window.plugin.pnav.settings.lat === 'undefined' ||
-        typeof window.plugin.pnav.settings.lng === 'undefined' ||
-        typeof window.plugin.pnav.settings.radius === 'undefined';
+        window.plugin.pnav.settings.lat === null ||
+        window.plugin.pnav.settings.lng === null ||
+        window.plugin.pnav.settings.radius === null;
 
       /** @type {pogoToolsData[]} */
       let exportData = pogoData.filter(function (object) {
@@ -1525,7 +1501,7 @@ function wrapper (plugin_info) {
    * @param {editData[]} [changes] - optional list of changes that should be transferred.
    */
   function botEdit (changes) {
-    if (typeof window.plugin.pnav.settings.webhookUrl === 'undefined') {
+    if (window.plugin.pnav.settings.webhookUrl === null) {
       console.error('no Webhook URL present!');
       return;
     }
@@ -1730,7 +1706,7 @@ function wrapper (plugin_info) {
   }
 
   let setup = function () {
-    $('head').append(`<style>
+    $('head').append(/* html */`<style>
       .Button {
         border: 1px solid #FFCE00;
         padding: 2px;
@@ -1739,6 +1715,9 @@ function wrapper (plugin_info) {
         color: #FFCE00;
         text-decoration: none!important;
         cursor: default;
+      }
+      .form-group {
+        margin-bottom: 10px;
       }
     </style>`);
     if (localStorage['plugin-pnav-settings']) {
