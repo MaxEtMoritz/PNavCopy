@@ -437,7 +437,10 @@ namespace CompanionBot
                     if (perms.ManageMessages)
                         try
                         {
-                            message?.PinAsync().Wait();
+                            if (channel is IGuildChannel gc && gc.Guild.MfaLevel == MfaLevel.Disabled)
+                            {
+                                message?.PinAsync().Wait();
+                            }
                         }
                         catch (HttpException e)
                         {
