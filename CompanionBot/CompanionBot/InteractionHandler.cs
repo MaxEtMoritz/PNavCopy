@@ -106,7 +106,7 @@ namespace CompanionBot
             }
             else
             {
-                await _logger.Log(new LogMessage(LogSeverity.Info, nameof(RegisterManualCommands), "Did not register disconnect command since no test server ID was provided."));
+                await _logger.Log(new LogMessage(LogSeverity.Info, nameof(RegisterManualCommands), "Did not register disconnect + status command since no test server ID was provided."));
             }
         }
 
