@@ -9,6 +9,7 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Globalization;
+using System.Reflection;
 
 namespace CompanionBot
 {
@@ -57,7 +58,13 @@ namespace CompanionBot
                 .AddSingleton<Logger>()
                 .AddSingleton<InteractionHandler>()
                 .AddSingleton(new HttpClient() { Timeout = TimeSpan.FromSeconds(10) })
-                .AddSingleton<InteractionService>()
+                .AddSingleton<InteractionService>(b => new(b.GetRequiredService<DiscordSocketClient>(), new InteractionServiceConfig()
+                {
+                    LocalizationManager = new ResxLocalizationManager("CompanionBot.Properties.SlashCommands", Assembly.GetExecutingAssembly(), new CultureInfo[] {
+                        CultureInfo.GetCultureInfo("de"),
+                        CultureInfo.GetCultureInfo("en-US")
+                    })
+                }))
                 .BuildServiceProvider();
 
             _client = _services.GetRequiredService<DiscordSocketClient>();
@@ -65,7 +72,6 @@ namespace CompanionBot
             _client.LeftGuild += GuildLeft;
 
             _client.Ready += ClientReady;
-
             _services.GetRequiredService<InteractiveService>().Log += _services.GetRequiredService<Logger>().Log;
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
