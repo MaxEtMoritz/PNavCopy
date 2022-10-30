@@ -34,7 +34,7 @@ With This Plugin you can...
 - Represent the state of the export in Colors with a highlighter: PokeStops are blue, Gyms red and Ex raid gyms have a red border and yellow filling.
 
 ## Integrations
-If you use the [Pogo tools plugin by AlfonsoML](https://gitlab.com/AlfonsoML/pogo-s2/), the info entered there is used to determine Type and Ex Eligibility if applicable. Otherwise you can choose manually.
+If you use the [Pogo tools plugin by AlfonsoML](https://github.com/AlfonsoML-s/pogo-s2) (development from original author stalled, but still working), the info entered there is used to determine Type and Ex Eligibility if applicable. Otherwise you can choose manually.
 
 If you use the Plugin, you also have the option to upload all gathered Data at once.
 
