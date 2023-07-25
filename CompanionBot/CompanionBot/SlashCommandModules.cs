@@ -79,18 +79,18 @@ namespace CompanionBot
         }
 
 #if DEBUG 
-        [ComponentInteraction("devdisconnect*"), RequireOwner]
+        [ComponentInteraction("devdisconnect"), RequireOwner]
 #else
-        [ComponentInteraction("disconnect*"), RequireOwner]
+        [ComponentInteraction("disconnect"), RequireOwner]
 #endif
         public async Task ConfirmDisconnectAsync()
         {
-            await RespondAsync("Saving state...", ephemeral: true);
-            await _queue.SaveState();
-            await FollowupAsync(Properties.Resources.goodbye, ephemeral: true);
+            //await RespondAsync("Saving state...", ephemeral: true);
+            //await _queue.SaveState();
+            await RespondAsync(Properties.Resources.goodbye, ephemeral: true);
             await _client.LogoutAsync();
             await _client.StopAsync();
-            Environment.Exit(0);
+            //Environment.Exit(0);
         }
     }
 

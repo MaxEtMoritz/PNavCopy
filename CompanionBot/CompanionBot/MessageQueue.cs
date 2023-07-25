@@ -361,8 +361,7 @@ namespace CompanionBot
                 bool edit = editQueues.TryGetValue(guild, out ConcurrentQueue<EditData> editQueue);
                 bool progr = progress.TryGetValue(guild, out IUserMessage message);
                 bool working = workers.TryGetValue(guild, out Task worker) && !worker.IsCompleted && tokens.TryGetValue(guild, out CancellationTokenSource token) && !token.IsCancellationRequested;
-                var time = TimestampTag.FromDateTimeOffset(DateTimeOffset.UtcNow + (((create ? createQueue.Count : 0) * averageCreateTime) + ((edit ? editQueue.Count : 0) * averageEditTime)));
-                time.Style = TimestampTagStyles.Relative;
+                var time = TimestampTag.FromDateTimeOffset(DateTimeOffset.UtcNow + (((create ? createQueue.Count : 0) * averageCreateTime) + ((edit ? editQueue.Count : 0) * averageEditTime)), TimestampTagStyles.Relative);
                 EmbedBuilder embed = new EmbedBuilder()
                 {
                     Description = Properties.Resources.stillToDo,

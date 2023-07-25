@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace CompanionBot
 {
@@ -70,6 +71,7 @@ namespace CompanionBot
             _client = _services.GetRequiredService<DiscordSocketClient>();
             _client.Log += _services.GetRequiredService<Logger>().Log;
             _client.LeftGuild += GuildLeft;
+            _client.Disconnected += ClientDisconnected;
 
             _client.Ready += ClientReady;
             _services.GetRequiredService<InteractiveService>().Log += _services.GetRequiredService<Logger>().Log;
@@ -103,6 +105,22 @@ namespace CompanionBot
             logger.Log(new LogMessage(LogSeverity.Info, this.GetType().Name, $"The Bot was removed from Guild {guild.Name} ({guild.Id})."));
             _services.GetRequiredService<GuildSettings>().DeleteSettings(guild.Id);
             return Task.CompletedTask;
+        }
+
+        private async Task ClientDisconnected(Exception ex)
+        {
+            await _services.GetRequiredService<MessageQueue>().SaveState();
+            if (ex.GetType().Name == "TaskCanceledException")
+            {
+                // Bot was disconnected gracefully
+                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Info, this.GetType().Name, "Disconnected from gateway due to Command", ex));
+                Environment.Exit(0);
+            }
+            else
+            {
+                Environment.Exit(ex.HResult);
+                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Error, this.GetType().Name, "Disconnected from gateway due to Exception"));
+            }
         }
     }
 }

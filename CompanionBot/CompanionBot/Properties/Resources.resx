@@ -162,14 +162,14 @@ The following info is available:</value>
     <comment>footer of the import progress embed</comment>
   </data>
   <data name="errorBadArgs" xml:space="preserve">
-    <value>⚠ Too many or few parameters. ⚠
+    <value>:warning: Too many or few parameters. :warning:
 Error message:
 ```{0}```
 Please contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did and which parameters you specified.</value>
     <comment>Interaction failed because too many or too few parameters were given.</comment>
   </data>
   <data name="ErrorConvertFailed" xml:space="preserve">
-    <value>⚠ One or more parameters could not be converted. ⚠
+    <value>:warning: One or more parameters could not be converted. :warning:
 Error message:
 ```{0}```
 Please check your parameters.
@@ -177,21 +177,21 @@ If they seem correct, open up an issue at [GitHub](https://github.com/MaxEtMorit
     <comment>Interaction failed because Parameter(s) could not be converted.</comment>
   </data>
   <data name="errorException" xml:space="preserve">
-    <value>⚠ Internal Error. ⚠
+    <value>:warning: Internal Error. :warning:
 The bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.
-This Error message will (hopefully😅) help the developer investigate:
+This Error message will (hopefully:sweat_smile:) help the developer investigate:
 ```{0}```</value>
     <comment>Interaction failed because of an Exception.</comment>
   </data>
   <data name="errorParseFailed" xml:space="preserve">
-    <value>⚠ Internal Error. ⚠
+    <value>:warning: Internal Error. :warning:
 The bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.
-This Error message will (hopefully😅) help the developer investigate:
+This Error message will (hopefully:sweat_smile:) help the developer investigate:
 ```{0}```</value>
     <comment>Interaction failed because the Context was faulty</comment>
   </data>
   <data name="ErrorUnknownCommand" xml:space="preserve">
-    <value>⚠ Unknown interaction. ⚠
+    <value>:warning: Unknown interaction. :warning:
 Please contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you were trying to do when getting this error.</value>
     <comment>Interaction failed because it was not known.</comment>
   </data>
@@ -208,7 +208,7 @@ Please contact the bot owner by opening an issue at [GitHub](https://github.com/
     <comment>progress embed heading while working</comment>
   </data>
   <data name="interactionUnsuccessful" xml:space="preserve">
-    <value>❌ This interaction failed. ❌
+    <value>:x: This interaction failed. :x:
 Reason: {0}</value>
     <comment>Interaction was not successful.</comment>
   </data>
@@ -275,19 +275,19 @@ Expected {0} to {1}.</value>
     <comment>progress embed heading while paused</comment>
   </data>
   <data name="pauseError" xml:space="preserve">
-    <value>❌ Error while pausing</value>
+    <value>:x: Error while pausing</value>
     <comment>/pause error</comment>
   </data>
   <data name="pauseInProgress" xml:space="preserve">
-    <value>⏸ Pausing, please be patient...</value>
+    <value>:pause_button: Pausing, please be patient...</value>
     <comment>/pause</comment>
   </data>
   <data name="pauseNoOp" xml:space="preserve">
-    <value>ℹ Nothing to Pause here, no Bulk Import running at the moment.</value>
+    <value>:information_source: Nothing to Pause here, no Bulk Import running at the moment.</value>
     <comment>/pause when no import was running</comment>
   </data>
   <data name="pauseSuccessful" xml:space="preserve">
-    <value>✅ Successfully paused!</value>
+    <value>:white_check_mark: Successfully paused!</value>
     <comment>/pause finished successfully</comment>
   </data>
   <data name="poiNotFound" xml:space="preserve">
@@ -307,7 +307,7 @@ Expected {0} to {1}.</value>
     <comment>progress embed, time remaining description</comment>
   </data>
   <data name="promptMissingPerms" xml:space="preserve">
-    <value>⚠ Attention! ⚠ The Bot is missing permissions in the PokeNav mod-channel:
+    <value>:warning: Attention! :warning: The Bot is missing permissions in the PokeNav mod-channel:
 	{0} View Channel
 	{1} Send Messages
 	{2} Add Reactions (recommended but optional)
@@ -320,11 +320,11 @@ Make sure to grant the neccessary permissions for the bot for &lt;#{4}&gt;.</val
     <comment>PoI edit had multiple matches but no one chose the right one.</comment>
   </data>
   <data name="resume" xml:space="preserve">
-    <value>▶ Continuing...</value>
+    <value>:arrow_forward: Continuing...</value>
     <comment>/resume</comment>
   </data>
   <data name="resumeAlreadyRunning" xml:space="preserve">
-    <value>ℹ Bulk import is already running, no need to resume.</value>
+    <value>:information_source: Bulk import is already running, no need to resume.</value>
     <comment>/resume when import is already in progress</comment>
   </data>
   <data name="resumeForPrediction" xml:space="preserve">
@@ -332,7 +332,7 @@ Make sure to grant the neccessary permissions for the bot for &lt;#{4}&gt;.</val
     <comment>progress embed, time remaining when paused</comment>
   </data>
   <data name="resumeNoOp" xml:space="preserve">
-    <value>ℹ No data to import present.</value>
+    <value>:information_source: No data to import present.</value>
     <comment>/resume when nothing can be resumed</comment>
   </data>
   <data name="selectRightLocation" xml:space="preserve">
@@ -353,9 +353,9 @@ This is the test instance.</value>
     <comment>/disconnect test instance</comment>
   </data>
   <data name="textCommandException" xml:space="preserve">
-    <value>⚠ Internal Error. ⚠
+    <value>:warning: Internal Error. :warning:
 The bot has encountered a problem while executing this command. If the error persists, please open a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing as much information as possible.
-This Error message will (hopefully😅) help the developer investigate:
+This Error message will (hopefully:sweat_smile:) help the developer investigate:
 ```{0}```</value>
     <comment>text-based command failed due to exception</comment>
   </data>
@@ -371,7 +371,7 @@ This Error message will (hopefully😅) help the developer investigate:
     <value>Type:</value>
   </data>
   <data name="unmetPrecondition" xml:space="preserve">
-    <value>❌ This interaction is not allowed in the current context. ❌
+    <value>:x: This interaction is not allowed in the current context. :x:
 {0}</value>
     <comment>Interaction is not allowed.</comment>
   </data>

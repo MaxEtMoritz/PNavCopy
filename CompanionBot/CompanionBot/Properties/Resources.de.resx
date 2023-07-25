@@ -153,32 +153,32 @@ Folgende Informationen sind verfügbar:</value>
     <value>Verwenden Sie die /pause oder /resume-Kommandos um den Importvorgang zu verwalten</value>
   </data>
   <data name="errorBadArgs" xml:space="preserve">
-    <value>⚠ Zu viele oder zu wenige Parameter. ⚠
+    <value>:warning: Zu viele oder zu wenige Parameter. :warning:
 Fehlermeldung:
 ```{0}```
 Bitte kontaktieren Sie den Entwickler indem sie ein Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) eröffnen und angeben, was Sie tun wollten und welche Parameter Sie angegeben haben.</value>
   </data>
   <data name="ErrorConvertFailed" xml:space="preserve">
-    <value>⚠ Ein oder mehrere Parameter konnten nicht konvertiert werden. ⚠
+    <value>:warning: Ein oder mehrere Parameter konnten nicht konvertiert werden. :warning:
 Fehlermeldung:
 ```{0}```
 Bitte überprüfen Sie Ihre Parameter.
 Wenn Diese richtig zu sein scheinen, eröffnen Sie ein Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) und geben Sie an, was Sie getan haben und welche Parameter Sie angegeben haben.</value>
   </data>
   <data name="errorException" xml:space="preserve">
-    <value>⚠ Interner Fehler. ⚠
+    <value>:warning: Interner Fehler. :warning:
 Es ist ein Fehler bei der Ausführung dieses Befehls aufgetreten. Wenn der Fehler wiederholt auftritt, eröffnen Sie einen Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) und geben Sie so viel Information wie möglich an.
-Diese Fehlermeldung wird dem Entwickler (hoffentlich😅) bei der Fehlerbehebung helfen:
+Diese Fehlermeldung wird dem Entwickler (hoffentlich:sweat_smile:) bei der Fehlerbehebung helfen:
 ```{0}```</value>
   </data>
   <data name="errorParseFailed" xml:space="preserve">
-    <value>⚠ Interner Fehler. ⚠
+    <value>:warning: Interner Fehler. :warning:
 Es ist ein Fehler bei der Ausführung dieses Befehls aufgetreten. Wenn der Fehler wiederholt auftritt, eröffnen Sie einen Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) und geben Sie so viel Information wie möglich an.
-Diese Fehlermeldung wird dem Entwickler (hoffentlich😅) bei der Fehlerbehebung helfen:
+Diese Fehlermeldung wird dem Entwickler (hoffentlich:sweat_smile:) bei der Fehlerbehebung helfen:
 ```{0}```</value>
   </data>
   <data name="ErrorUnknownCommand" xml:space="preserve">
-    <value>⚠ Unbekannter Befehl. ⚠
+    <value>:warning: Unbekannter Befehl. :warning:
 Bitte kontaktieren Sie den Entwickler, indem Sie einen Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) eröffnen und angeben, was Sie tun wollten als der Fehler auftrat.</value>
   </data>
   <data name="goodbye" xml:space="preserve">
@@ -191,7 +191,7 @@ Bitte kontaktieren Sie den Entwickler, indem Sie einen Issue auf [GitHub](https:
     <value>Importiere...</value>
   </data>
   <data name="interactionUnsuccessful" xml:space="preserve">
-    <value>❌ Dieser Befehl ist fehlgeschlagen. ❌
+    <value>:x: Dieser Befehl ist fehlgeschlagen. :x:
 Grund: {0}</value>
   </data>
   <data name="invalidCommandStructure" xml:space="preserve">
@@ -243,16 +243,16 @@ Stellen Sie sicher, dass PokeNav in dem Kanal antworten kann, in dem Sie den Bef
     <value>Pausiert</value>
   </data>
   <data name="pauseError" xml:space="preserve">
-    <value>❌ Fehler beim Pausieren</value>
+    <value>:x: Fehler beim Pausieren</value>
   </data>
   <data name="pauseInProgress" xml:space="preserve">
-    <value>⏸ Pausiere, etwas Geduld bitte...</value>
+    <value>:pause_button: Pausiere, etwas Geduld bitte...</value>
   </data>
   <data name="pauseNoOp" xml:space="preserve">
-    <value>ℹ Nichts zu Pausieren hier, da momentan kein Massen-Import läuft.</value>
+    <value>:information_source: Nichts zu Pausieren hier, da momentan kein Massen-Import läuft.</value>
   </data>
   <data name="pauseSuccessful" xml:space="preserve">
-    <value>✅ Erfolgreich pausiert!</value>
+    <value>:white_check_mark: Erfolgreich pausiert!</value>
   </data>
   <data name="poiNotFound" xml:space="preserve">
     <value>Bearbeitung fehlgeschlagen. PoI nicht gefunden.</value>
@@ -267,7 +267,7 @@ Stellen Sie sicher, dass PokeNav in dem Kanal antworten kann, in dem Sie den Bef
     <value>Voraussichtlich fertig {0}</value>
   </data>
   <data name="promptMissingPerms" xml:space="preserve">
-    <value>⚠ Achtung! ⚠ Dem Bot fehlen Berechtigungen im PokeNav-Administrationskanal:
+    <value>:warning: Achtung! :warning: Dem Bot fehlen Berechtigungen im PokeNav-Administrationskanal:
 	{0} Kanal anzeigen
 	{1} Nachrichten senden
 	{2} Reaktionen hinzufügen (empfohlen aber optional)
@@ -278,16 +278,16 @@ Stellen Sie sicher, dass Sie dem Bot die nötigen Berechtigungen für &lt;#{4}&g
     <value>Niemand hat eine Reaktion hinzugefügt. Bitte versuchen Sie es manuell erneut.</value>
   </data>
   <data name="resume" xml:space="preserve">
-    <value>▶ Setze fort...</value>
+    <value>:arrow_forward: Setze fort...</value>
   </data>
   <data name="resumeAlreadyRunning" xml:space="preserve">
-    <value>ℹ Massen-Import läuft bereits, er muss nicht fortgesetzt werden.</value>
+    <value>:information_source: Massen-Import läuft bereits, er muss nicht fortgesetzt werden.</value>
   </data>
   <data name="resumeForPrediction" xml:space="preserve">
     <value>/resume, um Vorhersage zu sehen</value>
   </data>
   <data name="resumeNoOp" xml:space="preserve">
-    <value>ℹ Keine weiteren Daten zum Importieren vorhanden.</value>
+    <value>:information_source: Keine weiteren Daten zum Importieren vorhanden.</value>
   </data>
   <data name="selectRightLocation" xml:space="preserve">
     <value>Gehen Sie in &lt;#{0}&gt; und wählen Sie den korrekten Standort aus!</value>
@@ -303,9 +303,9 @@ Stellen Sie sicher, dass Sie dem Bot die nötigen Berechtigungen für &lt;#{4}&g
 Dies ist die Test-Instanz.</value>
   </data>
   <data name="textCommandException" xml:space="preserve">
-    <value>⚠ Interner Fehler. ⚠
+    <value>:warning: Interner Fehler. :warning:
 Es ist ein Fehler bei der Ausführung dieses Befehls aufgetreten. Wenn der Fehler wiederholt auftritt, eröffnen Sie einen GitHub-Issue unter https://github.com/MaxEtMoritz/PNavCopy und geben Sie so viel Information wie möglich an.
-Diese Fehlermeldung wird dem Entwickler (hoffentlich😅) bei der Fehlerbehebung helfen:
+Diese Fehlermeldung wird dem Entwickler (hoffentlich:sweat_smile:) bei der Fehlerbehebung helfen:
 ```{0}```</value>
   </data>
   <data name="textCommandUnsuccessful" xml:space="preserve">
@@ -318,7 +318,7 @@ Diese Fehlermeldung wird dem Entwickler (hoffentlich😅) bei der Fehlerbehebung
     <value>Art:</value>
   </data>
   <data name="unmetPrecondition" xml:space="preserve">
-    <value>❌ Dieser Befehl ist im aktuellen Kontext nicht erlaubt. ❌
+    <value>:x: Dieser Befehl ist im aktuellen Kontext nicht erlaubt. :x:
 {0}</value>
   </data>
   <data name="unmetPreconditionTextBased" xml:space="preserve">
