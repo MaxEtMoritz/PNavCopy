@@ -10,7 +10,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.Reflection;
-using System.Diagnostics;
 
 namespace CompanionBot
 {
@@ -113,13 +112,13 @@ namespace CompanionBot
             if (ex.GetType().Name == "TaskCanceledException")
             {
                 // Bot was disconnected gracefully
-                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Info, this.GetType().Name, "Disconnected from gateway due to Command", ex));
+                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Info, this.GetType().Name, "Disconnected from gateway due to Command"));
                 Environment.Exit(0);
             }
             else
             {
                 Environment.Exit(ex.HResult);
-                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Error, this.GetType().Name, "Disconnected from gateway due to Exception"));
+                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Error, this.GetType().Name, "Disconnected from gateway due to Exception", ex));
             }
         }
     }

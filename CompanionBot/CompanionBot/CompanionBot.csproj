@@ -69,6 +69,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\PublishProfiles\" />
+  </ItemGroup>
+
   <ProjectExtensions><VisualStudio><UserProperties config_1json__JsonSchema="config-schema.json" /></VisualStudio></ProjectExtensions>
 
 </Project>
