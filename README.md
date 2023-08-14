@@ -18,7 +18,7 @@ To use this IITC Plugin, you need
 ## Installation
 To install the Plugin, click the button below:
 
-<a class="button iitc" role="button" href="https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js" target="_blank">Install IITC Plugin</a>
+<a style="padding-top:0.4em;padding-right:3em;padding-left:3em;padding-bottom:0.6em;border-radius:20px;font-weight:bold;background:green;color:white;" role="button" href="https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js" target="_blank">Install IITC Plugin</a>
 
 You should be asked if you want to install an external Plugin. Confirm the Installation and you are done!
 
@@ -62,32 +62,10 @@ After the Export, the Bot does its Work automatically without the need to keep I
 
 You can invite it to your server by clicking below:
 
-<a class="button discord" href="https://discord.com/api/oauth2/authorize?client_id=806533005626572813&permissions=274878131264&scope=bot%20applications.commands" role="button">Invite bot to your server</a>
+<a style="padding-top:0.4em;padding-right:3em;padding-left:3em;padding-bottom:0.6em;border-radius:20px;font-weight:bold;background:#5865F2;color:white;" href="https://discord.com/api/oauth2/authorize?client_id=806533005626572813&permissions=274878131264&scope=bot%20applications.commands" role="button" target="_blank">Invite bot to your server</a>
 
 ## How to contribute?
 You can contribute by...
 - translating this Plugin into your native language. A guide on how to translate can be found [here](/Translating.md).
 - contributing Code to the plugin or the bot. Please fork this repository and open a pull request. I will then take a look at it and if i consider it good, i'll merge it into the dev branch and later on into main if everything is working.
 - reporting Bugs and other issues.
-
-
-<style>
-    a.button{
-        padding-top:0.4em;
-        padding-right:3em;
-        padding-left:3em;
-        padding-bottom:0.6em;
-        border-radius:20px;
-        font-weight:bold;
-    }
-
-    a.discord{
-        background:#5865F2;
-        color:white;
-    }
-
-    a.iitc {
-        background:green;
-        color:white;
-    }
-</style>
