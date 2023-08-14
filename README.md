@@ -16,9 +16,7 @@ To use this IITC Plugin, you need
 
 
 ## Installation
-To install the Plugin, click the button below:
-
-<a style="padding-top:0.4em;padding-right:3em;padding-left:3em;padding-bottom:0.6em;border-radius:20px;font-weight:bold;background:green;color:white;" role="button" href="https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js" target="_blank">Install IITC Plugin</a>
+To install the Plugin, click :point_right:**[here](https://raw.github.com/MaxEtMoritz/PNavCopy/main/PNavCopy.user.js)**:point_left:.
 
 You should be asked if you want to install an external Plugin. Confirm the Installation and you are done!
 
@@ -60,9 +58,7 @@ The Companion Bot is a helper Bot that recieves a JSON file from the WebHook or 
 
 After the Export, the Bot does its Work automatically without the need to keep IITC open so long.
 
-You can invite it to your server by clicking below:
-
-<a style="padding-top:0.4em;padding-right:3em;padding-left:3em;padding-bottom:0.6em;border-radius:20px;font-weight:bold;background:#5865F2;color:white;" href="https://discord.com/api/oauth2/authorize?client_id=806533005626572813&permissions=274878131264&scope=bot%20applications.commands" role="button" target="_blank">Invite bot to your server</a>
+You can invite it to your server by clicking :point_right:**[here](https://discord.com/api/oauth2/authorize?client_id=806533005626572813&permissions=274878131264&scope=bot%20applications.commands)**:point_left:.
 
 ## How to contribute?
 You can contribute by...
