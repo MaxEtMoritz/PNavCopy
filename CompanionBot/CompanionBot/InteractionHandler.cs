@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -11,13 +12,14 @@ using System.Threading.Tasks;
 
 namespace CompanionBot
 {
-    internal class InteractionHandler
+    public class InteractionHandler
     {
         private readonly InteractionService _service;
         private readonly IServiceProvider _services;
         private readonly Logger _logger;
         private readonly DiscordSocketClient _client;
         private readonly IConfiguration _config;
+        private IEnumerable<IApplicationCommand> _commands = new List<IApplicationCommand>();
 
         public InteractionHandler(IServiceProvider services)
         {
@@ -30,10 +32,11 @@ namespace CompanionBot
 
         public async Task InstallCommandsAsync()
         {
-            _service.SlashCommandExecuted += CommandExecuted;
-            _service.ContextCommandExecuted += CommandExecuted;
-            _service.ComponentCommandExecuted += CommandExecuted;
-            _service.AutocompleteCommandExecuted += CommandExecuted;
+            //_service.SlashCommandExecuted += CommandExecuted;
+            //_service.ContextCommandExecuted += CommandExecuted;
+            //_service.ComponentCommandExecuted += CommandExecuted;
+            //_service.AutocompleteCommandExecuted += CommandExecuted;
+            _service.InteractionExecuted += CommandExecuted;
             _service.Log += _logger.Log;
 
             // Here we discover all of the interaction modules in the
@@ -71,7 +74,7 @@ namespace CompanionBot
         {
             ulong id = _config.GetValue<ulong>("testServerId", 0);
             if (id > 0)
-                await _service.RegisterCommandsToGuildAsync(id);
+                _commands = _commands.Concat(await _service.RegisterCommandsToGuildAsync(id));
             else
                 await _logger.Log(new LogMessage(LogSeverity.Warning, nameof(RegisterSlashCommandsForTestGuild), "No test server ID specified in config.json, skipped registering commands!"));
             await RegisterManualCommands();
@@ -79,7 +82,7 @@ namespace CompanionBot
 
         public async Task RegisterSlashCommandsGlobally()
         {
-            await _service.RegisterCommandsGloballyAsync();
+            _commands = _commands.Concat(await _service.RegisterCommandsGloballyAsync());
             await RegisterManualCommands();
         }
 
@@ -89,20 +92,9 @@ namespace CompanionBot
             if (testguildId > 0)
             {                    
                 var disconnectCmd = _service.GetSlashCommandInfo<ManualSlashModules>(nameof(ManualSlashModules.DisconnectAsync));
-                var testGuild = _client.GetGuild(testguildId);
-                var botOwner = (await _client.GetApplicationInfoAsync()).Owner;
                 var statusCommand = _service.GetSlashCommandInfo<ManualSlashModules>(nameof(ManualSlashModules.BotStatus));
-                await _service.AddCommandsToGuildAsync(testGuild, false, disconnectCmd, statusCommand);
-                try
-                {
-                    await _service.ModifySlashCommandPermissionsAsync(disconnectCmd, testGuild, new(testGuild.EveryoneRole, false), new(botOwner, true));
-                    await _service.ModifySlashCommandPermissionsAsync(statusCommand, testGuild, new(testGuild.EveryoneRole, false), new(botOwner, true));
-                }
-                catch (Exception e)
-                {
-                    await _logger.Log(new(LogSeverity.Warning, nameof(RegisterManualCommands), "permission modification broken.", e));
-                }
-                await _logger.Log(new LogMessage(LogSeverity.Debug, nameof(RegisterManualCommands), "Registered disconnect + status command and modified permissions for it."));
+                _commands = _commands.Concat(await _service.AddCommandsToGuildAsync(testguildId, false, disconnectCmd, statusCommand));
+                await _logger.Log(new LogMessage(LogSeverity.Debug, nameof(RegisterManualCommands), "Registered disconnect + status command."));
             }
             else
             {
@@ -126,7 +118,7 @@ namespace CompanionBot
                 switch (result.Error.Value)
                 {
                     case InteractionCommandError.UnknownCommand:
-                        await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Unknown interaction {info.Name}!"));
+                        await _logger.Log(new LogMessage(LogSeverity.Error, info?.Name??"unknown", $"Unknown interaction {info?.Name}!"));
                         await respond(Properties.Resources.ErrorUnknownCommand, null, false, true, null, null, null, null);
                         break;
                     case InteractionCommandError.ConvertFailed:
@@ -175,6 +167,20 @@ namespace CompanionBot
                 // Log Command Execution
                 await _logger.Log(new LogMessage(LogSeverity.Info, info.Name, context.Guild != null ? $"Interaction executed in guild {context.Guild.Name} ({context.Guild.Id})" : $"Interaction executed in DM with User {context.User.Username}#{context.User.Discriminator} ({context.User.Id})."));
             }
+        }
+
+        public string GetApplicationCommandMention(string commandName)
+        {
+            var commandInfo = _commands.FirstOrDefault(c=>c.Name == commandName,null);
+            Console.WriteLine(_commands);
+            if(commandInfo is null)
+            {
+                throw new ArgumentException("Command not found", nameof(commandName));
+            }
+
+            var localizedCommandName = commandInfo.NameLocalizations.ContainsKey(CultureInfo.CurrentCulture.Name) ? commandInfo.NameLocalizations[CultureInfo.CurrentCulture.Name] : commandInfo.Name;
+
+            return $"</{localizedCommandName}:{commandInfo.Id}>";
         }
     }
 }

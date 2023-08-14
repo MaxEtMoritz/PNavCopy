@@ -19,7 +19,7 @@ namespace CompanionBot.Properties {
     // -Klasse über ein Tool wie ResGen oder Visual Studio automatisch generiert.
     // Um einen Member hinzuzufügen oder zu entfernen, bearbeiten Sie die .ResX-Datei und führen dann ResGen
     // mit der /str-Option erneut aus, oder Sie erstellen Ihr VS-Projekt neu.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -162,7 +162,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Too many or few parameters. ⚠
+        ///   Sucht eine lokalisierte Zeichenfolge, die :warning: Too many or few parameters. :warning:
         ///Error message:
         ///```{0}```
         ///Please contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you did and which parameters you specified. ähnelt.
@@ -174,7 +174,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ One or more parameters could not be converted. ⚠
+        ///   Sucht eine lokalisierte Zeichenfolge, die :warning: One or more parameters could not be converted. :warning:
         ///Error message:
         ///```{0}```
         ///Please check your parameters.
@@ -187,9 +187,9 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Internal Error. ⚠
+        ///   Sucht eine lokalisierte Zeichenfolge, die :warning: Internal Error. :warning:
         ///The bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.
-        ///This Error message will (hopefully😅) help the developer investigate:
+        ///This Error message will (hopefully:sweat_smile:) help the developer investigate:
         ///```{0}``` ähnelt.
         /// </summary>
         internal static string errorException {
@@ -199,9 +199,9 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Internal Error. ⚠
+        ///   Sucht eine lokalisierte Zeichenfolge, die :warning: Internal Error. :warning:
         ///The bot has encountered a problem while executing this interaction. If the error persists, please open an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing as much information as possible.
-        ///This Error message will (hopefully😅) help the developer investigate:
+        ///This Error message will (hopefully:sweat_smile:) help the developer investigate:
         ///```{0}``` ähnelt.
         /// </summary>
         internal static string errorParseFailed {
@@ -211,12 +211,30 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Unknown interaction. ⚠
+        ///   Sucht eine lokalisierte Zeichenfolge, die :warning: Unknown interaction. :warning:
         ///Please contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you were trying to do when getting this error. ähnelt.
         /// </summary>
         internal static string ErrorUnknownCommand {
             get {
                 return ResourceManager.GetString("ErrorUnknownCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The file is too large. Please upload a file with a maximum size of `{0}` Megabyte. ähnelt.
+        /// </summary>
+        internal static string FileTooLarge {
+            get {
+                return ResourceManager.GetString("FileTooLarge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The file type `{0}` is not allowed. Please upload a file of type(s) `{1}`. ähnelt.
+        /// </summary>
+        internal static string FileTypeNotAllowed {
+            get {
+                return ResourceManager.GetString("FileTypeNotAllowed", resourceCulture);
             }
         }
         
@@ -248,7 +266,26 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ This interaction failed. ❌
+        ///   Sucht eine lokalisierte Zeichenfolge, die Successfully read {0} POI from the file: {1} Gyms and {2} PokéStops. ähnelt.
+        /// </summary>
+        internal static string ImportSuccessful {
+            get {
+                return ResourceManager.GetString("ImportSuccessful", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Index {0} is too big. File only has {1} columns.
+        ///Remember that the first column has index 0, not 1. ähnelt.
+        /// </summary>
+        internal static string IndexIsTooBig {
+            get {
+                return ResourceManager.GetString("IndexIsTooBig", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die :x: This interaction failed. :x:
         ///Reason: {0} ähnelt.
         /// </summary>
         internal static string interactionUnsuccessful {
@@ -285,6 +322,18 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Malformed CSV in line {0}:
+        ///```csv
+        ///{1}
+        ///``` ähnelt.
+        /// </summary>
+        internal static string MalformedCSV {
+            get {
+                return ResourceManager.GetString("MalformedCSV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Did not receive a Response from PokeNav in time.
         ///Make sure PokeNav is able to respond in the Channel where you execute the command. ähnelt.
         /// </summary>
@@ -313,7 +362,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die PokeNav Moderation Channel not set yet. Run `/mod-channel` to set it, then run `/resume` to create the PoI. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die PokeNav Moderation Channel not set yet. Run {0} to set it, then run {1} to create the PoI. ähnelt.
         /// </summary>
         internal static string modChannelUnset {
             get {
@@ -327,6 +376,15 @@ namespace CompanionBot.Properties {
         internal static string name {
             get {
                 return ResourceManager.GetString("name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The file does not contain a column named {0}. ähnelt.
+        /// </summary>
+        internal static string NoColumnWithThatName {
+            get {
+                return ResourceManager.GetString("NoColumnWithThatName", resourceCulture);
             }
         }
         
@@ -396,7 +454,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ Error while pausing ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die :x: Error while pausing ähnelt.
         /// </summary>
         internal static string pauseError {
             get {
@@ -405,7 +463,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⏸ Pausing, please be patient... ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die :pause_button: Pausing, please be patient... ähnelt.
         /// </summary>
         internal static string pauseInProgress {
             get {
@@ -414,7 +472,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ℹ Nothing to Pause here, no Bulk Import running at the moment. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die :information_source: Nothing to Pause here, no Bulk Import running at the moment. ähnelt.
         /// </summary>
         internal static string pauseNoOp {
             get {
@@ -423,7 +481,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ✅ Successfully paused! ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die :white_check_mark: Successfully paused! ähnelt.
         /// </summary>
         internal static string pauseSuccessful {
             get {
@@ -468,7 +526,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Attention! ⚠ The Bot is missing permissions in the PokeNav mod-channel:
+        ///   Sucht eine lokalisierte Zeichenfolge, die :warning: Attention! :warning: The Bot is missing permissions in the PokeNav mod-channel:
         ///	{0} View Channel
         ///	{1} Send Messages
         ///	{2} Add Reactions (recommended but optional)
@@ -491,7 +549,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ▶ Continuing... ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die :arrow_forward: Continuing... ähnelt.
         /// </summary>
         internal static string resume {
             get {
@@ -500,7 +558,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ℹ Bulk import is already running, no need to resume. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die :information_source: Bulk import is already running, no need to resume. ähnelt.
         /// </summary>
         internal static string resumeAlreadyRunning {
             get {
@@ -509,7 +567,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die /resume to see prediction ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die {0} to see prediction ähnelt.
         /// </summary>
         internal static string resumeForPrediction {
             get {
@@ -518,7 +576,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ℹ No data to import present. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die :information_source: No data to import present. ähnelt.
         /// </summary>
         internal static string resumeNoOp {
             get {
@@ -564,9 +622,9 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠ Internal Error. ⚠
+        ///   Sucht eine lokalisierte Zeichenfolge, die :warning: Internal Error. :warning:
         ///The bot has encountered a problem while executing this command. If the error persists, please open a GitHub issue at https://github.com/MaxEtMoritz/PNavCopy, providing as much information as possible.
-        ///This Error message will (hopefully😅) help the developer investigate:
+        ///This Error message will (hopefully:sweat_smile:) help the developer investigate:
         ///```{0}``` ähnelt.
         /// </summary>
         internal static string textCommandException {
@@ -603,7 +661,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ This interaction is not allowed in the current context. ❌
+        ///   Sucht eine lokalisierte Zeichenfolge, die :x: This interaction is not allowed in the current context. :x:
         ///{0} ähnelt.
         /// </summary>
         internal static string unmetPrecondition {
@@ -618,6 +676,24 @@ namespace CompanionBot.Properties {
         internal static string unmetPreconditionTextBased {
             get {
                 return ResourceManager.GetString("unmetPreconditionTextBased", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die You have to either specify the parameters `latitude` and `longitude` or the parameters `lat_lon` and `lat_lon_sep`. ähnelt.
+        /// </summary>
+        internal static string WrongParamsLatLon {
+            get {
+                return ResourceManager.GetString("WrongParamsLatLon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die You have to either specify the parameter `type` or `manual_type`. ähnelt.
+        /// </summary>
+        internal static string WrongParamType {
+            get {
+                return ResourceManager.GetString("WrongParamType", resourceCulture);
             }
         }
         

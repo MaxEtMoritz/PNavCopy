@@ -3,4 +3,5 @@ node_modules/
 config.json
 CompanionBot/CompanionBot/bin
 CompanionBot/CompanionBot/obj
-CompanionBot/.vs
+.vs/
+*.user
