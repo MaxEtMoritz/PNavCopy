@@ -195,6 +195,14 @@ This Error message will (hopefully:sweat_smile:) help the developer investigate:
 Please contact the bot owner by opening an issue at [GitHub](https://github.com/MaxEtMoritz/PNavCopy), providing what you were trying to do when getting this error.</value>
     <comment>Interaction failed because it was not known.</comment>
   </data>
+  <data name="FileTooLarge" xml:space="preserve">
+    <value>The file is too large. Please upload a file with a maximum size of `{0}` Megabyte.</value>
+    <comment>/import, File Too large</comment>
+  </data>
+  <data name="FileTypeNotAllowed" xml:space="preserve">
+    <value>The file type `{0}` is not allowed. Please upload a file of type(s) `{1}`.</value>
+    <comment>/import, file with invalid MIME type uploaded</comment>
+  </data>
   <data name="goodbye" xml:space="preserve">
     <value>Disconnecting now. Goodbye!</value>
     <comment>/disconnect confirmed by Button click</comment>
@@ -206,6 +214,15 @@ Please contact the bot owner by opening an issue at [GitHub](https://github.com/
   <data name="importing" xml:space="preserve">
     <value>Importing...</value>
     <comment>progress embed heading while working</comment>
+  </data>
+  <data name="ImportSuccessful" xml:space="preserve">
+    <value>Successfully read {0} POI from the file: {1} Gyms and {2} PokéStops.</value>
+    <comment>/import completed successfully</comment>
+  </data>
+  <data name="IndexIsTooBig" xml:space="preserve">
+    <value>Index {0} is too big. File only has {1} columns.
+Remember that the first column has index 0, not 1.</value>
+    <comment>/import column index out of bounds</comment>
   </data>
   <data name="interactionUnsuccessful" xml:space="preserve">
     <value>:x: This interaction failed. :x:
@@ -223,6 +240,13 @@ Reason: {0}</value>
   <data name="locationIdParseFailed" xml:space="preserve">
     <value>Error: Parsing of PokeNav ID failed.</value>
     <comment>PokeNav's location info embed could not be parsed correctly</comment>
+  </data>
+  <data name="MalformedCSV" xml:space="preserve">
+    <value>Malformed CSV in line {0}:
+```csv
+{1}
+```</value>
+    <comment>/import, CSV file has syntax error</comment>
   </data>
   <data name="modChannelFail" xml:space="preserve">
     <value>Did not receive a Response from PokeNav in time.
@@ -243,6 +267,10 @@ Make sure PokeNav is able to respond in the Channel where you execute the comman
   </data>
   <data name="name" xml:space="preserve">
     <value>Name:</value>
+  </data>
+  <data name="NoColumnWithThatName" xml:space="preserve">
+    <value>The file does not contain a column named {0}.</value>
+    <comment>/import, invalid column name specified</comment>
   </data>
   <data name="noMsgHistoryPerm" xml:space="preserve">
     <value>Message History permission missing. Unable to handle location select dialog =&gt; edit skipped.</value>
@@ -378,6 +406,14 @@ This Error message will (hopefully:sweat_smile:) help the developer investigate:
   <data name="unmetPreconditionTextBased" xml:space="preserve">
     <value>This command is not allowed in the current context: {0}.</value>
     <comment>text-based commands: Command not allowed in this context</comment>
+  </data>
+  <data name="WrongParamsLatLon" xml:space="preserve">
+    <value>You have to either specify the parameters `latitude` and `longitude` or the parameters `lat_lon` and `lat_lon_sep`.</value>
+    <comment>/import, Parameters for latitude and longitude were not specified correctly</comment>
+  </data>
+  <data name="WrongParamType" xml:space="preserve">
+    <value>You have to either specify the parameter `type` or `manual_type`.</value>
+    <comment>/import, none of the two type params was set</comment>
   </data>
   <data name="yesIAm" xml:space="preserve">
     <value>Yes i am</value>

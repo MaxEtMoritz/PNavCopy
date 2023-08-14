@@ -221,6 +221,24 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The file is too large. Please upload a file with a maximum size of `{0}` Megabyte. ähnelt.
+        /// </summary>
+        internal static string FileTooLarge {
+            get {
+                return ResourceManager.GetString("FileTooLarge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The file type `{0}` is not allowed. Please upload a file of type(s) `{1}`. ähnelt.
+        /// </summary>
+        internal static string FileTypeNotAllowed {
+            get {
+                return ResourceManager.GetString("FileTypeNotAllowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Disconnecting now. Goodbye! ähnelt.
         /// </summary>
         internal static string goodbye {
@@ -244,6 +262,25 @@ namespace CompanionBot.Properties {
         internal static string importing {
             get {
                 return ResourceManager.GetString("importing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Successfully read {0} POI from the file: {1} Gyms and {2} PokéStops. ähnelt.
+        /// </summary>
+        internal static string ImportSuccessful {
+            get {
+                return ResourceManager.GetString("ImportSuccessful", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Index {0} is too big. File only has {1} columns.
+        ///Remember that the first column has index 0, not 1. ähnelt.
+        /// </summary>
+        internal static string IndexIsTooBig {
+            get {
+                return ResourceManager.GetString("IndexIsTooBig", resourceCulture);
             }
         }
         
@@ -281,6 +318,18 @@ namespace CompanionBot.Properties {
         internal static string locationIdParseFailed {
             get {
                 return ResourceManager.GetString("locationIdParseFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Malformed CSV in line {0}:
+        ///```csv
+        ///{1}
+        ///``` ähnelt.
+        /// </summary>
+        internal static string MalformedCSV {
+            get {
+                return ResourceManager.GetString("MalformedCSV", resourceCulture);
             }
         }
         
@@ -327,6 +376,15 @@ namespace CompanionBot.Properties {
         internal static string name {
             get {
                 return ResourceManager.GetString("name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The file does not contain a column named {0}. ähnelt.
+        /// </summary>
+        internal static string NoColumnWithThatName {
+            get {
+                return ResourceManager.GetString("NoColumnWithThatName", resourceCulture);
             }
         }
         
@@ -618,6 +676,24 @@ namespace CompanionBot.Properties {
         internal static string unmetPreconditionTextBased {
             get {
                 return ResourceManager.GetString("unmetPreconditionTextBased", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die You have to either specify the parameters `latitude` and `longitude` or the parameters `lat_lon` and `lat_lon_sep`. ähnelt.
+        /// </summary>
+        internal static string WrongParamsLatLon {
+            get {
+                return ResourceManager.GetString("WrongParamsLatLon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die You have to either specify the parameter `type` or `manual_type`. ähnelt.
+        /// </summary>
+        internal static string WrongParamType {
+            get {
+                return ResourceManager.GetString("WrongParamType", resourceCulture);
             }
         }
         

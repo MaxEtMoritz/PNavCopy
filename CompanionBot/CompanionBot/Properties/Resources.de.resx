@@ -181,6 +181,12 @@ Diese Fehlermeldung wird dem Entwickler (hoffentlich:sweat_smile:) bei der Fehle
     <value>:warning: Unbekannter Befehl. :warning:
 Bitte kontaktieren Sie den Entwickler, indem Sie einen Issue auf [GitHub](https://github.com/MaxEtMoritz/PNavCopy) eröffnen und angeben, was Sie tun wollten als der Fehler auftrat.</value>
   </data>
+  <data name="FileTooLarge" xml:space="preserve">
+    <value>Die Datei ist zu groß. Bitte laden Sie eine Datei mit einer Maximalgröße von {0} Megabyte hoch.</value>
+  </data>
+  <data name="FileTypeNotAllowed" xml:space="preserve">
+    <value>Der Dateityp `{0}` ist nicht gültig. Bitte laden Sie eine Datei des Typs / der Typen `{1}` hoch.</value>
+  </data>
   <data name="goodbye" xml:space="preserve">
     <value>Beende jetzt die Verbindung. Servus!</value>
   </data>
@@ -189,6 +195,13 @@ Bitte kontaktieren Sie den Entwickler, indem Sie einen Issue auf [GitHub](https:
   </data>
   <data name="importing" xml:space="preserve">
     <value>Importiere...</value>
+  </data>
+  <data name="ImportSuccessful" xml:space="preserve">
+    <value>Es wurden {0} POI aus der Datei gelesen: {1} Arenen und {2} PokéStops.</value>
+  </data>
+  <data name="IndexIsTooBig" xml:space="preserve">
+    <value>Der Index {0} ist zu groß. Die Datei hat nur {1} Spalten.
+Denken Sie daran dass die erste Spalte den Index 0 hat, nicht 1.</value>
   </data>
   <data name="interactionUnsuccessful" xml:space="preserve">
     <value>:x: Dieser Befehl ist fehlgeschlagen. :x:
@@ -202,6 +215,12 @@ Grund: {0}</value>
   </data>
   <data name="locationIdParseFailed" xml:space="preserve">
     <value>Fehler: Parsen der PokeNav-ID fehlgeschlagen.</value>
+  </data>
+  <data name="MalformedCSV" xml:space="preserve">
+    <value>Ungültiges CSV in Zeile {0}:
+```csv
+{1}
+```</value>
   </data>
   <data name="modChannelFail" xml:space="preserve">
     <value>Keine rechtzeitige Antwort von PokeNav erhalten.
@@ -218,6 +237,9 @@ Stellen Sie sicher, dass PokeNav in dem Kanal antworten kann, in dem Sie den Bef
   </data>
   <data name="name" xml:space="preserve">
     <value>Name:</value>
+  </data>
+  <data name="NoColumnWithThatName" xml:space="preserve">
+    <value>Die Datei enthält keine Spalte mit dem Namen {0}.</value>
   </data>
   <data name="noMsgHistoryPerm" xml:space="preserve">
     <value>Berechtigung "Nachrichtenverlauf anzeigen" nicht erteilt. Der PoI-Auswahldialog kann deshalb nicht verarbeitet werden =&gt; Die Bearbeitung wurde übersprungen.</value>
@@ -323,6 +345,12 @@ Diese Fehlermeldung wird dem Entwickler (hoffentlich:sweat_smile:) bei der Fehle
   </data>
   <data name="unmetPreconditionTextBased" xml:space="preserve">
     <value>Dieser Befehl ist im aktuellen Kontext nicht erlaubt: {0}.</value>
+  </data>
+  <data name="WrongParamsLatLon" xml:space="preserve">
+    <value>Sie müssen entweder die Parameter `breitengrad` und `längengrad` oder die Parameter `breiten-längen` und `breiten-längen-trenner` angeben.</value>
+  </data>
+  <data name="WrongParamType" xml:space="preserve">
+    <value>Sie müssen entweder den Parameter `poi-typ` oder `fester_poi-typ` angeben.</value>
   </data>
   <data name="yesIAm" xml:space="preserve">
     <value>Ja, bin ich</value>

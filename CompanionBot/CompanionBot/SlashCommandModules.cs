@@ -126,12 +126,12 @@ namespace CompanionBot
             // validate if necessary params are set
             if ((latitude == null || longitude == null) && (latLon == null || latLonSep == null))
             {
-                await RespondAsync("You have to either specify the parameters `latitude` and `longitude` or the parameters `latLon` and `latLonSep`.");
+                await RespondAsync(Properties.Resources.WrongParamsLatLon);
                 return;
             }
             if (type == null && manualType == (int)Choices.none)
             {
-                await RespondAsync("You have to either specify the parameter `type` or `manualType`.");
+                await RespondAsync(Properties.Resources.WrongParamType);
                 return;
             }
 
@@ -168,27 +168,22 @@ namespace CompanionBot
                                 var index = Int32.Parse(colId);
                                 if (index > line.Length)
                                 {
-                                    await RespondAsync($"Index {index} is too big. File only has {line.Length} columns.\nRemember that the first column has index 0, not 1.");
+                                    await RespondAsync(String.Format(Properties.Resources.IndexIsTooBig, index, line.Length));
                                     return;
                                 }
                             }
                             else if (!header || !line.Contains(colId))
                             {
-                                await RespondAsync($"The file does not contain a column named {colId}.");
+                                await RespondAsync(String.Format(Properties.Resources.NoColumnWithThatName, colId));
                                 return;
                             }
                         }
                     }
                 }
             }
-            catch (MalformedLineException e)
+            catch (MalformedLineException)
             {
-                await RespondAsync($"""
-                Malformed CSV in line {csvReader.ErrorLineNumber}:
-                ```csv
-                {(csvReader.ErrorLine.Length <= 150 ? csvReader.ErrorLine : csvReader.ErrorLine[..150] + '…')}
-                ```
-                """);
+                await RespondAsync(String.Format(Properties.Resources.MalformedCSV, csvReader.ErrorLineNumber, csvReader.ErrorLine.Length <= 150 ? csvReader.ErrorLine : csvReader.ErrorLine[..150] + '…'));
                 return;
             }
 
@@ -266,12 +261,7 @@ namespace CompanionBot
                 catch (MalformedLineException e)
                 {
                     await _logger.Log(new(LogSeverity.Info, nameof(Import), $"Malformed CSV uploaded (line {csvReader.ErrorLineNumber}).", e));
-                    await RespondAsync($"""
-                    Malformed CSV in line {csvReader.ErrorLineNumber}:
-                    ```csv
-                    {(csvReader.ErrorLine.Length <= 150 ? csvReader.ErrorLine : csvReader.ErrorLine[..150] + '…')}
-                    ```
-                    """);
+                    await RespondAsync(String.Format(Properties.Resources.MalformedCSV, csvReader.ErrorLineNumber, csvReader.ErrorLine.Length <= 150 ? csvReader.ErrorLine : csvReader.ErrorLine[..150] + '…'));
                     return;
                 }
                 catch (InvalidDataException e)
@@ -291,12 +281,7 @@ namespace CompanionBot
                 catch (MalformedLineException e)
                 {
                     await _logger.Log(new(LogSeverity.Info, nameof(Import), $"Malformed CSV uploaded (line {csvReader.ErrorLineNumber}).", e));
-                    await RespondAsync($"""
-                    Malformed CSV in line {csvReader.ErrorLineNumber}:
-                    ```csv
-                    {(csvReader.ErrorLine.Length <= 150 ? csvReader.ErrorLine : csvReader.ErrorLine[..150] + '…')}
-                    ```
-                    """);
+                    await RespondAsync(String.Format(Properties.Resources.MalformedCSV, csvReader.ErrorLineNumber, csvReader.ErrorLine.Length <= 150 ? csvReader.ErrorLine : csvReader.ErrorLine[..150] + '…'));
                     return;
                 }
                 catch (InvalidDataException e)
@@ -308,7 +293,7 @@ namespace CompanionBot
             }
             await _logger.Log(new(LogSeverity.Debug, nameof(Import), $"took {DateTime.Now - start}"));
 
-            await RespondAsync($"Successfully read {data.Count} POI from the file: {data.Count(d=>d.type == PoiType.gym)} Gyms and {data.Count(d => d.type == PoiType.pokestop)} PokéStops.");
+            await RespondAsync(String.Format(Properties.Resources.ImportSuccessful, data.Count, data.Count(p => p.type == PoiType.gym), data.Count(p => p.type == PoiType.pokestop)));
 
             csvReader.Close();
 

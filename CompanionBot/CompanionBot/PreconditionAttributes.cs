@@ -1,5 +1,6 @@
 ﻿using Discord;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using C = Discord.Commands;
@@ -43,18 +44,21 @@ namespace CompanionBot
         }
         public override Task<I.PreconditionResult> CheckRequirementsAsync(IInteractionContext context, I.IParameterInfo parameterInfo, object value, IServiceProvider services)
         {
-            if(parameterInfo.ParameterType != typeof(IAttachment)) {
+            CultureInfo.CurrentCulture = new(context.Interaction.UserLocale);
+            CultureInfo.CurrentUICulture = new(context.Interaction.UserLocale);
+            if (parameterInfo.ParameterType != typeof(IAttachment))
+            {
                 return Task.FromException<I.PreconditionResult>(new ArgumentException("Precondition only applicable to File type Inputs"));
             }
-            if(value is not null)
+            if (value is not null)
             {
                 var file = (IAttachment)value;
                 var cType = file.ContentType.Split(';')[0].Trim();
-                if(MimeType.Contains(cType))
+                if (MimeType.Contains(cType))
                 {
                     return Task.FromResult(I.PreconditionResult.FromSuccess());
                 }
-                return Task.FromResult(I.PreconditionResult.FromError($"The file type `{cType}` is not allowed. Please upload a file of type(s) `{MimeType.Aggregate(String.Empty,(string agg,string current)=>agg==String.Empty?current:agg+"`, `"+current,(string a)=>a)}`."));
+                return Task.FromResult(I.PreconditionResult.FromError(String.Format(Properties.Resources.FileTypeNotAllowed, cType, MimeType.Aggregate(String.Empty, (string agg, string current) => agg == String.Empty ? current : agg + "`, `" + current, (string a) => a))));
             }
             return Task.FromResult(I.PreconditionResult.FromSuccess());
         }
@@ -69,6 +73,8 @@ namespace CompanionBot
         }
         public override Task<I.PreconditionResult> CheckRequirementsAsync(IInteractionContext context, I.IParameterInfo parameterInfo, object value, IServiceProvider services)
         {
+            CultureInfo.CurrentCulture = new(context.Interaction.UserLocale);
+            CultureInfo.CurrentUICulture = new(context.Interaction.UserLocale);
             if (parameterInfo.ParameterType != typeof(IAttachment))
             {
                 return Task.FromException<I.PreconditionResult>(new ArgumentException("Precondition only applicable to File type Inputs"));
@@ -80,7 +86,7 @@ namespace CompanionBot
                 {
                     return Task.FromResult(I.PreconditionResult.FromSuccess());
                 }
-                return Task.FromResult(I.PreconditionResult.FromError($"The file is too large. Please upload a file with a maximum size of `{maxMegabyte}` Megabyte."));
+                return Task.FromResult(I.PreconditionResult.FromError(String.Format(Properties.Resources.FileTooLarge, maxMegabyte)));
             }
             return Task.FromResult(I.PreconditionResult.FromSuccess());
         }
