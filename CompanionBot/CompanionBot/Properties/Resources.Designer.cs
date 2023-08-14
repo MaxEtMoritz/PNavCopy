@@ -313,7 +313,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die PokeNav Moderation Channel not set yet. Run `/mod-channel` to set it, then run `/resume` to create the PoI. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die PokeNav Moderation Channel not set yet. Run {0} to set it, then run {1} to create the PoI. ähnelt.
         /// </summary>
         internal static string modChannelUnset {
             get {
@@ -509,7 +509,7 @@ namespace CompanionBot.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die /resume to see prediction ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die {0} to see prediction ähnelt.
         /// </summary>
         internal static string resumeForPrediction {
             get {

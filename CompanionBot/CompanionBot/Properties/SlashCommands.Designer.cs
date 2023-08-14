@@ -19,7 +19,7 @@ namespace CompanionBot.Properties {
     // -Klasse über ein Tool wie ResGen oder Visual Studio automatisch generiert.
     // Um einen Member hinzuzufügen oder zu entfernen, bearbeiten Sie die .ResX-Datei und führen dann ResGen
     // mit der /str-Option erneut aus, oder Sie erstellen Ihr VS-Projekt neu.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class SlashCommands {
@@ -75,6 +75,267 @@ namespace CompanionBot.Properties {
         internal static string disconnect_name {
             get {
                 return ResourceManager.GetString("disconnect.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die How the columns are separated from each other. Enter the delimiter or \&quot;TAB\&quot; (for Tab). Default: , ähnelt.
+        /// </summary>
+        internal static string import_delimiter_description {
+            get {
+                return ResourceManager.GetString("import.delimiter.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die delimiter ähnelt.
+        /// </summary>
+        internal static string import_delimiter_name {
+            get {
+                return ResourceManager.GetString("import.delimiter.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Import POI data from an arbitrary CSV file. ähnelt.
+        /// </summary>
+        internal static string import_description {
+            get {
+                return ResourceManager.GetString("import.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Column name or zero-based index of the Ex gym status. ähnelt.
+        /// </summary>
+        internal static string import_ex_description {
+            get {
+                return ResourceManager.GetString("import.ex.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ex_gym_status ähnelt.
+        /// </summary>
+        internal static string import_ex_name {
+            get {
+                return ResourceManager.GetString("import.ex.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The CSV file containing the data ähnelt.
+        /// </summary>
+        internal static string import_file_description {
+            get {
+                return ResourceManager.GetString("import.file.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die file ähnelt.
+        /// </summary>
+        internal static string import_file_name {
+            get {
+                return ResourceManager.GetString("import.file.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Is the first row a Header row (does it contain the column names)? Default: True ähnelt.
+        /// </summary>
+        internal static string import_header_description {
+            get {
+                return ResourceManager.GetString("import.header.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die has_header ähnelt.
+        /// </summary>
+        internal static string import_header_name {
+            get {
+                return ResourceManager.GetString("import.header.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Column name or index of lat/lon. If lat and lon are separated, use params latitude and longitude. ähnelt.
+        /// </summary>
+        internal static string import_lat_lon_description {
+            get {
+                return ResourceManager.GetString("import.lat-lon.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die lat_lon ähnelt.
+        /// </summary>
+        internal static string import_lat_lon_name {
+            get {
+                return ResourceManager.GetString("import.lat-lon.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Separator of combined lat/lon. If lat and lon are separated, use parameters latitude and longitude. ähnelt.
+        /// </summary>
+        internal static string import_lat_lon_sep_description {
+            get {
+                return ResourceManager.GetString("import.lat-lon-sep.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die lat_lon_sep ähnelt.
+        /// </summary>
+        internal static string import_lat_lon_sep_name {
+            get {
+                return ResourceManager.GetString("import.lat-lon-sep.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Column name or zero-based index of lat. If lat and lon is combined, use params latLon and latLonSep. ähnelt.
+        /// </summary>
+        internal static string import_latitude_description {
+            get {
+                return ResourceManager.GetString("import.latitude.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die latitude ähnelt.
+        /// </summary>
+        internal static string import_latitude_name {
+            get {
+                return ResourceManager.GetString("import.latitude.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Column name or zero-based index of lon. If lat and lon is combined, use params latLon and latLonSep. ähnelt.
+        /// </summary>
+        internal static string import_longitude_description {
+            get {
+                return ResourceManager.GetString("import.longitude.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die longitude ähnelt.
+        /// </summary>
+        internal static string import_longitude_name {
+            get {
+                return ResourceManager.GetString("import.longitude.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Only Gyms ähnelt.
+        /// </summary>
+        internal static string import_manual_type_0_name {
+            get {
+                return ResourceManager.GetString("import.manual-type.0.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Set the POI type for every POI of this file. If the POI type is inside the file, use parameter type. ähnelt.
+        /// </summary>
+        internal static string import_manual_type_description {
+            get {
+                return ResourceManager.GetString("import.manual-type.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die manual_type ähnelt.
+        /// </summary>
+        internal static string import_manual_type_name {
+            get {
+                return ResourceManager.GetString("import.manual-type.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die No manual type override ähnelt.
+        /// </summary>
+        internal static string import_manual_type_none_name {
+            get {
+                return ResourceManager.GetString("import.manual-type.none.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Only PokéStops ähnelt.
+        /// </summary>
+        internal static string import_manual_type_Stop_name {
+            get {
+                return ResourceManager.GetString("import.manual-type.Stop.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die import ähnelt.
+        /// </summary>
+        internal static string import_name {
+            get {
+                return ResourceManager.GetString("import.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Column name or zero-based index of the POI names in the file. ähnelt.
+        /// </summary>
+        internal static string import_name_description {
+            get {
+                return ResourceManager.GetString("import.name.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die name ähnelt.
+        /// </summary>
+        internal static string import_name_name {
+            get {
+                return ResourceManager.GetString("import.name.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Are the values enclosed with double quotes? Default: False ähnelt.
+        /// </summary>
+        internal static string import_quoted_description {
+            get {
+                return ResourceManager.GetString("import.quoted.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die fields_quoted ähnelt.
+        /// </summary>
+        internal static string import_quoted_name {
+            get {
+                return ResourceManager.GetString("import.quoted.name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Column name or zero-based index of POI type. If all POI are of the same type, use param manualType. ähnelt.
+        /// </summary>
+        internal static string import_type_description {
+            get {
+                return ResourceManager.GetString("import.type.description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die poi_type ähnelt.
+        /// </summary>
+        internal static string import_type_name {
+            get {
+                return ResourceManager.GetString("import.type.name", resourceCulture);
             }
         }
         

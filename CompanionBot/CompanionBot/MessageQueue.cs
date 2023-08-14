@@ -19,6 +19,7 @@ using System.Globalization;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.IO;
+using System.Xml.Linq;
 
 namespace CompanionBot
 {
@@ -30,7 +31,7 @@ namespace CompanionBot
         private readonly HttpClient _webClient = new(TimeLimiter.GetFromMaxCountByInterval(1, TimeSpan.FromSeconds(1)).AsDelegatingHandler()); // 1 request per second at max!
         private readonly string prefix;
         private readonly ConcurrentDictionary<ulong, CancellationTokenSource> tokens = new();
-        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<string>> createQueues;
+        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<PortalData>> createQueues;
         private readonly ConcurrentDictionary<ulong, ConcurrentQueue<EditData>> editQueues;
         private readonly ConcurrentDictionary<ulong, Task> workers = new();
         private readonly ConcurrentDictionary<ulong, IUserMessage> progress = new();
@@ -38,16 +39,18 @@ namespace CompanionBot
         private readonly RequestOptions options;
         private readonly RequestOptions typingOptions;
         private readonly IConfiguration _config;
+        private readonly InteractionHandler _iHandler;
         private TimeSpan averageCreateTime = TimeSpan.FromSeconds(1);
         private TimeSpan averageEditTime = TimeSpan.FromSeconds(2);
 
-        public MessageQueue(DiscordSocketClient client, InteractiveService interactive, Logger logger, GuildSettings settings, IConfiguration config)
+        public MessageQueue(DiscordSocketClient client, InteractiveService interactive, Logger logger, GuildSettings settings, IConfiguration config, InteractionHandler interactionHandler)
         {
             _client = client;
             _inter = interactive;
             _logger = logger;
             _settings = settings;
             _config = config;
+            _iHandler = interactionHandler;
             prefix = $"<@{config["pokeNavId"]}> ";
             options = RequestOptions.Default;
             options.RetryMode = RetryMode.RetryRatelimit;
@@ -58,7 +61,7 @@ namespace CompanionBot
             if (File.Exists("pendingCreations.json"))
             {
                 var ms = File.OpenRead("pendingCreations.json");
-                createQueues = JsonSerializer.Deserialize<ConcurrentDictionary<ulong, ConcurrentQueue<string>>>(ms);
+                createQueues = JsonSerializer.Deserialize<ConcurrentDictionary<ulong, ConcurrentQueue<PortalData>>>(ms);
                 _logger.Log(new(LogSeverity.Info, nameof(MessageQueue), "deserialized createQueues."));
                 ms.Close();
                 File.Delete("pendingCreations.json");
@@ -75,31 +78,31 @@ namespace CompanionBot
             editQueues ??= new();
         }
 
-        public Task EnqueueCreate(ICommandContext context, List<string> commands, ChannelPermissions invokingPerms)
+        public Task EnqueueCreate(ulong guildId, IMessageChannel channel, List<PortalData> data, ChannelPermissions invokingPerms)
         {
-            createQueues.AddOrUpdate(context.Guild.Id, new ConcurrentQueue<string>(commands), (ulong id, ConcurrentQueue<string> queue) =>
+            createQueues.AddOrUpdate(guildId, new ConcurrentQueue<PortalData>(data), (ulong id, ConcurrentQueue<PortalData> queue) =>
             {
-                foreach (string command in commands)
+                foreach (PortalData command in data)
                 {
                     queue.Enqueue(command);
                 }
                 return queue;
             });
 
-            UpdateProgress(context.Guild.Id, context.Channel, invokingPerms);
+            UpdateProgress(guildId, channel, invokingPerms);
 
-            workers.AddOrUpdate(context.Guild.Id, (ulong key) =>
+            workers.AddOrUpdate(guildId, (ulong key) =>
             {
                 CancellationTokenSource source = new();
                 tokens[key] = source;
-                return Work(key, context.Channel, invokingPerms, source.Token);
+                return Work(key, channel, invokingPerms, source.Token);
             }, (ulong key, Task current) =>
             {
                 if (current.IsCompleted && !current.IsCanceled)
                 {
                     CancellationTokenSource source = new();
                     tokens[key] = source;
-                    return Work(key, context.Channel, invokingPerms, source.Token);
+                    return Work(key, channel, invokingPerms, source.Token);
                 }
                 return current;
             });
@@ -176,7 +179,7 @@ namespace CompanionBot
             {
                 if (workers.TryRemove(context.Guild.Id, out Task value))
                     value.Dispose();
-                if (createQueues.TryGetValue(context.Guild.Id, out ConcurrentQueue<string> create) && !create.IsEmpty)
+                if (createQueues.TryGetValue(context.Guild.Id, out ConcurrentQueue<PortalData> create) && !create.IsEmpty)
                 {
                     CancellationTokenSource source = new();
                     tokens[context.Guild.Id] = source;
@@ -357,7 +360,7 @@ namespace CompanionBot
             {
                 CultureInfo.CurrentCulture = new((channel as IGuildChannel).Guild.PreferredLocale);
                 CultureInfo.CurrentUICulture = new((channel as IGuildChannel).Guild.PreferredLocale);
-                bool create = createQueues.TryGetValue(guild, out ConcurrentQueue<string> createQueue);
+                bool create = createQueues.TryGetValue(guild, out ConcurrentQueue<PortalData> createQueue);
                 bool edit = editQueues.TryGetValue(guild, out ConcurrentQueue<EditData> editQueue);
                 bool progr = progress.TryGetValue(guild, out IUserMessage message);
                 bool working = workers.TryGetValue(guild, out Task worker) && !worker.IsCompleted && tokens.TryGetValue(guild, out CancellationTokenSource token) && !token.IsCancellationRequested;
@@ -384,7 +387,7 @@ namespace CompanionBot
                     new EmbedFieldBuilder()
                     {
                         Name = Properties.Resources.timeRemaining,
-                        Value = working?String.Format(Properties.Resources.probablyFinished, time):"/resume to see prediction"
+                        Value = working?String.Format(Properties.Resources.probablyFinished, time):$"{_iHandler.GetApplicationCommandMention("resume")} to see prediction"
                     }
                 }
                 }.WithCurrentTimestamp();
@@ -468,10 +471,10 @@ namespace CompanionBot
 
                 ChannelPermissions modPerms = _client.GetGuild(guildId).CurrentUser.GetPermissions(channel as IGuildChannel);
                 DateTime start;
-                if (modPerms.SendMessages && createQueues.TryGetValue(guildId, out ConcurrentQueue<string> queue))
+                if (modPerms.SendMessages && createQueues.TryGetValue(guildId, out ConcurrentQueue<PortalData> queue))
                 {
 
-                    while (modPerms.SendMessages && queue.TryDequeue(out string current))
+                    while (modPerms.SendMessages && queue.TryDequeue(out PortalData current))
                     {
                         if (token.IsCancellationRequested)
                         {
@@ -482,6 +485,7 @@ namespace CompanionBot
                             token.ThrowIfCancellationRequested();
                         }
                         start = DateTime.UtcNow;
+                        string command = $"create poi {current.type} «{current.name}» {current.lat} {current.lng}{(current.isEx != null ? $" \"ex_eligible: {Convert.ToInt16((bool)current.isEx)}\"" : "")}";
                         IDisposable typing = null;
                         try
                         {
@@ -494,7 +498,7 @@ namespace CompanionBot
                         CancellationTokenSource ct = new();
                         // wait for PokeNav to respond...
                         var nma = _inter.NextMessageAsync(x => x.Author.Id == ulong.Parse(_config["pokeNavId"]) && x.Channel.Id == channel.Id && x.Embeds.Count == 1 && (x.Content == "The following poi has been created for use in your community:" || x.Embeds.First().Title == "Error" || x.Content.StartsWith("Error:")), null, TimeSpan.FromSeconds(10), cancellationToken: ct.Token);
-                        Task<bool> t = TryToSendMessage(channel, ref modPerms, $"{prefix}{current}", options: options);
+                        Task<bool> t = TryToSendMessage(channel, ref modPerms, $"{prefix}{command}", options: options);
                         if (!await t)
                         {
                             ct.Cancel();
@@ -528,8 +532,9 @@ namespace CompanionBot
             }
             else
             {
+                string err = String.Format(Properties.Resources.modChannelUnset, _iHandler.GetApplicationCommandMention("mod-channel"), _iHandler.GetApplicationCommandMention("resume"));
                 if (invokingPerms.SendMessages)
-                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, Properties.Resources.modChannelUnset))
+                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, err))
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Work), $"Error while sending error message in Guild {guildId}."));
                     }
@@ -846,7 +851,7 @@ namespace CompanionBot
                         }
                         averageEditTime = averageEditTime * 0.9 + (DateTime.UtcNow - start) * (1 - 0.9); // TODO: Does this work like intended?
                     }
-                    if (createQueues.TryGetValue(guildId, out ConcurrentQueue<string> create) && !create.IsEmpty)
+                    if (createQueues.TryGetValue(guildId, out ConcurrentQueue<PortalData> create) && !create.IsEmpty)
                     {
                         workers[guildId] = Work(guildId, invokedChannel, invokingPerms, token); // proceed with creation after edits are complete if there is anything to create.
                     }
@@ -854,8 +859,9 @@ namespace CompanionBot
             }
             else
             {
+                string err = String.Format(Properties.Resources.modChannelUnset, _iHandler.GetApplicationCommandMention("mod-channel"), _iHandler.GetApplicationCommandMention("resume"));
                 if (invokingPerms.SendMessages)
-                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, Properties.Resources.modChannelUnset))
+                    if (!await TryToSendMessage(invokedChannel, ref invokingPerms, err))
                     {
                         await _logger.Log(new LogMessage(LogSeverity.Error, nameof(Edit), $"Error while sending error message in Guild {guildId}."));
                     }

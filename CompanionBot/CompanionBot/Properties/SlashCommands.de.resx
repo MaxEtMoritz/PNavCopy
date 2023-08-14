@@ -103,6 +103,93 @@
   <data name="disconnect.name" xml:space="preserve">
     <value>trennen</value>
   </data>
+  <data name="import.delimiter.description" xml:space="preserve">
+    <value>Trennzeichen zwischen Spalten. Geben Sie das Trennzeichen oder "TAB" ein. Standard: ,</value>
+  </data>
+  <data name="import.delimiter.name" xml:space="preserve">
+    <value>trennzeichen</value>
+  </data>
+  <data name="import.description" xml:space="preserve">
+    <value>POI-Daten aus einer CSV-Datei importieren.</value>
+  </data>
+  <data name="import.ex.description" xml:space="preserve">
+    <value>Spaltenname oder nullbasierter Index des Ex-Arena-Status.</value>
+  </data>
+  <data name="import.ex.name" xml:space="preserve">
+    <value>ex-arena_status</value>
+  </data>
+  <data name="import.file.description" xml:space="preserve">
+    <value>Die CSV-Datei mit den Daten</value>
+  </data>
+  <data name="import.file.name" xml:space="preserve">
+    <value>datei</value>
+  </data>
+  <data name="import.header.description" xml:space="preserve">
+    <value>Ist die erste Zeile eine Kopfzeile (enthält sie die Spaltennamen)? Standard: True</value>
+  </data>
+  <data name="import.header.name" xml:space="preserve">
+    <value>hat_kopfzeile</value>
+  </data>
+  <data name="import.lat-lon-sep.description" xml:space="preserve">
+    <value>Trennzeichen kombinierter Längen-/Breitengrad. Wenn schon getrennt, Parameter längen° und breiten°.</value>
+  </data>
+  <data name="import.lat-lon-sep.name" xml:space="preserve">
+    <value>breiten-längen-trenner</value>
+  </data>
+  <data name="import.lat-lon.description" xml:space="preserve">
+    <value>Spaltenname oder Index kombinierter Längen-/Breiten°. Wenn getrennt, Parameter längen° und breiten°.</value>
+  </data>
+  <data name="import.lat-lon.name" xml:space="preserve">
+    <value>breiten_längen</value>
+  </data>
+  <data name="import.latitude.description" xml:space="preserve">
+    <value>Spaltenname oder 0-basierter Index d. Breiten°. Kombinierter Längen-/Breiten°: latLon und latLonSep.</value>
+  </data>
+  <data name="import.latitude.name" xml:space="preserve">
+    <value>breitengrad</value>
+  </data>
+  <data name="import.longitude.description" xml:space="preserve">
+    <value>Spaltenname oder 0-basierter Index des Längen°. Kombinierter Längen-/Breiten°: latLon und latLonSep.</value>
+  </data>
+  <data name="import.longitude.name" xml:space="preserve">
+    <value>längengrad</value>
+  </data>
+  <data name="import.manual-type.description" xml:space="preserve">
+    <value>POI-Typ für alle POI der Datei setzen. Wenn Typ in Datei enthalten: Parameter poi-typ.</value>
+  </data>
+  <data name="import.manual-type.0.name" xml:space="preserve">
+    <value>Alles Arenen</value>
+  </data>
+  <data name="import.manual-type.name" xml:space="preserve">
+    <value>fester_poi-typ</value>
+  </data>
+  <data name="import.manual-type.none.name" xml:space="preserve">
+    <value>Kein fester POI-Typ</value>
+  </data>
+  <data name="import.manual-type.Stop.name" xml:space="preserve">
+    <value>Alles PokéStops</value>
+  </data>
+  <data name="import.name" xml:space="preserve">
+    <value>importieren</value>
+  </data>
+  <data name="import.name.description" xml:space="preserve">
+    <value>Spaltenname oder Nullbasierter Index der POI-Namen.</value>
+  </data>
+  <data name="import.name.name" xml:space="preserve">
+    <value>name</value>
+  </data>
+  <data name="import.quoted.description" xml:space="preserve">
+    <value>Sind die Werte von Anführungszeichen umschlossen? Standard: False</value>
+  </data>
+  <data name="import.quoted.name" xml:space="preserve">
+    <value>felder_in_anführungszeichen</value>
+  </data>
+  <data name="import.type.description" xml:space="preserve">
+    <value>Spaltenname oder 0-basierter Index des POI-Typs. Alle POI vom selben Typ: Parameter fester_poi-typ.</value>
+  </data>
+  <data name="import.type.name" xml:space="preserve">
+    <value>poi-typ</value>
+  </data>
   <data name="mod-channel.description" xml:space="preserve">
     <value>Fragt den PokeNav-Moderationskanal dieses Servers ab und speichert ihn.</value>
   </data>

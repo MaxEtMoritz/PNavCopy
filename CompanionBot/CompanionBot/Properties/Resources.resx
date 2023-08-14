@@ -238,7 +238,7 @@ Make sure PokeNav is able to respond in the Channel where you execute the comman
     <comment>/mod-channel completed successfully</comment>
   </data>
   <data name="modChannelUnset" xml:space="preserve">
-    <value>PokeNav Moderation Channel not set yet. Run `/mod-channel` to set it, then run `/resume` to create the PoI.</value>
+    <value>PokeNav Moderation Channel not set yet. Run {0} to set it, then run {1} to create the PoI.</value>
     <comment>import, no mod-channel was set yet.</comment>
   </data>
   <data name="name" xml:space="preserve">
@@ -328,7 +328,7 @@ Make sure to grant the neccessary permissions for the bot for &lt;#{4}&gt;.</val
     <comment>/resume when import is already in progress</comment>
   </data>
   <data name="resumeForPrediction" xml:space="preserve">
-    <value>/resume to see prediction</value>
+    <value>{0} to see prediction</value>
     <comment>progress embed, time remaining when paused</comment>
   </data>
   <data name="resumeNoOp" xml:space="preserve">

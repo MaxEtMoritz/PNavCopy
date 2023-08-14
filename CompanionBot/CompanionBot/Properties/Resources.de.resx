@@ -214,7 +214,7 @@ Stellen Sie sicher, dass PokeNav in dem Kanal antworten kann, in dem Sie den Bef
     <value>PokeNav-Administrationskanal erfolgreich auf &lt;#{0}&gt; festgelegt</value>
   </data>
   <data name="modChannelUnset" xml:space="preserve">
-    <value>PokeNav-Administrationskanal noch nicht gesetzt. Führen Sie `/mod-channel` aus, um Ihn zu setzen, danach `/resume` um es erneut zu versuchen.</value>
+    <value>PokeNav-Administrationskanal noch nicht gesetzt. Führen Sie {0} aus, um Ihn zu setzen, danach {1} um es erneut zu versuchen.</value>
   </data>
   <data name="name" xml:space="preserve">
     <value>Name:</value>
@@ -284,7 +284,7 @@ Stellen Sie sicher, dass Sie dem Bot die nötigen Berechtigungen für &lt;#{4}&g
     <value>:information_source: Massen-Import läuft bereits, er muss nicht fortgesetzt werden.</value>
   </data>
   <data name="resumeForPrediction" xml:space="preserve">
-    <value>/resume, um Vorhersage zu sehen</value>
+    <value>{0}, um Vorhersage zu sehen</value>
   </data>
   <data name="resumeNoOp" xml:space="preserve">
     <value>:information_source: Keine weiteren Daten zum Importieren vorhanden.</value>

@@ -48,10 +48,10 @@ namespace CompanionBot
                 if (perms.SendMessages)
                     await Context.Message.ReplyAsync(String.Format(Properties.Resources.downloadFailed, e.Message));
             }
-            PortalData[] data;
+            List<PortalData> data;
             try
             {
-                data = JsonConvert.DeserializeObject<PortalData[]>(dataString, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Error });
+                data = JsonConvert.DeserializeObject<List<PortalData>>(dataString, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Error });
             }
             catch (Exception e)
             {
@@ -60,12 +60,7 @@ namespace CompanionBot
                 return;
             }
 
-            List<string> commands = new();
-            foreach (PortalData current in data)
-            {
-                commands.Add($"create poi {current.type} «{current.name}» {current.lat} {current.lng}{(current.isEx != null ? $" \"ex_eligible: {Convert.ToInt16((bool)current.isEx)}\"" : "")}");
-            }
-            await _queue.EnqueueCreate(Context, commands, perms);
+            await _queue.EnqueueCreate(Context.Guild.Id, Context.Channel, data, perms);
         }
 
         [Command("edit", RunMode = RunMode.Async), Alias("e"), Summary("Receives a list of Edits to make from the IITC Plugin, sends the PoI Info Command to obtain the PokeNav id and makes the Edit afterwards."), RequireWebhook(Group = "g"), RequireOwner(Group = "g"), RequireAttachedJson]
