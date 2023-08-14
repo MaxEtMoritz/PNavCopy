@@ -10,6 +10,9 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.Reflection;
+using System.Timers;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace CompanionBot
 {
@@ -21,9 +24,9 @@ namespace CompanionBot
         private IConfiguration _config;
         private IServiceProvider _services;
         private InteractionHandler iHandler;
+        private static Timer watchdog = new(TimeSpan.FromSeconds(30)) { AutoReset = false };
 
-        public static void Main()
-        => new Program().MainAsync().GetAwaiter().GetResult();
+        public static void Main() => new Program().MainAsync().GetAwaiter().GetResult();
 
         public async Task MainAsync()
         {
@@ -42,12 +45,12 @@ namespace CompanionBot
                     MessageCacheSize = 20,
                     GatewayIntents = GatewayIntents.GuildMessageReactions
                     | GatewayIntents.GuildMessages
-                    | GatewayIntents.Guilds,
+                    | GatewayIntents.Guilds | GatewayIntents.MessageContent,
                     AlwaysDownloadDefaultStickers = false,
                     AlwaysResolveStickers = false,
 #if DEBUG
                     LogGatewayIntentWarnings = true,
-                    LogLevel = LogSeverity.Debug
+                    LogLevel = LogSeverity.Debug,
 #endif
                 }))
                 .AddSingleton<InteractiveService>()
@@ -66,17 +69,20 @@ namespace CompanionBot
                     })
                 }))
                 .BuildServiceProvider();
+            watchdog.Elapsed += Watchdog_Elapsed;
 
             _client = _services.GetRequiredService<DiscordSocketClient>();
             _client.Log += _services.GetRequiredService<Logger>().Log;
             _client.LeftGuild += GuildLeft;
             _client.Disconnected += ClientDisconnected;
+            _client.Connected += ClientConnected;
 
             _client.Ready += ClientReady;
             _services.GetRequiredService<InteractiveService>().Log += _services.GetRequiredService<Logger>().Log;
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
+
             commandService = _services.GetRequiredService<CommandService>();
             commandService.Log += _services.GetRequiredService<Logger>().Log;
             handler = _services.GetRequiredService<CommandHandler>();
@@ -89,8 +95,28 @@ namespace CompanionBot
             await Task.Delay(-1);
         }
 
+        private void Watchdog_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            _services.GetRequiredService<MessageQueue>().SaveState().Wait();
+            _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Error, this.GetType().Name, "Gateway connection was not recovered in time. Exiting.")).Wait();
+            Environment.Exit(-1);
+        }
+
         private async Task ClientReady()
         {
+            // logout and save state when process is terminated.
+            void h(PosixSignalContext ctx) {
+                _services.GetRequiredService<MessageQueue>().SaveState().Wait();
+                _client.Dispose();
+                // don't know why the explicit kill is necessary, but without it, the program hangs on termination...
+                // mabe because the default will wait for the Task.delay(-1) to finish that never happens???
+                Process.GetCurrentProcess().Kill();
+            }
+
+            PosixSignalRegistration.Create(PosixSignal.SIGINT, h);
+            PosixSignalRegistration.Create(PosixSignal.SIGHUP, h);
+            PosixSignalRegistration.Create(PosixSignal.SIGTERM, h);
+            PosixSignalRegistration.Create(PosixSignal.SIGQUIT, h);
 #if DEBUG
             await iHandler.RegisterSlashCommandsForTestGuild();
 #else
@@ -117,8 +143,17 @@ namespace CompanionBot
             }
             else
             {
-                Environment.Exit(ex.HResult);
-                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Error, this.GetType().Name, "Disconnected from gateway due to Exception", ex));
+                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Warning, this.GetType().Name, "Disconnected. Kill scheduled...", ex));
+                watchdog.Start();
+            }
+        }
+
+        private async Task ClientConnected()
+        {
+            if (watchdog.Enabled)
+            {
+                await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Info, this.GetType().Name, "Kill prevented, connection was re-established."));
+                watchdog.Stop();
             }
         }
     }
