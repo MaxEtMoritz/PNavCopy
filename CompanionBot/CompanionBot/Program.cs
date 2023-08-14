@@ -6,13 +6,12 @@ using Fergun.Interactive;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Net.Http;
-using System.Threading.Tasks;
 using System.Globalization;
+using System.Net.Http;
 using System.Reflection;
-using System.Timers;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Timers;
 
 namespace CompanionBot
 {
@@ -24,7 +23,7 @@ namespace CompanionBot
         private IConfiguration _config;
         private IServiceProvider _services;
         private InteractionHandler iHandler;
-        private static Timer watchdog = new(TimeSpan.FromSeconds(30)) { AutoReset = false };
+        private static readonly Timer watchdog = new(TimeSpan.FromSeconds(30)) { AutoReset = false };
 
         public static void Main() => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -32,7 +31,7 @@ namespace CompanionBot
         {
             _config = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("config.json")
+                .AddJsonFile("config.json",false, true)
                 .Build();
 
             CultureInfo.DefaultThreadCurrentCulture = new("en-US");
@@ -91,6 +90,25 @@ namespace CompanionBot
             iHandler = _services.GetRequiredService<InteractionHandler>();
             await iHandler.InstallCommandsAsync();
 
+            // logout and save state when process is terminated.
+            void PosixHandler(PosixSignalContext ctx)
+            {
+                _services.GetRequiredService<Logger>().Log(new(LogSeverity.Info, nameof(PosixHandler), $"Received {Enum.GetName(typeof(PosixSignal), ctx.Signal)}, exiting...")).Wait();
+                _services.GetRequiredService<MessageQueue>().SaveState().Wait();
+                _client.Dispose();
+                // don't know why preventing automatic termination is necessary, but otherwise the handler hangs the application...
+                ctx.Cancel = true;
+                Environment.Exit(0);
+            }
+
+            // store registrations, otherwise the handlers are cleared by GC after some time...
+            PosixSignalRegistration[] regs = new[]{
+                PosixSignalRegistration.Create(PosixSignal.SIGINT, PosixHandler),
+                PosixSignalRegistration.Create(PosixSignal.SIGHUP, PosixHandler),
+                PosixSignalRegistration.Create(PosixSignal.SIGTERM, PosixHandler),
+                PosixSignalRegistration.Create(PosixSignal.SIGQUIT, PosixHandler)
+            };
+
             // Block this task until the program is closed.
             await Task.Delay(-1);
         }
@@ -104,19 +122,6 @@ namespace CompanionBot
 
         private async Task ClientReady()
         {
-            // logout and save state when process is terminated.
-            void h(PosixSignalContext ctx) {
-                _services.GetRequiredService<MessageQueue>().SaveState().Wait();
-                _client.Dispose();
-                // don't know why the explicit kill is necessary, but without it, the program hangs on termination...
-                // mabe because the default will wait for the Task.delay(-1) to finish that never happens???
-                Process.GetCurrentProcess().Kill();
-            }
-
-            PosixSignalRegistration.Create(PosixSignal.SIGINT, h);
-            PosixSignalRegistration.Create(PosixSignal.SIGHUP, h);
-            PosixSignalRegistration.Create(PosixSignal.SIGTERM, h);
-            PosixSignalRegistration.Create(PosixSignal.SIGQUIT, h);
 #if DEBUG
             await iHandler.RegisterSlashCommandsForTestGuild();
 #else
