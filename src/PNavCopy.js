@@ -187,14 +187,14 @@ window.plugin.pnav.copy = function () {
       window.plugin.pnav.settings.radius !== null &&
       checkDistance(data.lat, data.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) > window.plugin.pnav.settings.radius
     ) {
-      alert(getString('alertOutsideArea'));
+      alert(getString('alertOutsideArea', window.plugin.pnav.settings.language));
     } else {
       let changes = checkForSingleModification(data);
       if (changes) {
         window.plugin.pnav.bulkModify([changes]);
       } else if (data.type !== 'none') {
         if (pNavData[data.type][selectedGuid]) {
-          alert(getString('alertAlreadyExported'));
+          alert(getString('alertAlreadyExported', window.plugin.pnav.settings.language));
           input.show();
           input.val(`${prefix}create poi ${data.type} «${data.name}» ${data.lat} ${data.lng}${data.isEx ? ' "ex_eligible: 1"' : ''}`);
           copyfieldvalue('copyInput');
@@ -229,8 +229,8 @@ window.plugin.pnav.copy = function () {
       }
     }
     // eslint-disable-next-line no-underscore-dangle
-    if (window._current_highlighter === getString('portalHighlighterName')) {
-      window.changePortalHighlights(getString('portalHighlighterName')); // re-validate highlighter if active
+    if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+      window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language)); // re-validate highlighter if active
     }
   }
 };
@@ -243,23 +243,23 @@ window.plugin.pnav.imExport = function () {
    */
 
   let date = new Date();
-  let html = `<button type="Button" id="exportBtn" title="${getString('btnExportTitle')}">${getString('btnExportText')}</button>
+  let html = `<button type="Button" id="exportBtn" title="${getString('btnExportTitle', window.plugin.pnav.settings.language)}">${getString('btnExportText', window.plugin.pnav.settings.language)}</button>
     <hr>`;
   if (typeof L.FileListLoader !== 'undefined' || typeof window.requestFile !== 'undefined') {
-    html += `<button id="importBtn" type="Button" title="${getString('btnImportTitle')}">${getString('btnImportText')}</button>`;
+    html += `<button id="importBtn" type="Button" title="${getString('btnImportTitle', window.plugin.pnav.settings.language)}">${getString('btnImportText', window.plugin.pnav.settings.language)}</button>`;
   } else if (File && FileReader && Blob) {
     html += `<form id="importForm">
       <input type="file" id="importFile" name="import" accept="application/json"><br>
-      <input type="submit" value="${getString('btnImportText')}" title="${getString('btnImportTitle')}" class="Button">
+      <input type="submit" value="${getString('btnImportText', window.plugin.pnav.settings.language)}" title="${getString('btnImportTitle', window.plugin.pnav.settings.language)}" class="Button">
       </form>`;
   } else {
-    html += `<textarea id="importInput" style="width:100%; height:auto" placeholder="${getString('importInputText')}"></textarea>
-      <button type="Button" class="Button" id="importDialogButton" title="${getString('btnImportTitle')}">${getString('btnImportText')}</button>`;
+    html += `<textarea id="importInput" style="width:100%; height:auto" placeholder="${getString('importInputText', window.plugin.pnav.settings.language)}"></textarea>
+      <button type="Button" class="Button" id="importDialogButton" title="${getString('btnImportTitle', window.plugin.pnav.settings.language)}">${getString('btnImportText', window.plugin.pnav.settings.language)}</button>`;
   }
   const dialog = window.dialog({id: 'imExportDialog',
     width: 'auto',
     height: 'auto',
-    title: getString('imExportDialogTitle'),
+    title: getString('imExportDialogTitle', window.plugin.pnav.settings.language),
     html});
 
   $('#exportBtn').on('click', () => {
@@ -275,7 +275,7 @@ window.plugin.pnav.imExport = function () {
       tmpTextarea.select();
       document.execCommand('copy');
       document.body.removeChild(tmpTextarea);
-      alert(getString('alertExportCopied'));
+      alert(getString('alertExportCopied', window.plugin.pnav.settings.language));
     }
   });
   if ($('#importBtn').length > 0) {
@@ -290,11 +290,11 @@ window.plugin.pnav.imExport = function () {
             dialog.dialog('close');
             // re-validate the highlighter if it is active.
             // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName')) {
-              window.changePortalHighlights(getString('portalHighlighterName'));
+            if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+              window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
             }
           } else {
-            alert(getString('importInvalidFormat'));
+            alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
           }
         });
       } else if (typeof window.requestFile !== 'undefined') {
@@ -306,11 +306,11 @@ window.plugin.pnav.imExport = function () {
             dialog.dialog('close');
             // re-validate the highlighter if it is active.
             // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName')) {
-              window.changePortalHighlights(getString('portalHighlighterName'));
+            if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+              window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
             }
           } else {
-            alert(getString('importInvalidFormat'));
+            alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
           }
         });
       }
@@ -330,11 +330,11 @@ window.plugin.pnav.imExport = function () {
             dialog.dialog('close');
             // re-validate the highlighter if it is active.
             // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName')) {
-              window.changePortalHighlights(getString('portalHighlighterName'));
+            if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+              window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
             }
           } else {
-            alert(getString('importInvalidFormat'));
+            alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
           }
         };
         fr.readAsText($('#importFile', dialog).prop('files')[0]);
@@ -346,7 +346,7 @@ window.plugin.pnav.imExport = function () {
       try {
         data = JSON.parse($('#importInput', dialog).val());
       } catch (e) {
-        alert(getString('importInvalidFormat'));
+        alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
         console.error(`Parsing of import JSON Data failed: ${e.message}`);
         return;
       }
@@ -355,12 +355,12 @@ window.plugin.pnav.imExport = function () {
         saveToLocalStorage();
         // re-validate the highlighter if it is active.
         // eslint-disable-next-line no-underscore-dangle
-        if (window._current_highlighter === getString('portalHighlighterName')) {
-          window.changePortalHighlights(getString('portalHighlighterName'));
+        if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+          window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
         }
         dialog.dialog('close');
       } else {
-        alert(getString('importInvalidFormat'));
+        alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
       }
     });
   }
@@ -378,7 +378,7 @@ window.plugin.pnav.showSettings = function () {
     width: 'auto',
     height: 'auto',
     html,
-    title: getString('pnavsettingsTitle'),
+    title: getString('pnavsettingsTitle', window.plugin.pnav.settings.language),
     buttons: {
       OK () {
         if (!window.plugin.pnav.timer) {
@@ -396,7 +396,7 @@ window.plugin.pnav.showSettings = function () {
             lCommBounds.addLayer(circle);
           }
         } else {
-          alert(getString('alertExportRunning'));
+          alert(getString('alertExportRunning', window.plugin.pnav.settings.language));
         }
         container.dialog('close');
       }
@@ -481,8 +481,8 @@ window.plugin.pnav.deleteExportState = function () {
   pNavData.gym = {};
   // re-validate the highlighter if it is active.
   // eslint-disable-next-line no-underscore-dangle
-  if (window._current_highlighter === getString('portalHighlighterName')) {
-    window.changePortalHighlights(getString('portalHighlighterName'));
+  if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+    window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
   }
 };
 
@@ -510,41 +510,41 @@ window.plugin.pnav.bulkModify = function (changes) {
     let i = 0;
     const send = Boolean(window.plugin.pnav.settings.webhookUrl);
     const html = `
-        <label>${getString('Modification')}</label><label id=pNavModNrCur>1</label><label>${getString('of')}</label><label id="pNavModNrMax"></label>
+        <label>${getString('Modification', window.plugin.pnav.settings.language)}</label><label id=pNavModNrCur>1</label><label>${getString('of', window.plugin.pnav.settings.language)}</label><label id="pNavModNrMax"></label>
         <h3>
-          ${getString('pNavOldPoiNameDescription')}
+          ${getString('pNavOldPoiNameDescription', window.plugin.pnav.settings.language)}
         </h3>
         <h3 id="pNavOldPoiName"></h3>
         <p>
-          <a id="address">${getString('requestAddressDescription')}</a>
+          <a id="address">${getString('requestAddressDescription', window.plugin.pnav.settings.language)}</a>
           <span id="addressdetails" hidden></span>
         </p>
-        <label>${getString('pNavChangesMadeDescription')}</label>
+        <label>${getString('pNavChangesMadeDescription', window.plugin.pnav.settings.language)}</label>
         <ul id="pNavChangesMade"></ul>
         <label>
-          ${getString('pNavPoiIdDescription')}
+          ${getString('pNavPoiIdDescription', window.plugin.pnav.settings.language)}
           <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="1"/>
         </label>
         <br>
-        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${getString('pNavPoiInfoTitle', {send})}" style="margin-top:5px">
-          ${getString('pNavPoiInfoText', {send})}
+        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${getString('pNavPoiInfoTitle', window.plugin.pnav.settings.language, {send})}" style="margin-top:5px">
+          ${getString('pNavPoiInfoText', window.plugin.pnav.settings.language, {send})}
         </button>
-        <button type="Button" class="ui-button" id="pNavModCommand" title="${getString('pNavModCommandTitleDisabled', {send})}" style="margin-top:5px;color:darkgray;text-decoration:none">
-          ${getString('pNavModCommandText', {send})}
+        <button type="Button" class="ui-button" id="pNavModCommand" title="${getString('pNavModCommandTitleDisabled', window.plugin.pnav.settings.language, {send})}" style="margin-top:5px;color:darkgray;text-decoration:none">
+          ${getString('pNavModCommandText', window.plugin.pnav.settings.language, {send})}
         </button>
       `;
 
     /** @type{JQuery<HTMLElement>}*/
     const modDialog = window.dialog({
       id: 'pNavmodDialog',
-      title: getString('pNavmodDialogTitle'),
+      title: getString('pNavmodDialogTitle', window.plugin.pnav.settings.language),
       html,
       width: 'auto',
       height: 'auto',
       buttons: {
         Skip: {
           id: 'btnSkip',
-          text: getString('btnSkipText'),
+          text: getString('btnSkipText', window.plugin.pnav.settings.language),
           click () {
             i++;
             if (i == changeList.length) {
@@ -574,12 +574,12 @@ window.plugin.pnav.bulkModify = function (changes) {
       const value = e.target.valueAsNumber;
       if (valid && value && value > 0) {
         $('#pNavModCommand', modDialog).prop('style', 'margin-top:5px');
-        $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleEnabled', {send}));
+        $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleEnabled', window.plugin.pnav.settings.language, {send}));
       } else {
         $('#pNavModCommand', modDialog).css('color', 'darkgray');
         $('#pNavModCommand', modDialog).css('text-decoration', 'none');
         $('#pNavModCommand', modDialog).css('border', '1px solid darkgray');
-        $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleDisabled', {send}));
+        $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleDisabled', window.plugin.pnav.settings.language, {send}));
       }
     });
     $('#pNavModCommand', modDialog).on('click', function () {
@@ -611,7 +611,7 @@ window.plugin.pnav.bulkModify = function (changes) {
     $('#pNavModNrMax', modDialog).text(changeList.length);
     updateUI(modDialog, poi, i);
   } else {
-    alert(getString('alertNoModifications'));
+    alert(getString('alertNoModifications', window.plugin.pnav.settings.language));
   }
 };
 
@@ -663,7 +663,7 @@ function updateUI (dialog, poi, i) {
   $('#pNavModCommand', dialog).css('border', '1px solid darkgray');
   $('#pNavModCommand', dialog).css('cursor', 'default');
   $('#pNavModCommand', dialog).css('text-decoration', 'none');
-  $('#pNavModCommand', dialog).prop('title', getString('pNavModCommandTitleDisabled', {send: Boolean(window.plugin.pnav.settings.webhookUrl)}));
+  $('#pNavModCommand', dialog).prop('title', getString('pNavModCommandTitleDisabled', window.plugin.pnav.settings.language, {send: Boolean(window.plugin.pnav.settings.webhookUrl)}));
 }
 
 function sendModCommand (poiId, changes) {
@@ -915,7 +915,7 @@ window.plugin.pnav.bulkExport = function (type) {
   if (!window.plugin.pnav.timer) {
     let data = gatherExportData(type);
     if (!data) {
-      alert(getString('alertProblemPogoTools'));
+      alert(getString('alertProblemPogoTools', window.plugin.pnav.settings.language));
       return;
     }
     if (window.plugin.pnav.settings.useBot) {
@@ -944,34 +944,34 @@ window.plugin.pnav.bulkExport = function (type) {
     let dialog = window.dialog({
       id: 'bulkExportProgress',
       html: `
-              <h3 id="exportState">${getString('exportStateTextExporting')}</h3>
+              <h3 id="exportState">${getString('exportStateTextExporting', window.plugin.pnav.settings.language)}</h3>
               <p>
                 <label>
-                  ${getString('exportProgressBarDescription')}
+                  ${getString('exportProgressBarDescription', window.plugin.pnav.settings.language)}
                   <progress id="exportProgressBar" value="0" max="${data.length}"/>
                 </label>
               </p>
               <label id="exportNumber">0</label>
-              <label>${getString('of')} ${data.length}</label>
+              <label>${getString('of', window.plugin.pnav.settings.language)} ${data.length}</label>
               <br>
-              <label>${getString('exportTimeRemainingDescription')}</label>
+              <label>${getString('exportTimeRemainingDescription', window.plugin.pnav.settings.language)}</label>
               <label id="exportTimeRemaining">???</label>
               <label>s</label>
         `,
       width: 'auto',
-      title: getString('bulkExportProgressTitle'),
+      title: getString('bulkExportProgressTitle', window.plugin.pnav.settings.language),
       buttons: {
         OK: {
-          text: getString('bulkExportProgressButtonText'),
-          title: getString('bulkExportProgressButtonTitle'),
+          text: getString('bulkExportProgressButtonText', window.plugin.pnav.settings.language),
+          title: getString('bulkExportProgressButtonTitle', window.plugin.pnav.settings.language),
           click () {
             saveState(data, type, i);
             clearInterval(window.plugin.pnav.timer);
             window.plugin.pnav.timer = null;
             // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName')) {
+            if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
               // re-validate highlighter if it is enabled.
-              window.changePortalHighlights(getString('portalHighlighterName'));
+              window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
             }
             dialog.dialog('close');
           }
@@ -1030,9 +1030,9 @@ function botExport (data, type) {
     success () {
       saveState(data, type);
       // eslint-disable-next-line no-underscore-dangle
-      if (window._current_highlighter === getString('portalHighlighterName')) {
+      if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
         // re-validate highlighter if it is enabled.
-        window.changePortalHighlights(getString('portalHighlighterName'));
+        window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
       }
     }
   });
@@ -1125,9 +1125,9 @@ function botEdit (changes) {
     success () {
       updateDone(changes);
       // eslint-disable-next-line no-underscore-dangle
-      if (window._current_highlighter === getString('portalHighlighterName')) {
+      if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
         // re-validate highlighter if it is enabled.
-        window.changePortalHighlights(getString('portalHighlighterName'));
+        window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
       }
     }
   });
@@ -1151,7 +1151,7 @@ function updateExportDialog (dialog, cur, max, time) {
     $('#exportTimeRemaining', dialog).text(time);
   }
   if (cur >= max) {
-    $('#exportState', dialog).text(getString('exportStateTextReady'));
+    $('#exportState', dialog).text(getString('exportStateTextReady', window.plugin.pnav.settings.language));
     const okayButton = $('.ui-button', dialog.parentElement).not('.ui-dialog-titlebar-button');
     okayButton.text('OK');
     okayButton.prop('title', '');
@@ -1231,24 +1231,24 @@ function modifyPortalDetails (data) {
         <div id="PNav" style="color:#fff">
           <Label>
             <input type="radio" checked name="type" value="none" id="PNavNone"/>
-            ${getString('PNavNoneDescription')}
+            ${getString('PNavNoneDescription', window.plugin.pnav.settings.language)}
           </label>
           <Label>
             <input type="radio" name="type" value="pokestop" id="PNavStop"/>
-            ${getString('PNavStopDescription')}
+            ${getString('PNavStopDescription', window.plugin.pnav.settings.language)}
           </label>
           <Label>
             <input type="radio" name="type" value="gym" id="PNavGym"/>
-            ${getString('PNavGymDescription')}
+            ${getString('PNavGymDescription', window.plugin.pnav.settings.language)}
           </label>
           <Label>
             <input type="radio" name="type" value="ex" id="PNavEx"/>
-            ${getString('PNavExDescription')}
+            ${getString('PNavExDescription', window.plugin.pnav.settings.language)}
           </label>
           <a style="${
   window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''
-}" title="${getString('PogoButtonsTitle', {send})}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">
-            ${getString('PogoButtonsText', {send})}
+}" title="${getString('PogoButtonsTitle', window.plugin.pnav.settings.language, {send})}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">
+            ${getString('PogoButtonsText', window.plugin.pnav.settings.language, {send})}
           </a>
         </div>
       `);
@@ -1279,9 +1279,9 @@ function waitForPogoButtons (mutationList, invokingObserver) {
       mutation.addedNodes.forEach((node) => {
         if (node.className == 'PogoButtons') {
           $(node).after(`
-             <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', {
+             <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', window.plugin.pnav.settings.language, {
     send: Boolean(window.plugin.pnav.settings.webhookUrl)
-  })}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">${getString('PogoButtonsText', {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>
+  })}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">${getString('PogoButtonsText', window.plugin.pnav.settings.language, {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>
              `);
           $(node).css('display', 'inline');
           // we don't need to look for the class anymore because we just found what we wanted ;-)
@@ -1295,7 +1295,7 @@ function waitForPogoButtons (mutationList, invokingObserver) {
 function waitForPogoStatus (mutationList, invokingObserver) {
   mutationList.forEach(function (mutation) {
     if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-      $('.PogoStatus').append(`<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">${getString('PogoButtonsText', {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>`);
+      $('.PogoStatus').append(`<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">${getString('PogoButtonsText', window.plugin.pnav.settings.language, {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>`);
       invokingObserver.disconnect();
     }
   });
@@ -1337,7 +1337,7 @@ function setup () {
   if (localStorage['plugin-pnav-done-gym']) {
     pNavData.gym = JSON.parse(localStorage.getItem('plugin-pnav-done-gym'));
   }
-  $('#toolbox').append(`<a title="${getString('pokeNavSettingsTitle')}" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">${getString('pokeNavSettingsText')}</a>`);
+  $('#toolbox').append(`<a title="${getString('pokeNavSettingsTitle', window.plugin.pnav.settings.language)}" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">${getString('pokeNavSettingsText', window.plugin.pnav.settings.language)}</a>`);
   $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
   lCommBounds = new L.LayerGroup();
   if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
@@ -1352,13 +1352,13 @@ function setup () {
     });
     lCommBounds.addLayer(commCircle);
   }
-  window.addLayerGroup(getString('lCommBoundsName'), lCommBounds);
-  window.addPortalHighlighter(getString('portalHighlighterName'), window.plugin.pnav.highlight);
+  window.addLayerGroup(getString('lCommBoundsName', window.plugin.pnav.settings.language), lCommBounds);
+  window.addPortalHighlighter(getString('portalHighlighterName', window.plugin.pnav.settings.language), window.plugin.pnav.highlight);
   let isLinksDisplayed = window.isLayerGroupDisplayed('Links', false);
   let isFieldsDisplayed = window.isLayerGroupDisplayed('Fields', false);
   $('#portal_highlight_select').on('change', function () {
     // eslint-disable-next-line no-underscore-dangle
-    if (window._current_highlighter === getString('portalHighlighterName')) {
+    if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
       isLinksDisplayed = window.isLayerGroupDisplayed('Links', false);
       isFieldsDisplayed = window.isLayerGroupDisplayed('Fields', false);
       // eslint-disable-next-line no-underscore-dangle
