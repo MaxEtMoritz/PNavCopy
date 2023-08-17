@@ -12,7 +12,7 @@ namespace CompanionBot
         {
             lock (Lock)
             {
-                string logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " " + message.Source.PadRight(11).Substring(0, 11) + " ";
+                string logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " " + message.Source.PadRight(11)[..11] + " ";
                 Console.Write(logEntry);
                 switch (message.Severity)
                 {
