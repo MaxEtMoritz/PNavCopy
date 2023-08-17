@@ -1,0 +1,137 @@
+{
+  "alertAlreadyExported": "This location has already been exported! If you are sure this is not the case, the creation command has been copied to clipboard for you. If this happens too often, try to reset the export state in the settings.",
+  "alertExportCopied": "File download is not supported on this device / IITC version. Thus the data was copied to clipboard. Please save it as a .json file!",
+  "alertExportRunning": "Settings not saved because Export was running. Pause the Export and then try again!",
+  "alertLanguageAfterReload": "The new language settings will be fully in effect after a page reload.",
+  "alertNoModifications": "No modifications detected!",
+  "alertOutsideArea": "This location is outside the specified Community Area!",
+  "alertProblemPogoTools": "There was a problem reading the Pogo Tools Data File.",
+  "botEditDialogTitle": "Edit export",
+  "btnBulkExportGymsText": "Export all Pogo Tools Gyms",
+  "btnBulkExportGymsTitle": "Grab the File where all Gyms are stored by PoGo Tools and send them one by one via WebHook. This can take much time!",
+  "btnBulkExportStopsText": "Export all Pogo Tools Stops",
+  "btnBulkExportStopsTitle": "Grab the File where all Stops are stored by PoGo Tools and send them one by one via WebHook. This can take much time!",
+  "btnBulkModifyText": "Check for Modifications",
+  "btnBulkModifyTitle": "Check if the Pogo Tools Data was modified and start Upload process of modifications",
+  "btnEraseHistoryTextDefault": "Delete Location Export History",
+  "btnEraseHistoryTextSuccess": "Deleted!",
+  "btnEraseHistoryTitle": "Delete all collected Export History.",
+  "btnExportText": "Export Data",
+  "btnExportTitle": "This will download a file containing all data exported to PokeNav.",
+  "btnImExportText": "Import / Export data",
+  "btnImExportTitle": "Opens a dialog where you can export the current data or import again.",
+  "btnImportText": "Import Data",
+  "btnImportTitle": "Import the exported data. ATTENTION: This will override the current data!",
+  "btnSkipText": "Skip one",
+  "bulkExportProgressButtonText": "Pause",
+  "bulkExportProgressButtonTitle": "Store Progress locally and stop Exporting. If you wish to restart, go to Settings and click the Export Button again.",
+  "bulkExportProgressTitle": "PokeNav Bulk Export Progress",
+  "exportDialogTitle": "Export",
+  "exportProgressBarDescription": "Progress:",
+  "exportStateTextExporting": "Exporting...",
+  "exportStateTextReady": "Export Ready!",
+  "exportTimeRemainingDescription": "Time remaining: ",
+  "imExportDialogTitle": "Import / Export",
+  "importInputText": "Paste the data you exported in this text field!",
+  "importInvalidFormat": "The Import has an invalid format! Make sure that you selected the right file!",
+  "lblErrorCnText": "Invalid Coordinate Format! Please input them like 00.0...00, 00.0...00!",
+  "lblErrorRdText": "Invalid Radius! Please check if it is a valid Number!",
+  "lblErrorWHText": "Invalid URL! Please delete or correct it!",
+  "lCommBoundsName": "PokeNav Community",
+  "Modification": "Modification ",
+  "of": " of ",
+  "pnavCenterDescription": "Community Center:",
+  "pnavCenterTitle": "Paste the Center Coordinate of your Community here (you can view it typing @PokeNav show settings in Admin Channel)",
+  "pNavChangesMadeDescription": "The following has changed:",
+  "pnavCodenameDescription": "Name:",
+  "pnavCodenameTitle": "The Name that will be displayed if you send to the PokeNav channel. Default is your Ingess Codename.",
+  "PNavExDescription": "Ex Gym",
+  "PNavGymDescription": "Gym",
+  "pnavhookurlDescription": "Discord WebHook URL:",
+  "pnavhookurlTitle": "Paste the URL of the WebHook you created in your Server's Admin Channel here. If left blank, the Commands are copied to Clipboard.",
+  "pnavLanguageDescription": "Language:",
+  "pNavModCommandText": [
+    {
+      "send": {
+        "false": "Copy",
+        "true": "Send"
+      }
+    },
+    " Modification Command"
+  ],
+  "pNavModCommandTitleDisabled": [
+    "You must input the PokeNav location ID before you can ",
+    {
+      "send": {
+        "false": "copy",
+        "true": "send"
+      }
+    },
+    " the modification command!"
+  ],
+  "pNavModCommandTitleEnabled": [
+    {
+      "send": {
+        "false": "Copies",
+        "true": "Sends"
+      }
+    },
+    " the modification command."
+  ],
+  "pNavmodDialogTitle": "PokeNav Modification(s)",
+  "PNavNoneDescription": "None",
+  "pNavOldPoiNameDescription": "The following POI was modified:",
+  "pNavPoiIdDescription": "PokeNav ID:",
+  "pNavPoiInfoText": [
+    {
+      "send": {
+        "false": "Copy",
+        "true": "Send"
+      }
+    },
+    " POI Info Command"
+  ],
+  "pNavPoiInfoTitle": [
+    {
+      "send": {
+        "false": "Copies",
+        "true": "Sends"
+      }
+    },
+    " the POI Information Command for the POI."
+  ],
+  "pnavRadiusDescription": "Community Radius (Km):",
+  "pnavRadiusTitle": "Enter the specified Community Radius in kilometers here.",
+  "pnavsettingsTitle": "PokeNav Settings",
+  "PNavStopDescription": "Stop",
+  "PogoButtonsText": [
+    {
+      "send": {
+        "false": "Copy",
+        "true": "Send to"
+      }
+    },
+    " PokeNav"
+  ],
+  "PogoButtonsTitle": [
+    {
+      "send": {
+        "false": "Copy",
+        "true": "Send"
+      }
+    },
+    " the Location create Command to ",
+    {
+      "send": {
+        "false": "Clipboard",
+        "true": "Discord via WebHook"
+      }
+    }
+  ],
+  "pokeNavSettingsText": "PokeNav Settings",
+  "pokeNavSettingsTitle": "Configure PokeNav",
+  "portalHighlighterName": "PokeNav State",
+  "requestAddressDescription": "Request Address",
+  "useBotText": "Use Companion Bot",
+  "useBotTitle": "Tick this if you have invited the Companion Bot to your Server. This enables a faster bulk export. More Info on GitHub!"
+}

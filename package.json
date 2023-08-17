@@ -2,13 +2,19 @@
   "name": "pnavcopy",
   "version": "1.7.6",
   "description": "Copy portal info to clipboard or send it to Discord in the format the PokeNav Discord bot needs.",
-  "main": ".eslintrc.js",
-  "dependencies": {},
+  "private": true,
   "devDependencies": {
-    "eslint": "^7.32.0"
+    "eslint": "^8.47.0",
+    "handlebars-loader": "^1.7.3",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "webpack-userscript": "^3.2.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "serve": "webpack serve"
   },
   "repository": {
     "type": "git",
@@ -19,5 +25,8 @@
   "bugs": {
     "url": "https://github.com/MaxEtMoritz/PNavCopy/issues"
   },
-  "homepage": "https://github.com/MaxEtMoritz/PNavCopy#readme"
+  "homepage": "https://github.com/MaxEtMoritz/PNavCopy#readme",
+  "dependencies": {
+    "handlebars": "^4.7.8"
+  }
 }

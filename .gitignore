@@ -4,3 +4,4 @@ config.json
 CompanionBot/CompanionBot/bin
 CompanionBot/CompanionBot/obj
 CompanionBot/.vs
+dist/
