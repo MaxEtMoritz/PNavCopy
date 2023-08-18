@@ -1,9 +1,0 @@
-{
-    "typeAcquisition": {
-        "include": [
-            "jquery",
-            "leaflet",
-            "iitc"
-        ]
-    }
-}
