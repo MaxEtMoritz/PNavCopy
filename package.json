@@ -16,9 +16,9 @@
     "webpack-userscript": "^3.2.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack",
-    "serve": "webpack serve"
+    "build:dev":"webpack --node-env development --mode development",
+    "build:prod": "webpack --node-env production --mode production",
+    "serve": "webpack serve --node-env development --mode development"
   },
   "repository": {
     "type": "git",

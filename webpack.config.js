@@ -55,6 +55,7 @@ module.exports = {
     }),
     new UserscriptPlugin({
       headers: {
+        name: 'IITC Plugin: Copy PokeNav Command',
         category: 'Misc',
         namespace: 'https://github.com/MaxEtMoritz/PNavCopy',
         include: [
@@ -64,13 +65,13 @@ module.exports = {
         grant: 'none',
         id: 'pnavcopy@maxetmoritz'
       },
-      metajs: true,
-      downloadBaseURL: 'https://raw.github.com/MaxEtMoritz/PNavCopy/main/dist/',
+      metajs: !dev,
+      downloadBaseURL: 'https://github.com/MaxEtMoritz/PNavCopy/releases/latest/download/',
       whitelist: [
         'category',
         'id'
       ],
-      proxyScript: true
+      proxyScript: dev
     })
   ]
 };
