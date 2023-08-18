@@ -1,6 +1,10 @@
 /* globals $, L, SCRIPT_INFO */
 
+import {checkDistance, copyfieldvalue, sendMessage} from './utils';
 import {detectLanguage, getString, supportedLanguages} from './l10n';
+import bulkExportDialog from './templates/bulkExport.hbs';
+import bulkModifyDialog from './templates/bulkModify.hbs';
+import portalDetails from './templates/portalDetailsStandalone.hbs';
 import settingsDialog from './templates/settings.hbs';
 
 // original Plug-In is from https://gitlab.com/ruslan.levitskiy/iitc-mobile/-/tree/master, the License of this project is provided below:
@@ -29,7 +33,7 @@ window.plugin.pnav = function () {};
 
 // Language is set in setup() if not already present in localStorage.
 /* eslint-disable no-undefined */
-window.plugin.pnav.settings = {
+let settings = {
   webhookUrl: null,
   name: window.PLAYER ? window.PLAYER.nickname : '', // if not yet logged in to Intel, window.PLAYER is undefined.
   radius: null,
@@ -44,7 +48,8 @@ let pNavData = {
   pokestop: {},
   gym: {}
 };
-const request = new XMLHttpRequest();
+
+let timer = null;
 
 // both bots react to mentions, no need to fiddle around with prefixes!
 const pNavId = 428187007965986826n;
@@ -53,10 +58,6 @@ const companionId = 806533005626572813n;
 /** @type {L.LayerGroup} */
 let lCommBounds;
 const wait = 2000; // Discord WebHook accepts 30 Messages in 60 Seconds.
-
-window.plugin.pnav.getString = getString;
-
-// TODO
 
 function isImportInputValid (data) {
   if (Object.keys(data).length > 2 || typeof data.pokestop !== 'object' || typeof data.gym !== 'object') {
@@ -106,7 +107,7 @@ function isImportInputValid (data) {
 }
 
 // Highlighter that will highlight Portals according to the data that was submitted to PokeNav. PokeStops in blue, Gyms in red, Ex Gyms maybe with a yellow circle, Not yet submitted portals in gray.
-window.plugin.pnav.highlight = function (data) {
+function highlight (data) {
   const guid = data.portal.options.guid;
   let color, fillColor;
   if (pNavData.pokestop[guid]) {
@@ -124,14 +125,13 @@ window.plugin.pnav.highlight = function (data) {
   params.color = color;
   params.fillColor = fillColor;
   data.portal.setStyle(params);
-};
+}
 
-window.plugin.pnav.copy = function () {
+function copy () {
   let input = $('#copyInput');
   if (window.selectedPortal) {
     let portal = window.portals[selectedGuid];
 
-    /** @type {string} */
     const prefix = `<@${pNavId}> `;
 
     /** @type {portalData} */
@@ -182,32 +182,32 @@ window.plugin.pnav.copy = function () {
     }
 
     if (
-      window.plugin.pnav.settings.lat !== null &&
-      window.plugin.pnav.settings.lng !== null &&
-      window.plugin.pnav.settings.radius !== null &&
-      checkDistance(data.lat, data.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) > window.plugin.pnav.settings.radius
+      settings.lat !== null &&
+      settings.lng !== null &&
+      settings.radius !== null &&
+      checkDistance(data.lat, data.lng, settings.lat, settings.lng) > settings.radius
     ) {
-      alert(getString('alertOutsideArea', window.plugin.pnav.settings.language));
+      alert(getString('alertOutsideArea', settings.language));
     } else {
       let changes = checkForSingleModification(data);
       if (changes) {
-        window.plugin.pnav.bulkModify([changes]);
+        bulkModify([changes]);
       } else if (data.type !== 'none') {
         if (pNavData[data.type][selectedGuid]) {
-          alert(getString('alertAlreadyExported', window.plugin.pnav.settings.language));
+          alert(getString('alertAlreadyExported', settings.language));
           input.show();
           input.val(`${prefix}create poi ${data.type} «${data.name}» ${data.lat} ${data.lng}${data.isEx ? ' "ex_eligible: 1"' : ''}`);
           copyfieldvalue('copyInput');
           input.hide();
-        } else if (window.plugin.pnav.settings.webhookUrl) {
-          if (window.plugin.pnav.settings.useBot) {
+        } else if (settings.webhookUrl) {
+          if (settings.useBot) {
             let formData = new FormData();
             formData.append('content', `<@${companionId}> cm`);
-            formData.append('username', window.plugin.pnav.settings.name);
+            formData.append('username', settings.name);
             formData.append('file', new Blob([JSON.stringify(data)], {type: 'application/json'}), `creation.json`);
             $.ajax({
               method: 'POST',
-              url: window.plugin.pnav.settings.webhookUrl,
+              url: settings.webhookUrl,
               contentType: 'application/json',
               processData: false,
               data: formData,
@@ -229,13 +229,13 @@ window.plugin.pnav.copy = function () {
       }
     }
     // eslint-disable-next-line no-underscore-dangle
-    if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
-      window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language)); // re-validate highlighter if active
+    if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
+      window.changePortalHighlights(getString('portalHighlighterName', settings.language)); // re-validate highlighter if active
     }
   }
-};
+}
 
-window.plugin.pnav.imExport = function () {
+function imExport () {
 
   /*
    * Methods to upload / download files inspired by PoGoTools Plugin by AlfonsoML on GitLab:
@@ -243,30 +243,30 @@ window.plugin.pnav.imExport = function () {
    */
 
   let date = new Date();
-  let html = `<button type="Button" id="exportBtn" title="${getString('btnExportTitle', window.plugin.pnav.settings.language)}">${getString('btnExportText', window.plugin.pnav.settings.language)}</button>
+  let html = `<button type="Button" id="exportBtn" title="${getString('btnExportTitle', settings.language)}">${getString('btnExportText', settings.language)}</button>
     <hr>`;
   if (typeof L.FileListLoader !== 'undefined' || typeof window.requestFile !== 'undefined') {
-    html += `<button id="importBtn" type="Button" title="${getString('btnImportTitle', window.plugin.pnav.settings.language)}">${getString('btnImportText', window.plugin.pnav.settings.language)}</button>`;
+    html += `<button id="importBtn" type="Button" title="${getString('btnImportTitle', settings.language)}">${getString('btnImportText', settings.language)}</button>`;
   } else if (File && FileReader && Blob) {
     html += `<form id="importForm">
       <input type="file" id="importFile" name="import" accept="application/json"><br>
-      <input type="submit" value="${getString('btnImportText', window.plugin.pnav.settings.language)}" title="${getString('btnImportTitle', window.plugin.pnav.settings.language)}" class="Button">
+      <input type="submit" value="${getString('btnImportText', settings.language)}" title="${getString('btnImportTitle', settings.language)}" class="Button">
       </form>`;
   } else {
-    html += `<textarea id="importInput" style="width:100%; height:auto" placeholder="${getString('importInputText', window.plugin.pnav.settings.language)}"></textarea>
-      <button type="Button" class="Button" id="importDialogButton" title="${getString('btnImportTitle', window.plugin.pnav.settings.language)}">${getString('btnImportText', window.plugin.pnav.settings.language)}</button>`;
+    html += `<textarea id="importInput" style="width:100%; height:auto" placeholder="${getString('importInputText', settings.language)}"></textarea>
+      <button type="Button" class="Button" id="importDialogButton" title="${getString('btnImportTitle', settings.language)}">${getString('btnImportText', settings.language)}</button>`;
   }
   const dialog = window.dialog({id: 'imExportDialog',
     width: 'auto',
     height: 'auto',
-    title: getString('imExportDialogTitle', window.plugin.pnav.settings.language),
+    title: getString('imExportDialogTitle', settings.language),
     html});
 
   $('#exportBtn').on('click', () => {
     if (typeof window.saveFile !== 'undefined') {
-      window.saveFile(JSON.stringify(pNavData, null, 2), `IITCPokenavExport-${window.plugin.pnav.settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json`, 'application/json');
+      window.saveFile(JSON.stringify(pNavData, null, 2), `IITCPokenavExport-${settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json`, 'application/json');
     } else if (typeof window.android !== 'undefined' && window.android.saveFile) {
-      window.android.saveFile(`IITCPokenavExport-${window.plugin.pnav.settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json`, 'application/json', JSON.stringify(pNavData));
+      window.android.saveFile(`IITCPokenavExport-${settings.name}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}.json`, 'application/json', JSON.stringify(pNavData));
     } else {
       // Idea taken from https://stackoverflow.com/a/50230647 by User KeshavDulal
       const tmpTextarea = document.createElement('textarea');
@@ -275,7 +275,7 @@ window.plugin.pnav.imExport = function () {
       tmpTextarea.select();
       document.execCommand('copy');
       document.body.removeChild(tmpTextarea);
-      alert(getString('alertExportCopied', window.plugin.pnav.settings.language));
+      alert(getString('alertExportCopied', settings.language));
     }
   });
   if ($('#importBtn').length > 0) {
@@ -290,11 +290,11 @@ window.plugin.pnav.imExport = function () {
             dialog.dialog('close');
             // re-validate the highlighter if it is active.
             // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
-              window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
+            if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
+              window.changePortalHighlights(getString('portalHighlighterName', settings.language));
             }
           } else {
-            alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
+            alert(getString('importInvalidFormat', settings.language));
           }
         });
       } else if (typeof window.requestFile !== 'undefined') {
@@ -306,11 +306,11 @@ window.plugin.pnav.imExport = function () {
             dialog.dialog('close');
             // re-validate the highlighter if it is active.
             // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
-              window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
+            if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
+              window.changePortalHighlights(getString('portalHighlighterName', settings.language));
             }
           } else {
-            alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
+            alert(getString('importInvalidFormat', settings.language));
           }
         });
       }
@@ -330,11 +330,11 @@ window.plugin.pnav.imExport = function () {
             dialog.dialog('close');
             // re-validate the highlighter if it is active.
             // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
-              window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
+            if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
+              window.changePortalHighlights(getString('portalHighlighterName', settings.language));
             }
           } else {
-            alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
+            alert(getString('importInvalidFormat', settings.language));
           }
         };
         fr.readAsText($('#importFile', dialog).prop('files')[0]);
@@ -346,7 +346,7 @@ window.plugin.pnav.imExport = function () {
       try {
         data = JSON.parse($('#importInput', dialog).val());
       } catch (e) {
-        alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
+        alert(getString('importInvalidFormat', settings.language));
         console.error(`Parsing of import JSON Data failed: ${e.message}`);
         return;
       }
@@ -355,40 +355,38 @@ window.plugin.pnav.imExport = function () {
         saveToLocalStorage();
         // re-validate the highlighter if it is active.
         // eslint-disable-next-line no-underscore-dangle
-        if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
-          window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
+        if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
+          window.changePortalHighlights(getString('portalHighlighterName', settings.language));
         }
         dialog.dialog('close');
       } else {
-        alert(getString('importInvalidFormat', window.plugin.pnav.settings.language));
+        alert(getString('importInvalidFormat', settings.language));
       }
     });
   }
-};
+}
 
-window.plugin.pnav.showSettings = function () {
-  let html = settingsDialog({
-    language: window.plugin.pnav.settings.language,
-    settings: window.plugin.pnav.settings,
-    pogoToolsAvailable: Boolean(window.plugin.pogo)
-  });
-
+function showSettings () {
   const container = window.dialog({
     id: 'pnavsettings',
     width: 'auto',
     height: 'auto',
-    html,
-    title: getString('pnavsettingsTitle', window.plugin.pnav.settings.language),
+    html: settingsDialog({
+      language: settings.language,
+      settings,
+      pogoToolsAvailable: Boolean(window.plugin.pogo)
+    }),
+    title: getString('pnavsettingsTitle', settings.language),
     buttons: {
       OK () {
-        if (!window.plugin.pnav.timer) {
+        if (!timer) {
           lCommBounds.clearLayers();
-          if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
+          if (settings.lat && settings.lng && settings.radius) {
             let circle = L.circle(L.latLng([
-              window.plugin.pnav.settings.lat,
-              window.plugin.pnav.settings.lng
+              settings.lat,
+              settings.lng
             ]), {
-              radius: window.plugin.pnav.settings.radius * 1000,
+              radius: settings.radius * 1000,
               interactive: false,
               fillOpacity: 0.1,
               color: '#000000'
@@ -396,20 +394,42 @@ window.plugin.pnav.showSettings = function () {
             lCommBounds.addLayer(circle);
           }
         } else {
-          alert(getString('alertExportRunning', window.plugin.pnav.settings.language));
+          alert(getString('alertExportRunning', settings.language));
         }
         container.dialog('close');
       }
     }
   });
 
+  /** @type {JQuery<HTMLSelectElement>}*/
   let languageDropdown = $('#pnavLanguage', container);
   supportedLanguages.forEach(function (key) {
     languageDropdown.append(`<option value="${key}">${key}</option>`);
   });
-  languageDropdown.val(window.plugin.pnav.settings.language);
+  languageDropdown.val(settings.language);
+  languageDropdown.on('change', (e) => {
+    settings.language = e.target.value;
+    alert(getString('alertLanguageAfterReload', e.target.value));
+  });
   $('input', container).on('blur', validateAndSaveSetting);
-};
+  $('#btnEraseHistory', container).on('click', (e) => {
+    deleteExportState();
+    $(e.target).css('color', 'green');
+    $(e.target).css('border', '1px solid green');
+    $(e.target).text(getString('btnEraseHistoryTextSuccess', settings.language));
+    setTimeout(() => {
+      if ($('#btnEraseHistory').length > 0) {
+        $('#btnEraseHistory').css('color', '');
+        $('#btnEraseHistory').css('border', '');
+        $('#btnEraseHistory').text(getString('btnEraseHistoryTextDefault', settings.language));
+      }
+    }, 1000);
+  });
+  $('#btnImExport', container).on('click', () => imExport());
+  $('#btnBulkExportGyms', container).on('click', () => bulkExport('gym'));
+  $('#btnBulkExportStops', container).on('click', () => bulkExport('pokestop'));
+  $('#btnBulkModify', container).on('click', () => bulkModify());
+}
 
 /**
  * Validates an input field and saves the corresponding setting if valid.
@@ -433,11 +453,11 @@ function validateAndSaveSetting (e) {
           return;
         }
       }
-      window.plugin.pnav.settings.lat = lat;
-      window.plugin.pnav.settings.lng = lng;
+      settings.lat = lat;
+      settings.lng = lng;
       if (e.currentTarget.nextElementSibling && e.currentTarget.nextElementSibling instanceof HTMLDivElement) e.currentTarget.nextElementSibling.style.display = 'none';
-      localStorage.setItem('plugin-pnav-settings', JSON.stringify(window.plugin.pnav.settings));
-    } else if (Object.getOwnPropertyNames(window.plugin.pnav.settings).includes(e.currentTarget.id)) {
+      localStorage.setItem('plugin-pnav-settings', JSON.stringify(settings));
+    } else if (Object.getOwnPropertyNames(settings).includes(e.currentTarget.id)) {
       let value;
       switch (e.currentTarget.type) {
       case 'checkbox':
@@ -458,8 +478,8 @@ function validateAndSaveSetting (e) {
         value = null;
       }
       if (e.currentTarget.nextElementSibling && e.currentTarget.nextElementSibling instanceof HTMLDivElement) e.currentTarget.nextElementSibling.style.display = 'none';
-      window.plugin.pnav.settings[e.currentTarget.id] = value;
-      localStorage.setItem('plugin-pnav-settings', JSON.stringify(window.plugin.pnav.settings));
+      settings[e.currentTarget.id] = value;
+      localStorage.setItem('plugin-pnav-settings', JSON.stringify(settings));
     }
   } else {
     console.log('invalid', e.currentTarget.nextSibling, e.currentTarget);
@@ -470,7 +490,7 @@ function validateAndSaveSetting (e) {
   }
 }
 
-window.plugin.pnav.deleteExportState = function () {
+function deleteExportState () {
   if (localStorage['plugin-pnav-done-pokestop']) {
     localStorage.removeItem('plugin-pnav-done-pokestop');
   }
@@ -481,10 +501,10 @@ window.plugin.pnav.deleteExportState = function () {
   pNavData.gym = {};
   // re-validate the highlighter if it is active.
   // eslint-disable-next-line no-underscore-dangle
-  if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
-    window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
+  if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
+    window.changePortalHighlights(getString('portalHighlighterName', settings.language));
   }
-};
+}
 
 /**
  * saves the State of the Bulk Export to local Storage.
@@ -500,51 +520,31 @@ function saveState (data, type, index) {
   saveToLocalStorage();
 }
 
-window.plugin.pnav.bulkModify = function (changes) {
+function bulkModify (changes) {
   const changeList = changes && changes instanceof Array ? changes : checkForModifications();
-  if (window.plugin.pnav.settings.useBot && window.plugin.pnav.settings.webhookUrl) {
+  if (settings.useBot && settings.webhookUrl) {
     botEdit(changeList);
     return;
   }
   if (changeList && changeList.length > 0) {
     let i = 0;
-    const send = Boolean(window.plugin.pnav.settings.webhookUrl);
-    const html = `
-        <label>${getString('Modification', window.plugin.pnav.settings.language)}</label><label id=pNavModNrCur>1</label><label>${getString('of', window.plugin.pnav.settings.language)}</label><label id="pNavModNrMax"></label>
-        <h3>
-          ${getString('pNavOldPoiNameDescription', window.plugin.pnav.settings.language)}
-        </h3>
-        <h3 id="pNavOldPoiName"></h3>
-        <p>
-          <a id="address">${getString('requestAddressDescription', window.plugin.pnav.settings.language)}</a>
-          <span id="addressdetails" hidden></span>
-        </p>
-        <label>${getString('pNavChangesMadeDescription', window.plugin.pnav.settings.language)}</label>
-        <ul id="pNavChangesMade"></ul>
-        <label>
-          ${getString('pNavPoiIdDescription', window.plugin.pnav.settings.language)}
-          <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield" type="number" min="0" step="1"/>
-        </label>
-        <br>
-        <button type="Button" class="ui-button" id="pNavPoiInfo" title="${getString('pNavPoiInfoTitle', window.plugin.pnav.settings.language, {send})}" style="margin-top:5px">
-          ${getString('pNavPoiInfoText', window.plugin.pnav.settings.language, {send})}
-        </button>
-        <button type="Button" class="ui-button" id="pNavModCommand" title="${getString('pNavModCommandTitleDisabled', window.plugin.pnav.settings.language, {send})}" style="margin-top:5px;color:darkgray;text-decoration:none">
-          ${getString('pNavModCommandText', window.plugin.pnav.settings.language, {send})}
-        </button>
-      `;
+    const send = Boolean(settings.webhookUrl);
+    const html = bulkModifyDialog({
+      language: settings.language,
+      options: {send}
+    });
 
     /** @type{JQuery<HTMLElement>}*/
     const modDialog = window.dialog({
       id: 'pNavmodDialog',
-      title: getString('pNavmodDialogTitle', window.plugin.pnav.settings.language),
+      title: getString('pNavmodDialogTitle', settings.language),
       html,
       width: 'auto',
       height: 'auto',
       buttons: {
         Skip: {
           id: 'btnSkip',
-          text: getString('btnSkipText', window.plugin.pnav.settings.language),
+          text: getString('btnSkipText', settings.language),
           click () {
             i++;
             if (i == changeList.length) {
@@ -559,7 +559,7 @@ window.plugin.pnav.bulkModify = function (changes) {
     });
     let poi = changeList[i];
     $('#pNavPoiInfo', modDialog).on('click', function () {
-      if (window.plugin.pnav.settings.webhookUrl) {
+      if (settings.webhookUrl) {
         sendMessage(`<@${pNavId}> ${poi.oldType === 'pokestop' ? 'stop' : poi.oldType}-info ${poi.oldName}`);
       } else {
         const input = $('#copyInput');
@@ -574,12 +574,12 @@ window.plugin.pnav.bulkModify = function (changes) {
       const value = e.target.valueAsNumber;
       if (valid && value && value > 0) {
         $('#pNavModCommand', modDialog).prop('style', 'margin-top:5px');
-        $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleEnabled', window.plugin.pnav.settings.language, {send}));
+        $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleEnabled', settings.language, {send}));
       } else {
         $('#pNavModCommand', modDialog).css('color', 'darkgray');
         $('#pNavModCommand', modDialog).css('text-decoration', 'none');
         $('#pNavModCommand', modDialog).css('border', '1px solid darkgray');
-        $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleDisabled', window.plugin.pnav.settings.language, {send}));
+        $('#pNavModCommand', modDialog).prop('title', getString('pNavModCommandTitleDisabled', settings.language, {send}));
       }
     });
     $('#pNavModCommand', modDialog).on('click', function () {
@@ -611,9 +611,9 @@ window.plugin.pnav.bulkModify = function (changes) {
     $('#pNavModNrMax', modDialog).text(changeList.length);
     updateUI(modDialog, poi, i);
   } else {
-    alert(getString('alertNoModifications', window.plugin.pnav.settings.language));
+    alert(getString('alertNoModifications', settings.language));
   }
-};
+}
 
 /**
  * updates the export state after an edit step.
@@ -663,7 +663,7 @@ function updateUI (dialog, poi, i) {
   $('#pNavModCommand', dialog).css('border', '1px solid darkgray');
   $('#pNavModCommand', dialog).css('cursor', 'default');
   $('#pNavModCommand', dialog).css('text-decoration', 'none');
-  $('#pNavModCommand', dialog).prop('title', getString('pNavModCommandTitleDisabled', window.plugin.pnav.settings.language, {send: Boolean(window.plugin.pnav.settings.webhookUrl)}));
+  $('#pNavModCommand', dialog).prop('title', getString('pNavModCommandTitleDisabled', settings.language, {send: Boolean(settings.webhookUrl)}));
 }
 
 function sendModCommand (poiId, changes) {
@@ -679,7 +679,7 @@ function sendModCommand (poiId, changes) {
       command += ` «${key}: ${value}»`;
     }
   }
-  if (window.plugin.pnav.settings.webhookUrl) {
+  if (settings.webhookUrl) {
     sendMessage(command);
   } else {
     const input = $('#copyInput');
@@ -798,7 +798,7 @@ function saveToLocalStorage () {
 /**
  * Edit Data that lists what edits should be made.
  * @typedef {object} editData
- * @property {string} oldType - expected pokestop or gym
+ * @property {'pokestop'|'gym'} oldType
  * @property {string} oldName
  * @property {string} guid
  * @property {string} lat
@@ -807,14 +807,14 @@ function saveToLocalStorage () {
  * @property {string} [edits.latitude]
  * @property {string} [edits.longitude]
  * @property {string} [edits.name]
- * @property {string} [edits.type] - expected pokestop, gym or none
+ * @property {'pokestop'|'gym'|'none'} [edits.type]
  * @property {number} [edits.ex_eligible]
  */
 
 /**
  * data about portals
  * @typedef {object} portalData
- * @property {string} type
+ * @property {'pokestop'|'gym'} type
  * @property {string} guid
  * @property {string} name
  * @property {string} lat
@@ -884,7 +884,7 @@ function checkForSingleModification (currentData) {
 
 /**
  * fetch previous data from local storage and add
- * @param {string} type - expected values pokestop or gym
+ * @param {'pokestop'|'gym'} type - expected values pokestop or gym
  * @return {pogoToolsData[] | null} returns the data to export or null if Pogo Tools Data was not found.
  */
 function gatherExportData (type) {
@@ -894,13 +894,13 @@ function gatherExportData (type) {
   if (pogoData[`${type}s`]) {
     pogoData = Object.values(pogoData[`${type}s`]);
     const doneGuids = Object.keys(pNavData.pokestop).concat(Object.keys(pNavData.gym));
-    const distanceNotCheckable = window.plugin.pnav.settings.lat === null || window.plugin.pnav.settings.lng === null || window.plugin.pnav.settings.radius === null;
+    const distanceNotCheckable = settings.lat === null || settings.lng === null || settings.radius === null;
 
     /** @type {pogoToolsData[]} */
     let exportData = pogoData.filter(function (object) {
       return (
         !doneGuids.includes(object.guid) &&
-        (distanceNotCheckable || checkDistance(object.lat, object.lng, window.plugin.pnav.settings.lat, window.plugin.pnav.settings.lng) <= window.plugin.pnav.settings.radius)
+        (distanceNotCheckable || checkDistance(object.lat, object.lng, settings.lat, settings.lng) <= settings.radius)
       );
     });
     return exportData;
@@ -909,16 +909,16 @@ function gatherExportData (type) {
 }
 
 /**
- * @param {string} type - the type of locations to export (expected values pokestop or gym)
+ * @param {'pokestop'|'gym'} type - the type of locations to export (expected values pokestop or gym)
  */
-window.plugin.pnav.bulkExport = function (type) {
-  if (!window.plugin.pnav.timer) {
+function bulkExport (type) {
+  if (!timer) {
     let data = gatherExportData(type);
     if (!data) {
-      alert(getString('alertProblemPogoTools', window.plugin.pnav.settings.language));
+      alert(getString('alertProblemPogoTools', settings.language));
       return;
     }
-    if (window.plugin.pnav.settings.useBot) {
+    if (settings.useBot) {
       botExport(data, type); // jump to BotExport immediately before opening the dialog, this is not needed!
       return;
     }
@@ -928,50 +928,39 @@ window.plugin.pnav.bulkExport = function (type) {
       return null;
     };
 
-    window.plugin.pnav.timer = setInterval(() => {
+    timer = setInterval(() => {
       if (i < data.length && data.length > 0) {
         normalExport(data, type, thisDialog, i).then((result) => {
           i = result;
         });
       } else {
         saveState(data, type, i);
-        clearInterval(window.plugin.pnav.timer);
-        window.plugin.pnav.timer = null;
+        clearInterval(timer);
+        timer = null;
         window.onbeforeunload = null;
       }
     }, wait);
 
     let dialog = window.dialog({
       id: 'bulkExportProgress',
-      html: `
-              <h3 id="exportState">${getString('exportStateTextExporting', window.plugin.pnav.settings.language)}</h3>
-              <p>
-                <label>
-                  ${getString('exportProgressBarDescription', window.plugin.pnav.settings.language)}
-                  <progress id="exportProgressBar" value="0" max="${data.length}"/>
-                </label>
-              </p>
-              <label id="exportNumber">0</label>
-              <label>${getString('of', window.plugin.pnav.settings.language)} ${data.length}</label>
-              <br>
-              <label>${getString('exportTimeRemainingDescription', window.plugin.pnav.settings.language)}</label>
-              <label id="exportTimeRemaining">???</label>
-              <label>s</label>
-        `,
+      html: bulkExportDialog({
+        language: settings.language,
+        max: data.length
+      }),
       width: 'auto',
-      title: getString('bulkExportProgressTitle', window.plugin.pnav.settings.language),
+      title: getString('bulkExportProgressTitle', settings.language),
       buttons: {
         OK: {
-          text: getString('bulkExportProgressButtonText', window.plugin.pnav.settings.language),
-          title: getString('bulkExportProgressButtonTitle', window.plugin.pnav.settings.language),
+          text: getString('bulkExportProgressButtonText', settings.language),
+          title: getString('bulkExportProgressButtonTitle', settings.language),
           click () {
             saveState(data, type, i);
-            clearInterval(window.plugin.pnav.timer);
-            window.plugin.pnav.timer = null;
+            clearInterval(timer);
+            timer = null;
             // eslint-disable-next-line no-underscore-dangle
-            if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+            if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
               // re-validate highlighter if it is enabled.
-              window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
+              window.changePortalHighlights(getString('portalHighlighterName', settings.language));
             }
             dialog.dialog('close');
           }
@@ -982,8 +971,8 @@ window.plugin.pnav.bulkExport = function (type) {
 
     $('.ui-button.ui-dialog-titlebar-button-close', thisDialog).on('click', function () {
       saveState(data, type, i);
-      clearInterval(window.plugin.pnav.timer);
-      window.plugin.pnav.timer = null;
+      clearInterval(timer);
+      timer = null;
     });
     if (data.length > 0) {
       normalExport(data, type, dialog, 0).then((result) => {
@@ -995,7 +984,7 @@ window.plugin.pnav.bulkExport = function (type) {
   } else {
     console.error('Bulk Export already running!');
   }
-};
+}
 
 /**
  * One Export step when the Companion Discord bot should be used.
@@ -1012,15 +1001,15 @@ function botExport (data, type) {
   let formData = new FormData();
   let date = new Date();
   formData.append('content', `<@${companionId}> cm`);
-  formData.append('username', window.plugin.pnav.settings.name);
+  formData.append('username', settings.name);
   formData.append(
     'file',
     new Blob([JSON.stringify(exportdata, null, 2)], {type: 'application/json'}),
-    `creations-${window.plugin.pnav.settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`
+    `creations-${settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`
   );
   $.ajax({
     method: 'POST',
-    url: window.plugin.pnav.settings.webhookUrl,
+    url: settings.webhookUrl,
     contentType: false,
     processData: false,
     data: formData,
@@ -1030,9 +1019,9 @@ function botExport (data, type) {
     success () {
       saveState(data, type);
       // eslint-disable-next-line no-underscore-dangle
-      if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+      if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
         // re-validate highlighter if it is enabled.
-        window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
+        window.changePortalHighlights(getString('portalHighlighterName', settings.language));
       }
     }
   });
@@ -1061,11 +1050,11 @@ async function normalExport (data, type, dialog, i) {
   let options = ex ? ' "ex_eligible: 1"' : '';
   let content = `${prefix}create poi ${type} «${name}» ${lat} ${lng}${options}`;
   const params = {
-    username: window.plugin.pnav.settings.name,
+    username: settings.name,
     avatar_url: '',
     content
   };
-  let success = await fetch(window.plugin.pnav.settings.webhookUrl, {
+  let success = await fetch(settings.webhookUrl, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(params)
@@ -1093,7 +1082,7 @@ async function normalExport (data, type, dialog, i) {
  * @param {editData[]} [changes] - optional list of changes that should be transferred.
  */
 function botEdit (changes) {
-  if (window.plugin.pnav.settings.webhookUrl === null) {
+  if (settings.webhookUrl === null) {
     console.error('no Webhook URL present!');
     return;
   }
@@ -1107,15 +1096,15 @@ function botEdit (changes) {
   let data = new FormData();
   let date = new Date();
   data.append('content', `<@${companionId}> e`);
-  data.append('username', window.plugin.pnav.settings.name);
+  data.append('username', settings.name);
   data.append(
     'file',
     new Blob([JSON.stringify(changes, null, 2)], {type: 'application/json'}),
-    `edits-${window.plugin.pnav.settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`
+    `edits-${settings.name}-${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}_${date.getUTCHours()}:${date.getUTCMinutes()}.json`
   );
   $.ajax({
     method: 'POST',
-    url: window.plugin.pnav.settings.webhookUrl,
+    url: settings.webhookUrl,
     contentType: false,
     processData: false,
     data,
@@ -1125,9 +1114,9 @@ function botEdit (changes) {
     success () {
       updateDone(changes);
       // eslint-disable-next-line no-underscore-dangle
-      if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+      if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
         // re-validate highlighter if it is enabled.
-        window.changePortalHighlights(getString('portalHighlighterName', window.plugin.pnav.settings.language));
+        window.changePortalHighlights(getString('portalHighlighterName', settings.language));
       }
     }
   });
@@ -1151,107 +1140,29 @@ function updateExportDialog (dialog, cur, max, time) {
     $('#exportTimeRemaining', dialog).text(time);
   }
   if (cur >= max) {
-    $('#exportState', dialog).text(getString('exportStateTextReady', window.plugin.pnav.settings.language));
+    $('#exportState', dialog).text(getString('exportStateTextReady', settings.language));
     const okayButton = $('.ui-button', dialog.parentElement).not('.ui-dialog-titlebar-button');
     okayButton.text('OK');
     okayButton.prop('title', '');
   }
 }
 
-/*
- *the idea of the following function was taken from https://stackoverflow.com/a/14561433
- *by User talkol (https://stackoverflow.com/users/1025458/talkol).
- *The License is CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
- *The Code was slightly adapted.
- */
-/**
- * @param {number} lat1
- * @param {number} lon1
- * @param {number} lat2
- * @param {number} lon2
- * @return {number}
- */
-function checkDistance (lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  let x1 = lat2 - lat1;
-  let dLat = (x1 * Math.PI) / 180;
-  let x2 = lon2 - lon1;
-  let dLon = (x2 * Math.PI) / 180;
-  let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  let d = R * c;
-  return d;
-}
-
-/**
- * @param {string} id - the id of the input field to copy from
- * @return {bool} - returns if copying was successful
- */
-function copyfieldvalue (id) {
-  let field = document.getElementById(id);
-  field.focus();
-  field.setSelectionRange(0, field.value.length);
-  field.select();
-  return copySelectionText();
-}
-
-function copySelectionText () {
-  let copysuccess;
-  try {
-    copysuccess = document.execCommand('copy');
-  } catch (e) {
-    copysuccess = false;
-  }
-  return copysuccess;
-}
-
-// source: Oscar Zanota on Dev.to (https://dev.to/oskarcodes/send-automated-discord-messages-through-webhooks-using-javascript-1p01)
-function sendMessage (msg) {
-  let params = {
-    username: window.plugin.pnav.settings.name,
-    avatar_url: '',
-    content: msg
-  };
-  request.open('POST', window.plugin.pnav.settings.webhookUrl);
-  request.setRequestHeader('Content-type', 'application/json');
-  request.send(JSON.stringify(params), false);
-}
-
 function modifyPortalDetails (data) {
   const detailsObserver = new MutationObserver(waitForPogoButtons);
   const statusObserver = new MutationObserver(waitForPogoStatus);
-  const send = Boolean(window.plugin.pnav.settings.webhookUrl);
+  const send = Boolean(settings.webhookUrl);
   console.log(data);
   let guid = data.guid;
   selectedGuid = guid;
   if (!window.plugin.pogo) {
     window.removeHook('portalDetailsUpdated', modifyPortalDetails);
     setTimeout(function () {
-      $('#portaldetails').append(`
-        <div id="PNav" style="color:#fff">
-          <Label>
-            <input type="radio" checked name="type" value="none" id="PNavNone"/>
-            ${getString('PNavNoneDescription', window.plugin.pnav.settings.language)}
-          </label>
-          <Label>
-            <input type="radio" name="type" value="pokestop" id="PNavStop"/>
-            ${getString('PNavStopDescription', window.plugin.pnav.settings.language)}
-          </label>
-          <Label>
-            <input type="radio" name="type" value="gym" id="PNavGym"/>
-            ${getString('PNavGymDescription', window.plugin.pnav.settings.language)}
-          </label>
-          <Label>
-            <input type="radio" name="type" value="ex" id="PNavEx"/>
-            ${getString('PNavExDescription', window.plugin.pnav.settings.language)}
-          </label>
-          <a style="${
-  window.isSmartphone() ? ';padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1' : ''
-}" title="${getString('PogoButtonsTitle', window.plugin.pnav.settings.language, {send})}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">
-            ${getString('PogoButtonsText', window.plugin.pnav.settings.language, {send})}
-          </a>
-        </div>
-      `);
+      $('#portaldetails').append(portalDetails({
+        language: settings.language,
+        options: {send},
+        mobile: window.isSmartphone()
+      }));
+      $('#pnavCopier').on('click', () => copy());
       if (pNavData.pokestop[selectedGuid]) {
         $('#PNavStop').prop('checked', true);
       } else if (pNavData.gym[selectedGuid]) {
@@ -1276,18 +1187,20 @@ function modifyPortalDetails (data) {
 function waitForPogoButtons (mutationList, invokingObserver) {
   mutationList.forEach(function (mutation) {
     if (mutation.type === 'childList' && mutation.addedNodes) {
-      mutation.addedNodes.forEach((node) => {
+      for (const node of mutation.addedNodes) {
         if (node.className == 'PogoButtons') {
           $(node).after(`
-             <a style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', window.plugin.pnav.settings.language, {
-    send: Boolean(window.plugin.pnav.settings.webhookUrl)
-  })}" onclick="window.plugin.pnav.copy();return false;" accesskey="p">${getString('PogoButtonsText', window.plugin.pnav.settings.language, {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>
+             <a id="pnavCopier" style="position:absolute;right:5px" title="${getString('PogoButtonsTitle', settings.language, {
+    send: Boolean(settings.webhookUrl)
+  })}" accesskey="p">${getString('PogoButtonsText', settings.language, {send: Boolean(settings.webhookUrl)})}</a>
              `);
+          $('#pnavCopier').on('click', () => copy());
           $(node).css('display', 'inline');
           // we don't need to look for the class anymore because we just found what we wanted ;-)
           invokingObserver.disconnect();
+          break;
         }
-      });
+      }
     }
   });
 }
@@ -1295,14 +1208,14 @@ function waitForPogoButtons (mutationList, invokingObserver) {
 function waitForPogoStatus (mutationList, invokingObserver) {
   mutationList.forEach(function (mutation) {
     if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-      $('.PogoStatus').append(`<a style="position:absolute;right:5px" onclick="window.plugin.pnav.copy();return false;">${getString('PogoButtonsText', window.plugin.pnav.settings.language, {send: Boolean(window.plugin.pnav.settings.webhookUrl)})}</a>`);
+      $('.PogoStatus').append(`<a id="pnavStatusCopier" style="position:absolute;right:5px">${getString('PogoButtonsText', settings.language, {send: Boolean(settings.webhookUrl)})}</a>`);
+      $('#pnavStatusCopier').on('click', () => copy());
       invokingObserver.disconnect();
     }
   });
 }
 
 function setup () {
-  console.warn('settupp');
   $('head').append(/* html */ `<style>
       .Button {
         border: 1px solid #FFCE00;
@@ -1319,17 +1232,17 @@ function setup () {
     </style>`);
   if (localStorage['plugin-pnav-settings']) {
     let savedSettings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
-    Object.keys(window.plugin.pnav.settings).forEach((key) => {
+    Object.keys(settings).forEach((key) => {
       if (typeof savedSettings[key] !== 'undefined') {
-        window.plugin.pnav.settings[key] = savedSettings[key];
+        settings[key] = savedSettings[key];
       }
     });
-    localStorage['plugin-pnav-settings'] = JSON.stringify(window.plugin.pnav.settings);
-    // window.plugin.pnav.settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
+    localStorage['plugin-pnav-settings'] = JSON.stringify(settings);
+    // settings = JSON.parse(localStorage.getItem('plugin-pnav-settings'));
   }
-  if (!window.plugin.pnav.settings.language) {
-    window.plugin.pnav.settings.language = detectLanguage();
-    localStorage['plugin-pnav-settings'] = JSON.stringify(window.plugin.pnav.settings);
+  if (!settings.language) {
+    settings.language = detectLanguage();
+    localStorage['plugin-pnav-settings'] = JSON.stringify(settings);
   }
   if (localStorage['plugin-pnav-done-pokestop']) {
     pNavData.pokestop = JSON.parse(localStorage.getItem('plugin-pnav-done-pokestop'));
@@ -1337,28 +1250,31 @@ function setup () {
   if (localStorage['plugin-pnav-done-gym']) {
     pNavData.gym = JSON.parse(localStorage.getItem('plugin-pnav-done-gym'));
   }
-  $('#toolbox').append(`<a title="${getString('pokeNavSettingsTitle', window.plugin.pnav.settings.language)}" onclick="if(!window.plugin.pnav.timer){window.plugin.pnav.showSettings();}return false;" accesskey="s">${getString('pokeNavSettingsText', window.plugin.pnav.settings.language)}</a>`);
+  $('#toolbox').append(`<a id="pNavSettings" title="${getString('pokeNavSettingsTitle', settings.language)}" accesskey="s">${getString('pokeNavSettingsText', settings.language)}</a>`);
+  $('#pNavSettings').on('click', () => {
+    if (!timer)showSettings();
+  });
   $('body').prepend('<input id="copyInput" style="position: absolute;"></input>');
   lCommBounds = new L.LayerGroup();
-  if (window.plugin.pnav.settings.lat && window.plugin.pnav.settings.lng && window.plugin.pnav.settings.radius) {
+  if (settings.lat && settings.lng && settings.radius) {
     let commCircle = L.circle(L.latLng([
-      window.plugin.pnav.settings.lat,
-      window.plugin.pnav.settings.lng
+      settings.lat,
+      settings.lng
     ]), {
-      radius: window.plugin.pnav.settings.radius * 1000,
+      radius: settings.radius * 1000,
       interactive: false,
       fillOpacity: 0.1,
       color: '#000000'
     });
     lCommBounds.addLayer(commCircle);
   }
-  window.addLayerGroup(getString('lCommBoundsName', window.plugin.pnav.settings.language), lCommBounds);
-  window.addPortalHighlighter(getString('portalHighlighterName', window.plugin.pnav.settings.language), window.plugin.pnav.highlight);
+  window.addLayerGroup(getString('lCommBoundsName', settings.language), lCommBounds);
+  window.addPortalHighlighter(getString('portalHighlighterName', settings.language), highlight);
   let isLinksDisplayed = window.isLayerGroupDisplayed('Links', false);
   let isFieldsDisplayed = window.isLayerGroupDisplayed('Fields', false);
   $('#portal_highlight_select').on('change', function () {
     // eslint-disable-next-line no-underscore-dangle
-    if (window._current_highlighter === getString('portalHighlighterName', window.plugin.pnav.settings.language)) {
+    if (window._current_highlighter === getString('portalHighlighterName', settings.language)) {
       isLinksDisplayed = window.isLayerGroupDisplayed('Links', false);
       isFieldsDisplayed = window.isLayerGroupDisplayed('Fields', false);
       // eslint-disable-next-line no-underscore-dangle

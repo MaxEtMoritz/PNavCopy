@@ -1,0 +1,29 @@
+<span>{{getString 'Modification'}}</span>
+<span id="pNavModNrCur">1</span>
+<span>{{getString 'of'}}</span>
+<span id="pNavModNrMax"></span>
+<h3>
+    {{getString 'pNavOldPoiNameDescription'}}
+</h3>
+<h3 id="pNavOldPoiName"></h3>
+<p>
+    <a id="address">{{getString 'requestAddressDescription'}}</a>
+    <span id="addressdetails" hidden></span>
+</p>
+<span>{{getString 'pNavChangesMadeDescription'}}</span>
+<ul id="pNavChangesMade"></ul>
+<label>
+    {{getString 'pNavPoiIdDescription'}}
+    <input id="pNavPoiId" style="appearance:textfield;-moz-appearance:textfield;-webkit-appearance:textfield"
+        type="number" min="0" step="1" />
+</label>
+<br>
+<button type="Button" class="ui-button" id="pNavPoiInfo"
+    title="{{getString 'pNavPoiInfoTitle'}}" style="margin-top:5px">
+    {{getString 'pNavPoiInfoText'}}
+</button>
+<button type="Button" class="ui-button" id="pNavModCommand"
+    title="{{getString 'pNavModCommandTitleDisabled'}}"
+    style="margin-top:5px;color:darkgray;text-decoration:none">
+    {{getString 'pNavModCommandText'}}
+</button>

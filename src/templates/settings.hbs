@@ -1,14 +1,13 @@
 <div class="form-group">
     <label for="pnavLanguage">{{getString 'pnavLanguageDescription'}}</label>
-    <select id="pnavLanguage"
-        onchange="window.plugin.pnav.settings.language = this.value;alert(window.plugin.pnav.getString('alertLanguageAfterReload'));">
+    <select id="pnavLanguage">
     </select>
 </div>
 <div>
     <label for="webhookUrl" title="{{getString 'pnavhookurlTitle'}}">{{getString 'pnavhookurlDescription'}}</label>
     <input type="url" style="width:100%" id="webhookUrl"
         value="{{#if settings.webhookUrl}}{{settings.webhookUrl}}{{/if}}"
-        pattern="^https?://(ptb.|canary.)?discord(app)?.com/api/webhooks/[0&#45;9]{1,20}/[^/]*$" />
+        pattern="^https?://(ptb.|canary.)?discord(app)?.com/api/webhooks/[0&#45;9]{1,20}/[^\/]*$" />
     <div style="color: red; display:none;">{{getString 'lblErrorWHText'}}</div>
 </div>
 <div class="form-group">
@@ -33,34 +32,28 @@
         type="number" min="0" step="0.001" value="{{#if settings.radius includeZero=true}}{{settings.radius}}{{/if}}">
     <div style="color:red;display:none">{{getString 'lblErrorRdText'}}</div>
 </div>
-<div class="form-group"><button type="Button" id="btnEraseHistory" style="width:100%" title="{{getString 'btnEraseHistoryTitle'}}" onclick="
-          window.plugin.pnav.deleteExportState();
-          $(this).css('color','green');
-          $(this).css('border','1px solid green')
-          $(this).text('{{getString 'btnEraseHistoryTextSuccess'}}'); setTimeout(function () {
-        if($('#btnEraseHistory').length> 0){
-        $('#btnEraseHistory').css('color', '');
-        $('#btnEraseHistory').css('border', '');
-        $('#btnEraseHistory').text('{{getString 'btnEraseHistoryTextDefault'}}');
-        }
-        }, 1000);
-        return false;
-        ">{{getString 'btnEraseHistoryTextDefault'}}</button></div>
 <div class="form-group">
-    <button type="Button" id="btnImExport" style="width:100%" title="{{getString 'btnImExportTitle'}}"
-        onclick="window.plugin.pnav.imExport();return false;">{{getString 'btnImExportText'}}</button>
+    <button type="Button" id="btnEraseHistory" style="width:100%" title="{{getString 'btnEraseHistoryTitle'}}">
+        {{getString 'btnEraseHistoryTextDefault'}}
+    </button>
+</div>
+<div class="form-group">
+    <button type="Button" id="btnImExport" style="width:100%" title="{{getString 'btnImExportTitle'}}">
+        {{getString 'btnImExportText'}}
+    </button>
 </div>{{#if pogoToolsAvailable}}{{#if settings.webhookUrl}}
 <div class="form-group">
-    <button type="Button" id="btnBulkExportGyms" style="width:100%" title="{{getString 'btnBulkExportGymsTitle'}}"
-        onclick="window.plugin.pnav.bulkExport('gym');return false;">{{getString 'btnBulkExportGymsText'}}</button>
+    <button type="Button" id="btnBulkExportGyms" style="width:100%" title="{{getString 'btnBulkExportGymsTitle'}}">
+        {{getString 'btnBulkExportGymsText'}}
+    </button>
 </div>
-<div class="form-group"><button type="Button" id="btnBulkExportStops" style="width:100%"
-        title="{{getString 'btnBulkExportStopsTitle'}}"
-        onclick="window.plugin.pnav.bulkExport('pokestop');return false;">{{getString
-        'btnBulkExportStopsText'}}</button>
+<div class="form-group">
+    <button type="Button" id="btnBulkExportStops" style="width:100%" title="{{getString 'btnBulkExportStopsTitle'}}">
+        {{getString 'btnBulkExportStopsText'}}
+    </button>
 </div>{{/if}}
 <div class="form-group">
-    <button type="Button" id="btnBulkModify" style="width:100%" title="{{getString 'btnBulkModifyTitle'}}"
-        onclick="window.plugin.pnav.bulkModify(); return false;">
-        {{getString 'btnBulkModifyText'}}</button>
+    <button type="Button" id="btnBulkModify" style="width:100%" title="{{getString 'btnBulkModifyTitle'}}">
+        {{getString 'btnBulkModifyText'}}
+    </button>
 </div>{{/if}}

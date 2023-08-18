@@ -1,0 +1,22 @@
+<div id="PNav" style="color:#fff">
+    <Label>
+        <input type="radio" checked name="type" value="none" id="PNavNone" />
+        {{getString 'PNavNoneDescription'}}
+    </label>
+    <Label>
+        <input type="radio" name="type" value="pokestop" id="PNavStop" />
+        {{getString 'PNavStopDescription'}}
+    </label>
+    <Label>
+        <input type="radio" name="type" value="gym" id="PNavGym" />
+        {{getString 'PNavGymDescription'}}
+    </label>
+    <Label>
+        <input type="radio" name="type" value="ex" id="PNavEx" />
+        {{getString 'PNavExDescription'}}
+    </label>
+    <a id="pnavCopier" {{#if mobile}}style="padding:5px;margin-top:3px;margin-bottom:3px;border:2px outset #20A8B1" {{/if}}
+        title="{{getString 'PogoButtonsTitle'}}" accesskey="p">
+        {{getString 'PogoButtonsText'}}
+    </a>
+</div>

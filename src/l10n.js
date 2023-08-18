@@ -1,4 +1,10 @@
-import strings from './strings';
+import * as de from './strings.de.json';
+import * as en from './strings.en.json';
+
+const strings = {
+  de,
+  en
+};
 
 /**
  * Gets a localized string for specific key and language if available, otherwise in default language.
