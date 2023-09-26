@@ -310,6 +310,7 @@ namespace CompanionBot
             //await RespondAsync("Saving state...", ephemeral: true);
             //await _queue.SaveState();
             await RespondAsync(Properties.Resources.goodbye, ephemeral: true);
+            Program.end = true;
             await _client.LogoutAsync();
             await _client.StopAsync();
             //Environment.Exit(0);
