@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using Fergun.Interactive;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Globalization;
 using System.Net.Http;
@@ -24,6 +25,7 @@ namespace CompanionBot
         private IServiceProvider _services;
         private InteractionHandler iHandler;
         private static readonly Timer watchdog = new(TimeSpan.FromSeconds(30)) { AutoReset = false };
+        internal static bool end = false;
 
         public static void Main() => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -140,7 +142,7 @@ namespace CompanionBot
         private async Task ClientDisconnected(Exception ex)
         {
             await _services.GetRequiredService<MessageQueue>().SaveState();
-            if (ex.GetType().Name == "TaskCanceledException")
+            if (ex.GetType().Name == "TaskCanceledException" && end)
             {
                 // Bot was disconnected gracefully
                 await _services.GetRequiredService<Logger>().Log(new LogMessage(LogSeverity.Info, this.GetType().Name, "Disconnected from gateway due to Command"));

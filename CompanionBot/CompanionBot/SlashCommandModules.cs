@@ -43,7 +43,7 @@ namespace CompanionBot
             CultureInfo.CurrentUICulture = new(Context.Interaction.UserLocale);
         }
 
-        [SlashCommand("mod-channel", "Requests PokeNav's mod channel and saves it."), RequireBotPermission(ChannelPermission.ViewChannel), EnabledInDm(false)]
+        [SlashCommand("mod-channel", "Requests PokeNav's mod channel and saves it."), RequireBotPermission(ChannelPermission.ViewChannel), CommandContextType(InteractionContextType.Guild)]
         public async Task SetModChannelAsync()
         {
             Task T = RespondAsync($"<@{_config["pokeNavId"]}> show mod-channel");
@@ -72,14 +72,14 @@ namespace CompanionBot
                 await FollowupAsync(Properties.Resources.modChannelFail);
         }
 
-        [SlashCommand("pause", "Pauses the currently running PokeNav POI import."), EnabledInDm(false)]
+        [SlashCommand("pause", "Pauses the currently running PokeNav POI import."), CommandContextType(InteractionContextType.Guild)]
         public Task Pause()
         {
             Console.WriteLine(CultureInfo.CurrentCulture.Name);
             return _queue.Pause(Context);
         }
 
-        [SlashCommand("resume", "Restarts the previously paused PokeNav POI import."), EnabledInDm(false)]
+        [SlashCommand("resume", "Restarts the previously paused PokeNav POI import."), CommandContextType(InteractionContextType.Guild)]
         public Task Resume()
         {
             return _queue.Resume(Context);
@@ -95,7 +95,7 @@ namespace CompanionBot
             none
         }
 
-        [SlashCommand("import", "imports POI data from an arbitrary CSV file."), EnabledInDm(false)]
+        [SlashCommand("import", "imports POI data from an arbitrary CSV file."), CommandContextType(InteractionContextType.Guild)]
         public async Task Import(
             [Summary(description:"The CSV file containing the data"), RequireMimeType("text/csv", "text/tab-separated-values"), MaxFileSize(300)]
         IAttachment file,
@@ -310,6 +310,7 @@ namespace CompanionBot
             //await RespondAsync("Saving state...", ephemeral: true);
             //await _queue.SaveState();
             await RespondAsync(Properties.Resources.goodbye, ephemeral: true);
+            Program.end = true;
             await _client.LogoutAsync();
             await _client.StopAsync();
             //Environment.Exit(0);
