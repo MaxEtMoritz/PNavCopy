@@ -38,6 +38,10 @@ If you use the [Pogo tools plugin by AlfonsoML](https://github.com/AlfonsoML-s/p
 
 If you use the Plugin, you also have the option to upload all gathered Data at once.
 
+:warning: Attention! :warning:
+There exists an actively maintained fork of the original plug-in by [NvlblNm](https://gitlab.com/NvlblNm/pogo-s2). But this fork is INCOMPATIBLE with my plug-in, because the way the data is stored was fundamentally changed in this fork.
+So please stick to the version linked on this page.
+
 ## Original Source / Dependencies
 Credits for the original source and licenses of dependencies can be found [here](/dependency-credits.md).
 
