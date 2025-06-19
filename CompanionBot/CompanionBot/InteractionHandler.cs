@@ -105,7 +105,7 @@ namespace CompanionBot
         private async Task CommandExecuted(ICommandInfo info, IInteractionContext bla, IResult result)
         {
             SocketInteractionContext<SocketInteraction> context = bla as SocketInteractionContext<SocketInteraction>;
-            Func<string, Embed[], bool, bool, AllowedMentions, MessageComponent, Embed, RequestOptions, Task> respond;
+            Func<string, Embed[], bool, bool, AllowedMentions, MessageComponent, Embed, RequestOptions, PollProperties, Task> respond;
             if (context.Interaction.HasResponded)
                 respond = context.Interaction.FollowupAsync;
             else
@@ -119,11 +119,11 @@ namespace CompanionBot
                 {
                     case InteractionCommandError.UnknownCommand:
                         await _logger.Log(new LogMessage(LogSeverity.Error, info?.Name??"unknown", $"Unknown interaction {info?.Name}!"));
-                        await respond(Properties.Resources.ErrorUnknownCommand, null, false, true, null, null, null, null);
+                        await respond(Properties.Resources.ErrorUnknownCommand, null, false, true, null, null, null, null, null);
                         break;
                     case InteractionCommandError.ConvertFailed:
                         await _logger.Log(new LogMessage(LogSeverity.Warning, info.Name, $"Parameter(s) could not be converted: {result.ErrorReason}"));
-                        await respond(String.Format(Properties.Resources.ErrorConvertFailed, result.ErrorReason), null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.ErrorConvertFailed, result.ErrorReason), null, false, true, null, null, null, null, null);
                         break;
                     case InteractionCommandError.BadArgs:
                         int minCount = 0;
@@ -135,30 +135,30 @@ namespace CompanionBot
                             maxCount++;
                         });
                         await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Too many or few parameters (expected {minCount} to {maxCount}): {result.ErrorReason}"));
-                        await respond(String.Format(Properties.Resources.errorBadArgs,result.ErrorReason), null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.errorBadArgs,result.ErrorReason), null, false, true, null, null, null, null, null);
                         break;
                     case InteractionCommandError.Exception:
                         string logentry = "Exception while executing interaction.\n";
                         if (context.Guild != null) logentry += $"Guild: {context.Guild.Name} ({context.Guild.Id})\n";
                         logentry += $"User: {context.User.Username} ({context.User.Id})\nError message: {result.ErrorReason}";
                         await _logger.Log(new LogMessage(LogSeverity.Critical, info.Name, logentry));
-                        await respond(String.Format(Properties.Resources.errorException,result.ErrorReason), null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.errorException,result.ErrorReason), null, false, true, null, null, null, null, null);
                         break;
                     case InteractionCommandError.Unsuccessful:
                         await _logger.Log(new LogMessage(LogSeverity.Warning, info.Name, $"Interaction execution unsuccessful: {result.ErrorReason}"));
-                        await respond(String.Format(Properties.Resources.interactionUnsuccessful,result.ErrorReason), null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.interactionUnsuccessful,result.ErrorReason), null, false, true, null, null, null, null, null);
                         break;
                     case InteractionCommandError.UnmetPrecondition:
                         await _logger.Log(new LogMessage(LogSeverity.Info, info.Name, $"User {context.User.Username} did not meet all preconditions: {result.ErrorReason}"));
-                        await respond(String.Format(Properties.Resources.unmetPrecondition,result.ErrorReason), null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.unmetPrecondition,result.ErrorReason), null, false, true, null, null, null, null, null);
                         break;
                     case InteractionCommandError.ParseFailed:
                         await _logger.Log(new LogMessage(LogSeverity.Error, info.Name, $"Parsing of Command Context failed: {result.ErrorReason}"));
-                        await respond(String.Format(Properties.Resources.errorParseFailed,result.ErrorReason), null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.errorParseFailed,result.ErrorReason), null, false, true, null, null, null, null, null);
                         break;
                     default:
                         await _logger.Log(new LogMessage(LogSeverity.Critical, info.Name, $"Unknown Error Type encountered: {result.Error.Value} - {result.ErrorReason}"));
-                        await respond(String.Format(Properties.Resources.errorException, result.ErrorReason), null, false, true, null, null, null, null);
+                        await respond(String.Format(Properties.Resources.errorException, result.ErrorReason), null, false, true, null, null, null, null, null);
                         break;
                 }
             }
