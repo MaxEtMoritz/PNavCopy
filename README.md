@@ -24,14 +24,14 @@ You should be asked if you want to install an external Plugin. Confirm the Insta
 ## Features
 With This Plugin you can...
 - Classify a portal manually as Stop, Gym or EX Gym or use the Info already collected with Pogo Tools (see [Integrations section](#integrations))
-- Copy The Command to Clipboard, use a WebHook to send it directly to the appropriate Discord channel or use the [Companion Bot](#about-the-companion-bot)
+- Copy The Command to Clipboard, use a WebHook to send it directly to the appropriate Discord channel ~~or use the [Companion Bot](#about-the-companion-bot)~~
 - Decide if the commands should be sent directly to the Discord channel or a thread
 - Send all the Data already collected with PoGo Tools to PokeNav with a few Clicks
 - Pause the Bulk export and start off where you ended it
 - Check for modifications of Pogo Tools data automatically
-- Send or copy modification or deletion Commands for PokeNav, or let the [Companion Bot](#about-the-companion-bot) do the work.
+- Send or copy modification or deletion Commands for PokeNav, ~~or let the [Companion Bot](#about-the-companion-bot) do the work~~.
 - View your PokeNav community bounds as a circle on the map
-- Represent the state of the export in Colors with a highlighter: PokeStops are blue, Gyms red and Ex raid gyms have a red border and yellow filling.
+- Represent the state of the export in Colors with a highlighter: PokeStops are blue, Gyms red and Elite raid gyms have a red border and yellow filling.
 
 ## Integrations
 If you use the [Pogo tools plugin by AlfonsoML](https://github.com/AlfonsoML-s/pogo-s2) (development from original author stalled, but still working), the info entered there is used to determine Type and Ex Eligibility if applicable. Otherwise you can choose manually.
@@ -58,14 +58,16 @@ If you created the WebHook, copy the WebHook URL and paste it into the Text Box 
 __Note:__ Have in mind that anyone who has the WebHook URL and knows how to post to WebHooks can send any Message he likes to the Channel, so be cautious who you give the WebHook URL to.
 
 ## About the Companion Bot
-The Companion Bot is a helper Bot that recieves a JSON file from the WebHook or an arbitrary CSV file from the user containing all PoI to create / update and posts the PokeNav commands one at a time. This is because WebHooks can only post 30 Messages per minute, resulting in long waiting times if you want to create all PoI via WebHook. And you have to keep IITC on all the time.
+:warning: **The Companion Bot has been taken offline for several reasons.** :warning: <br/>
+The source code is still available. If you plan to host the bot yourself, inform me and i will try to assist in the hosting process.
 
-After the Export, the Bot does its Work automatically without the need to keep IITC open so long.
+The Companion Bot was a helper Bot that recieved a JSON file from the WebHook or an arbitrary CSV file from the user containing all PoI to create / update and posted the PokeNav commands one at a time. This is because WebHooks can only post 30 Messages per minute, resulting in long waiting times if you want to create all PoI via WebHook. And you have to keep IITC on all the time.
 
-You can invite it to your server by clicking :point_right:**[here](https://discord.com/api/oauth2/authorize?client_id=806533005626572813&permissions=274878131264&scope=bot%20applications.commands)**:point_left:.
+After the export, the Bot did its work automatically without the need to keep IITC open so long.
 
 ## How to contribute?
 You can contribute by...
 - translating this Plugin into your native language. A guide on how to translate can be found [here](/Translating.md).
 - contributing Code to the plugin or the bot. Please fork this repository and open a pull request. I will then take a look at it and if i consider it good, i'll merge it into the dev branch and later on into main if everything is working.
+- hosting the companion bot.
 - reporting Bugs and other issues.
